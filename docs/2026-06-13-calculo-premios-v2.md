@@ -28,8 +28,17 @@ El código Java (`PremioCalculationService`), en **jornada doble con 2 empatados
 
 `v_puntos_jornada_falm` ya estaba validada por separado; la función solo combina ambas.
 
+## Premios de competición — `falm.calcular_premios_competicion(competicion, premios[])`
+
+Misma regla canónica sobre la **clasificación final** (`v_clasificacion`, orden por
+`puntos_clasificacion` y luego `puntos_favor`). El `tipo` de premio se deriva de la
+competición (cast `competicion_tipo → tipo_premio`, verificado). Importes los pasa el
+llamador: **Liga `[160,110,50]`, Clausura `[70,50,30]`, Champions `[100,60,30]`**.
+Snapshot en `premio` (borra y reinserta por competición+tipo).
+
+**Subsistema de premios COMPLETO** (jornada + competición), ambos con la regla canónica.
+
 ## Pendiente
 
-- **Premios de competición** (Liga 160/110/50, Clausura 70/50/30, Champions 100/60/30): misma regla canónica sobre `v_clasificacion` final → función análoga `calcular_premios_competicion`.
 - `procesar-fichajes` (3 desempates en 2 fases; determinista → puede ser SQL).
 - Expiración de ofertas (`pg_cron`), micro-scraper (Cloud Run).
