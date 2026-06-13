@@ -2,7 +2,7 @@ import { Component, OnInit, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { environment } from '../../../environments/environment';
 import {
-  AlineacionGuardada, Equipo, FalmService, FORMACIONES, ItemPlantilla, JornadaFalm, RolAlineacion,
+  AlineacionGuardada, Competicion, Equipo, FalmService, FORMACIONES, ItemPlantilla, JornadaFalm, RolAlineacion,
 } from '../../core/falm.service';
 
 const ORDEN: Record<string, number> = { PORTERO: 0, DEFENSA: 1, MEDIO: 2, DELANTERO: 3 };
@@ -20,6 +20,24 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     } @else if (!equipo()) {
       <p class="muted">No tienes equipo en la temporada activa.</p>
     } @else {
+      @if (competiciones().length > 1) {
+        <div class="comps">
+          @for (c of competiciones(); track c.id) {
+            <button class="comp" [class.on]="c.id === competicionId()" (click)="seleccionarCompeticion(c.id)">
+              <span class="ci">{{ icono(c.tipo) }}</span> {{ etiqueta(c.tipo) }}
+            </button>
+          }
+        </div>
+      }
+
+      @if (jornadasComp().length > 0) {
+        <div class="jchips">
+          @for (j of jornadasComp(); track j.id) {
+            <button class="jchip" [class.on]="j.id === jornada()?.id" (click)="seleccionarJornada(j)">J{{ j.numero }}</button>
+          }
+        </div>
+      }
+
       <div class="barra">
         <label class="form">
           <select [ngModel]="formacion()" (ngModelChange)="formacion.set($event)">
@@ -30,7 +48,12 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
         <button class="btn" (click)="guardar()" [disabled]="guardando()">{{ guardando() ? '…' : 'Guardar' }}</button>
       </div>
 
-      @if (heredada()) { <p class="hered">↩︎ Heredada de tu última jornada. Ajústala y guarda si quieres cambiarla.</p> }
+      <div class="atajos">
+        <button class="atajo" (click)="repetirUltima()">↩︎ Repetir última</button>
+        @if (!esLiga()) { <button class="atajo" (click)="copiarDeLiga()">📋 Copiar de Liga</button> }
+      </div>
+
+      @if (heredada()) { <p class="hered">↩︎ Heredada de tu última jornada de {{ etiqueta(compTipo()) }}. Ajústala y guarda si quieres cambiarla.</p> }
       @if (aviso()) { <p class="aviso">{{ aviso() }}</p> }
 
       <!-- CAMPO -->
@@ -83,6 +106,20 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     }
   `,
   styles: [`
+    .comps { display: flex; gap: 8px; margin-bottom: 12px; overflow-x: auto; padding-bottom: 4px; }
+    .comp { flex: 0 0 auto; display: flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 11px;
+      border: 1px solid var(--border); background: var(--surface); color: var(--muted); cursor: pointer;
+      font-weight: 800; font-size: .82rem; white-space: nowrap; transition: all .14s ease; }
+    .comp .ci { font-size: 1rem; }
+    .comp.on { background: rgba(0,230,118,.1); color: var(--primary); border-color: var(--primary); box-shadow: inset 0 0 0 1px var(--primary); }
+    .jchips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 12px; }
+    .jchip { flex: 0 0 auto; min-width: 42px; height: 36px; border: 1px solid var(--border); background: var(--surface);
+      color: var(--muted); border-radius: 10px; cursor: pointer; font-weight: 800; }
+    .jchip.on { background: var(--primary); color: var(--primary-ink); border-color: var(--primary); }
+    .atajos { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+    .atajo { background: var(--surface-2); border: 1px solid var(--border); color: var(--ink); border-radius: 10px;
+      padding: 8px 13px; cursor: pointer; font-weight: 700; font-size: .8rem; }
+    .atajo:hover { border-color: var(--border-strong); }
     .barra { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
     .form select { font-weight: 800; }
     .cont { font-weight: 900; font-size: 1.2rem; color: var(--bad); }
@@ -140,6 +177,9 @@ export class AlineacionComponent implements OnInit {
   ABR = ABR;
   formacion = signal('4-4-2');
   equipo = signal<Equipo | null>(null);
+  competiciones = signal<Competicion[]>([]);
+  competicionId = signal('');
+  jornadasComp = signal<JornadaFalm[]>([]);
   jornada = signal<JornadaFalm | null>(null);
   plantilla = signal<ItemPlantilla[]>([]);
   roles = signal<Record<string, RolAlineacion>>({});
@@ -149,6 +189,8 @@ export class AlineacionComponent implements OnInit {
   heredada = signal(false);
 
   titulares = computed(() => Object.values(this.roles()).filter((r) => r === 'TITULAR').length);
+  compTipo = computed(() => this.competiciones().find((c) => c.id === this.competicionId())?.tipo ?? 'LIGA');
+  esLiga = computed(() => this.compTipo() === 'LIGA');
 
   grupos = computed(() => {
     const by: Record<string, ItemPlantilla[]> = {};
@@ -168,6 +210,8 @@ export class AlineacionComponent implements OnInit {
 
   constructor(private falm: FalmService) {}
 
+  icono(t: string) { return t === 'CHAMPIONS' ? '🌟' : t === 'CLAUSURA' ? '🔚' : '🏆'; }
+  etiqueta(t: string) { return t === 'CHAMPIONS' ? 'Champions' : t === 'CLAUSURA' ? 'Clausura' : 'Liga'; }
   inicialJ(n: string) { return (n || '?').charAt(0).toUpperCase(); }
   corto(n: string) { const p = (n || '').split(' '); return p.length > 1 ? p[p.length - 1] : n; }
   rol(id: string): RolAlineacion { return this.roles()[id] ?? null; }
@@ -186,31 +230,64 @@ export class AlineacionComponent implements OnInit {
     try {
       const eq = await this.falm.miEquipo();
       this.equipo.set(eq);
-      if (!eq) return;
-      const [jor, plant] = await Promise.all([this.falm.jornadaActualLiga(), this.falm.miPlantilla(eq.id)]);
-      this.jornada.set(jor);
+      if (!eq) { this.cargando.set(false); return; }
+      const [comps, plant] = await Promise.all([this.falm.competiciones(), this.falm.miPlantilla(eq.id)]);
       this.plantilla.set(plant);
-      if (jor) {
-        const ali: AlineacionGuardada | null = await this.falm.getAlineacion(eq.id, jor.id);
-        if (ali) {
-          this.formacion.set(ali.formacion);
-          this.roles.set(ali.roles);
-        } else {
-          // No hay alineación para esta jornada: heredamos la última (alineación por defecto).
-          const prev = await this.falm.ultimaAlineacion(eq.id);
-          if (prev) {
-            const enPlantilla = new Set(plant.map((p) => p.activo_id));
-            const roles: Record<string, RolAlineacion> = {};
-            for (const [id, r] of Object.entries(prev.roles)) if (enPlantilla.has(id)) roles[id] = r;
-            this.formacion.set(prev.formacion);
-            this.roles.set(roles);
-            this.heredada.set(true);
-          }
-        }
-      }
+      const orden = { LIGA: 0, CHAMPIONS: 1, CLAUSURA: 2 } as Record<string, number>;
+      comps.sort((a, b) => (orden[a.tipo] ?? 9) - (orden[b.tipo] ?? 9));
+      this.competiciones.set(comps);
+      const liga = comps.find((c) => c.tipo === 'LIGA') ?? comps[0];
+      if (liga) await this.seleccionarCompeticion(liga.id);
     } catch (e: any) {
       this.aviso.set(e?.message ?? 'Error');
     } finally { this.cargando.set(false); }
+  }
+
+  async seleccionarCompeticion(compId: string) {
+    this.competicionId.set(compId);
+    const js = await this.falm.jornadas(compId);
+    this.jornadasComp.set(js);
+    if (js.length > 0) await this.seleccionarJornada(js[js.length - 1]);
+    else { this.jornada.set(null); this.roles.set({}); }
+  }
+
+  async seleccionarJornada(j: JornadaFalm) {
+    this.jornada.set(j);
+    this.aviso.set(''); this.heredada.set(false);
+    const eq = this.equipo();
+    if (!eq) return;
+    const ali = await this.falm.getAlineacion(eq.id, j.id);
+    if (ali) { this.aplicar(ali, false); return; }
+    // No hay alineación en esta jornada: heredamos la última de ESTA competición (por defecto).
+    const prev = await this.falm.ultimaAlineacion(eq.id, this.competicionId(), j.numero);
+    if (prev) this.aplicar(prev, true);
+    else { this.formacion.set('4-4-2'); this.roles.set({}); }
+  }
+
+  /** Aplica una alineación al editor, filtrando a jugadores que sigan en plantilla. */
+  private aplicar(ali: AlineacionGuardada, heredada: boolean) {
+    const enPlantilla = new Set(this.plantilla().map((p) => p.activo_id));
+    const roles: Record<string, RolAlineacion> = {};
+    for (const [id, r] of Object.entries(ali.roles)) if (enPlantilla.has(id)) roles[id] = r;
+    this.formacion.set(ali.formacion);
+    this.roles.set(roles);
+    this.heredada.set(heredada);
+  }
+
+  async repetirUltima() {
+    const eq = this.equipo(); const j = this.jornada();
+    if (!eq || !j) return;
+    const prev = await this.falm.ultimaAlineacion(eq.id, this.competicionId(), j.numero);
+    if (prev) { this.aplicar(prev, false); this.aviso.set('↩︎ Cargada tu última alineación de ' + this.etiqueta(this.compTipo()) + '. Revisa y guarda.'); }
+    else this.aviso.set('No hay una alineación anterior en esta competición para repetir.');
+  }
+
+  async copiarDeLiga() {
+    const eq = this.equipo(); const j = this.jornada();
+    if (!eq || !j) return;
+    const liga = await this.falm.copiarDesdeLiga(eq.id, j.fecha);
+    if (liga) { this.aplicar(liga, false); this.aviso.set('📋 Copiada tu alineación de Liga del mismo fin de semana. Revisa y guarda.'); }
+    else this.aviso.set('No hay alineación de Liga de ese fin de semana para copiar.');
   }
 
   async guardar() {

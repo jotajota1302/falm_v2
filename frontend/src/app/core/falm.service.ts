@@ -56,6 +56,7 @@ export interface PremioItem {
 export interface JornadaFalm {
   id: string;
   numero: number;
+  fecha?: string | null;   // fecha_cierre (para emparejar Liga↔Champions por fin de semana)
 }
 
 export interface EnfrentamientoFila {
@@ -273,11 +274,11 @@ export class FalmService {
   async jornadas(competicionId: string): Promise<JornadaFalm[]> {
     const { data, error } = await this.sb.client
       .from('jornada_falm')
-      .select('id, numero')
+      .select('id, numero, fecha_cierre')
       .eq('competicion_id', competicionId)
       .order('numero', { ascending: true });
     if (error) throw error;
-    return data ?? [];
+    return (data ?? []).map((j: any) => ({ id: j.id, numero: j.numero, fecha: j.fecha_cierre }));
   }
 
   /** Enfrentamientos de una jornada (puntos reales importados) + reparto 3/2/1.5. */
@@ -348,24 +349,48 @@ export class FalmService {
   }
 
   /**
-   * Última alineación guardada por el equipo (la más reciente por número de jornada).
-   * Sirve de "alineación por defecto": si no hay alineación para la jornada actual,
-   * se hereda esta — igual que hace el sistema al cerrar la jornada.
+   * Última alineación guardada por el equipo DENTRO de una competición
+   * (la más reciente por número de jornada, opcionalmente anterior a `antesDe`).
+   * Sirve de "alineación por defecto" / "repetir última": se hereda si no hay
+   * alineación para la jornada actual — igual que hace el sistema al cerrar la jornada.
    */
-  async ultimaAlineacion(equipoId: string): Promise<AlineacionGuardada | null> {
+  async ultimaAlineacion(equipoId: string, competicionId?: string, antesDe?: number): Promise<AlineacionGuardada | null> {
     const { data, error } = await this.sb.client
       .from('alineacion')
-      .select('formacion, jornada_falm:jornada_falm_id (numero), alineacion_activo(activo_id, rol)')
+      .select('formacion, jornada_falm:jornada_falm_id!inner (numero, competicion_id), alineacion_activo(activo_id, rol)')
       .eq('equipo_falm_id', equipoId);
     if (error) throw error;
-    const filas: any[] = data ?? [];
+    let filas: any[] = data ?? [];
+    if (competicionId) filas = filas.filter((f) => f.jornada_falm?.competicion_id === competicionId);
+    if (antesDe != null) filas = filas.filter((f) => (f.jornada_falm?.numero ?? 0) < antesDe);
     if (filas.length === 0) return null;
-    // la más reciente por número de jornada (orden en cliente para no depender de la relación)
     filas.sort((a, b) => (b.jornada_falm?.numero ?? 0) - (a.jornada_falm?.numero ?? 0));
     const top = filas[0];
     const roles: Record<string, RolAlineacion> = {};
     for (const aa of top.alineacion_activo ?? []) roles[aa.activo_id] = aa.rol;
     return { formacion: top.formacion, roles };
+  }
+
+  /**
+   * Copia la alineación de LIGA del MISMO fin de semana LFP a otra competición.
+   * Empareja la jornada destino con la jornada de Liga cuya fecha está más cerca
+   * (equivale a "misma jornada LFP" del sistema viejo, que /partidos ya no expone).
+   */
+  async copiarDesdeLiga(equipoId: string, fechaDestino?: string | null): Promise<AlineacionGuardada | null> {
+    const comps = await this.competiciones();
+    const liga = comps.find((c) => c.tipo === 'LIGA');
+    if (!liga) return null;
+    const js = await this.jornadas(liga.id);
+    if (js.length === 0) return null;
+    let ligaJornada = js[js.length - 1];
+    if (fechaDestino) {
+      const t = new Date(fechaDestino).getTime();
+      ligaJornada = js.reduce((best, j) => {
+        if (!j.fecha) return best;
+        return Math.abs(new Date(j.fecha).getTime() - t) < Math.abs(new Date(best.fecha ?? 0).getTime() - t) ? j : best;
+      }, js[0]);
+    }
+    return this.getAlineacion(equipoId, ligaJornada.id);
   }
 
   /** Guarda la alineación (escritura; requiere ser dueño del equipo por RLS). */
