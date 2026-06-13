@@ -82,15 +82,14 @@ export class DashboardComponent implements OnInit {
       const comps = await this.falm.competiciones();
       const liga = comps.find((c) => c.tipo === 'LIGA') ?? comps[0];
 
-      const [clas, premios, plantilla] = await Promise.all([
+      const [clas, plantilla] = await Promise.all([
         liga ? this.falm.clasificacion(liga.id) : Promise.resolve([]),
-        this.falm.misPremios(eq.id),
         this.falm.miPlantilla(eq.id),
       ]);
 
       const mia = clas.find((f) => f.equipo_falm_id === eq.id);
       if (mia) { this.posicion.set(mia.posicion); this.puntos.set(mia.puntos_clasificacion); }
-      this.premios.set(premios.reduce((s, p) => s + Number(p.importe), 0));
+      this.premios.set(Number(eq.beneficio ?? 0));
       this.jugadores.set(plantilla.length);
     } catch {
       /* estados por defecto */

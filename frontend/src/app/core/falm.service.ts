@@ -30,6 +30,7 @@ export interface Equipo {
   id: string;
   nombre: string;
   presupuesto: number;
+  beneficio?: number;
 }
 
 export interface ItemPlantilla {
@@ -99,27 +100,30 @@ export class FalmService {
   }
 
   /**
-   * Clasificación de una competición, ordenada por posición, con el nombre del equipo.
-   * Dos consultas (PostgREST no garantiza embedding desde vistas): la vista + los nombres.
+   * Clasificación: stats reales importados de producción (snapshot en equipo_falm),
+   * ordenados por puntos. (En producción V2 con pipeline jugado se usaría v_clasificacion.)
    */
   async clasificacion(competicionId: string): Promise<FilaClasificacion[]> {
     const { data, error } = await this.sb.client
-      .from('v_clasificacion')
-      .select('*')
-      .eq('competicion_id', competicionId)
-      .order('posicion', { ascending: true });
-    if (error) throw error;
-    const filas: any[] = data ?? [];
-    if (filas.length === 0) return [];
-
-    const ids = filas.map((f) => f.equipo_falm_id);
-    const { data: equipos, error: e2 } = await this.sb.client
       .from('equipo_falm')
-      .select('id, nombre')
-      .in('id', ids);
-    if (e2) throw e2;
-    const nombres = new Map((equipos ?? []).map((e: any) => [e.id, e.nombre]));
-    return filas.map((f) => ({ ...f, equipo_nombre: nombres.get(f.equipo_falm_id) }));
+      .select('id, nombre, puntos_clasif, puntos_totales, puntos_contra, victorias, victorias_min, empates, derrotas_min, derrotas')
+      .order('puntos_clasif', { ascending: false });
+    if (error) throw error;
+    return (data ?? []).map((e: any, i: number) => ({
+      competicion_id: competicionId,
+      equipo_falm_id: e.id,
+      equipo_nombre: e.nombre,
+      posicion: i + 1,
+      puntos_clasificacion: e.puntos_clasif,
+      puntos_favor: e.puntos_totales,
+      puntos_contra: e.puntos_contra,
+      victorias: e.victorias,
+      victorias_minimas: e.victorias_min,
+      empates: e.empates,
+      derrotas_minimas: e.derrotas_min,
+      derrotas: e.derrotas,
+      partidos_jugados: e.victorias + e.victorias_min + e.empates + e.derrotas_min + e.derrotas,
+    }));
   }
 
   /**
@@ -130,7 +134,7 @@ export class FalmService {
   async miEquipo(): Promise<Equipo | null> {
     let q = this.sb.client
       .from('equipo_falm')
-      .select('id, nombre, presupuesto, temporada!inner(activa)')
+      .select('id, nombre, presupuesto, beneficio, temporada!inner(activa)')
       .eq('temporada.activa', true);
 
     if (environment.devEquipoNombre) {
@@ -143,7 +147,9 @@ export class FalmService {
 
     const { data, error } = await q.maybeSingle();
     if (error) throw error;
-    return data ? { id: data.id, nombre: data.nombre, presupuesto: data.presupuesto } : null;
+    return data
+      ? { id: data.id, nombre: data.nombre, presupuesto: data.presupuesto, beneficio: data.beneficio }
+      : null;
   }
 
   /** Plantilla actual (sin baja) de un equipo, con datos del activo embebidos. */
