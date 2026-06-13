@@ -191,11 +191,11 @@ export class FalmService {
     return data ?? [];
   }
 
-  /** Enfrentamientos (con resultado) de una jornada, con nombres de equipo. */
+  /** Enfrentamientos de una jornada (puntos reales importados) + reparto 3/2/1.5. */
   async enfrentamientos(jornadaFalmId: string): Promise<EnfrentamientoFila[]> {
     const { data, error } = await this.sb.client
-      .from('v_enfrentamiento_resultado')
-      .select('*')
+      .from('enfrentamiento')
+      .select('id, equipo_local_id, equipo_visitante_id, puntos_local, puntos_visitante')
       .eq('jornada_falm_id', jornadaFalmId);
     if (error) throw error;
     const filas: any[] = data ?? [];
@@ -208,16 +208,30 @@ export class FalmService {
       .in('id', ids);
     if (e2) throw e2;
     const n = new Map((eqs ?? []).map((e: any) => [e.id, e.nombre]));
-    return filas.map((f) => ({
-      enfrentamiento_id: f.enfrentamiento_id,
-      equipo_local: n.get(f.equipo_local_id) ?? '?',
-      equipo_visitante: n.get(f.equipo_visitante_id) ?? '?',
-      puntos_local: f.puntos_local,
-      puntos_visitante: f.puntos_visitante,
-      puntos_clasif_local: f.puntos_clasif_local,
-      puntos_clasif_visitante: f.puntos_clasif_visitante,
-      jornada_jugada: f.jornada_jugada,
-    }));
+
+    const reparto = (a: number, b: number): [number, number] => {
+      const d = a - b;
+      if (d >= 3) return [3, 0];
+      if (d >= 0.5) return [2, 1];
+      if (d > -0.5) return [1.5, 1.5];
+      if (d > -3) return [1, 2];
+      return [0, 3];
+    };
+
+    return filas.map((f) => {
+      const pl = Number(f.puntos_local ?? 0), pv = Number(f.puntos_visitante ?? 0);
+      const [cl, cv] = reparto(pl, pv);
+      return {
+        enfrentamiento_id: f.id,
+        equipo_local: n.get(f.equipo_local_id) ?? '?',
+        equipo_visitante: n.get(f.equipo_visitante_id) ?? '?',
+        puntos_local: pl,
+        puntos_visitante: pv,
+        puntos_clasif_local: cl,
+        puntos_clasif_visitante: cv,
+        jornada_jugada: f.puntos_local != null,
+      };
+    });
   }
 
   /** Jornada de liga a editar (demo: la primera de la temporada). */
