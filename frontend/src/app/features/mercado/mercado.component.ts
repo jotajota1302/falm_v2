@@ -1,14 +1,18 @@
 import { Component, OnInit, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { ActivoLibre, FalmService } from '../../core/falm.service';
 
-/** Mercado de jugadores libres (lectura). Fichar irá en el bloque de fichajes. */
+/** Mercado de jugadores libres (lectura). Pedir fichaje en /fichajes. */
 @Component({
   selector: 'app-mercado',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, RouterLink],
   template: `
-    <h1>🛒 Mercado</h1>
+    <div class="cab">
+      <h1>🛒 Mercado</h1>
+      <a class="pedir" routerLink="/fichajes">🔁 Pedir fichaje</a>
+    </div>
 
     <input class="buscar" type="search" placeholder="Buscar jugador o club…" [(ngModel)]="filtro" />
 
@@ -35,7 +39,9 @@ import { ActivoLibre, FalmService } from '../../core/falm.service';
     }
   `,
   styles: [`
-    h1 { margin: 0 0 12px; }
+    h1 { margin: 0; }
+    .cab { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+    .pedir { background: var(--primary); color: #fff; padding: 8px 14px; border-radius: 10px; font-weight: 600; font-size: .9rem; }
     .buscar { width: 100%; padding: 11px 14px; border: 1px solid var(--border); border-radius: var(--radius-sm);
       font-size: 1rem; margin-bottom: 14px; background: var(--surface); }
     .total { margin: 0 0 12px; }

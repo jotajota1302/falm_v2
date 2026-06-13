@@ -74,6 +74,15 @@ export interface ActivoLibre {
   precio_mercado: number;
 }
 
+export type RolAlineacion = 'TITULAR' | 'SUPLENTE_DEFENSA' | 'SUPLENTE_MEDIO' | 'SUPLENTE_DELANTERO' | null;
+
+export interface AlineacionGuardada {
+  formacion: string;
+  roles: Record<string, RolAlineacion>; // activo_id -> rol
+}
+
+export const FORMACIONES = ['5-4-1', '5-3-2', '4-5-1', '4-4-2', '4-3-3', '3-4-3', '3-5-2'];
+
 /** Acceso de lectura al schema falm. Las mutaciones críticas van por RPC/Edge (no aquí). */
 @Injectable({ providedIn: 'root' })
 export class FalmService {
@@ -205,6 +214,57 @@ export class FalmService {
     }));
   }
 
+  /** Jornada de liga a editar (demo: la primera de la temporada). */
+  async jornadaActualLiga(): Promise<JornadaFalm | null> {
+    const comps = await this.competiciones();
+    const liga = comps.find((c) => c.tipo === 'LIGA') ?? comps[0];
+    if (!liga) return null;
+    const js = await this.jornadas(liga.id);
+    return js[0] ?? null;
+  }
+
+  /** Alineación guardada de un equipo en una jornada (con roles por activo). */
+  async getAlineacion(equipoId: string, jornadaFalmId: string): Promise<AlineacionGuardada | null> {
+    const { data, error } = await this.sb.client
+      .from('alineacion')
+      .select('formacion, alineacion_activo(activo_id, rol)')
+      .eq('equipo_falm_id', equipoId)
+      .eq('jornada_falm_id', jornadaFalmId)
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) return null;
+    const roles: Record<string, RolAlineacion> = {};
+    for (const aa of (data as any).alineacion_activo ?? []) roles[aa.activo_id] = aa.rol;
+    return { formacion: (data as any).formacion, roles };
+  }
+
+  /** Guarda la alineación (escritura; requiere ser dueño del equipo por RLS). */
+  async guardarAlineacion(
+    equipoId: string,
+    jornadaFalmId: string,
+    formacion: string,
+    roles: Record<string, RolAlineacion>
+  ): Promise<void> {
+    const { data: ali, error } = await this.sb.client
+      .from('alineacion')
+      .upsert(
+        { equipo_falm_id: equipoId, jornada_falm_id: jornadaFalmId, formacion },
+        { onConflict: 'equipo_falm_id,jornada_falm_id' }
+      )
+      .select('id')
+      .single();
+    if (error) throw error;
+
+    await this.sb.client.from('alineacion_activo').delete().eq('alineacion_id', (ali as any).id);
+    const filas = Object.entries(roles)
+      .filter(([, r]) => !!r)
+      .map(([activo_id, rol], i) => ({ alineacion_id: (ali as any).id, activo_id, rol, orden: i + 1 }));
+    if (filas.length) {
+      const { error: e2 } = await this.sb.client.from('alineacion_activo').insert(filas);
+      if (e2) throw e2;
+    }
+  }
+
   /** Mercado: activos libres en la temporada activa. */
   async mercadoLibre(): Promise<ActivoLibre[]> {
     const { data, error } = await this.sb.client
@@ -213,6 +273,23 @@ export class FalmService {
       .order('precio_mercado', { ascending: false });
     if (error) throw error;
     return (data ?? []) as ActivoLibre[];
+  }
+
+  /** Crea una petición de fichaje con opciones por prioridad (escritura; RLS dueño). */
+  async crearPeticion(
+    equipoId: string,
+    jornadaObjetivoId: string,
+    opciones: { activo_id: string; prioridad: number }[]
+  ): Promise<void> {
+    const { data: pet, error } = await this.sb.client
+      .from('peticion_fichaje')
+      .insert({ equipo_falm_id: equipoId, jornada_objetivo_id: jornadaObjetivoId, estado: 'PENDIENTE' })
+      .select('id')
+      .single();
+    if (error) throw error;
+    const filas = opciones.map((o) => ({ peticion_id: (pet as any).id, activo_id: o.activo_id, prioridad: o.prioridad }));
+    const { error: e2 } = await this.sb.client.from('peticion_fichaje_opcion').insert(filas);
+    if (e2) throw e2;
   }
 
   /** Premios ganados por un equipo. */

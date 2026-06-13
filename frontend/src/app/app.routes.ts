@@ -26,9 +26,19 @@ export const routes: Routes = [
           import('./features/equipo/plantilla.component').then((m) => m.PlantillaComponent),
       },
       {
+        path: 'alineacion',
+        loadComponent: () =>
+          import('./features/equipo/alineacion.component').then((m) => m.AlineacionComponent),
+      },
+      {
         path: 'mercado',
         loadComponent: () =>
           import('./features/mercado/mercado.component').then((m) => m.MercadoComponent),
+      },
+      {
+        path: 'fichajes',
+        loadComponent: () =>
+          import('./features/fichajes/fichajes.component').then((m) => m.FichajesComponent),
       },
       {
         path: 'clasificacion',

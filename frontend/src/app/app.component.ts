@@ -72,6 +72,7 @@ export class AppComponent {
   items: NavItem[] = [
     { path: '/dashboard', icon: '🏠', label: 'Inicio' },
     { path: '/plantilla', icon: '👕', label: 'Equipo' },
+    { path: '/alineacion', icon: '📋', label: 'Once' },
     { path: '/mercado', icon: '🛒', label: 'Mercado' },
     { path: '/clasificacion', icon: '🏆', label: 'Liga' },
     { path: '/jornadas', icon: '📅', label: 'Jornadas' },
