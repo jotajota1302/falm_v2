@@ -67,10 +67,14 @@ Estas vistas se crean al cerrar el **bloque de scoring** (Edge Functions), porqu
 - **`v_enfrentamiento_resultado`**: para cada `enfrentamiento`, puntos de cada lado (desde la vista anterior), diferencia, tipo de resultado (total/mínima/empate) y puntos de clasificación otorgados (3-0 / 2-1 / 1.5-1.5).
 - **`v_clasificacion`**: por equipo y competición, agrega `v_enfrentamiento_resultado` → puntos de clasificación, V/Vmín/E/Dmín/D, puntos totales a favor/contra, posición. El **beneficio** (premios) se añade al integrar el bloque de premios.
 
-## Regla pendiente de precisar (bloque scoring)
+## Regla de cómputo de suplentes (FIJADA)
 
-Cómo se combinan titulares + suplentes para el total del equipo en una jornada:
-- **(A) Solo titulares que jugaron + suplentes que entraron por un titular que no jugó** (sustitución, aunque hoy es manual).
-- **(B) Titulares + cualquier suplente que jugó** suman todos.
+**El suplente cubre al titular de su línea que no jugó; el equipo nunca suma más de 11.**
 
-El modelo (`rol` en `alineacion_activo` + existencia de `puntuacion`) soporta ambas; hay que fijar cuál replica el comportamiento actual antes de escribir `v_puntos_jornada_falm`.
+Algoritmo para `v_puntos_jornada_falm` (se implementará en el bloque scoring):
+1. Un activo "jugó" si tiene `puntuacion` en alguna `jornada_lfp` mapeada a esa jornada FALM.
+2. Cuentan los **titulares que jugaron**.
+3. Por cada **titular que NO jugó**, entra un **suplente de su misma línea** (DEFENSA/MEDIO/DELANTERO) que sí jugó, en el orden dado por `alineacion_activo.orden`. Cada suplente cubre como máximo una vacante.
+4. El **portero** no tiene suplente (lo cubre el portero virtual, que casi siempre puntúa); si el portero no jugó, su plaza queda sin cubrir.
+
+El modelo (`rol` + `orden` en `alineacion_activo`, existencia de `puntuacion`) soporta este algoritmo con window functions. Las tres vistas se crean en el **bloque de scoring/Edge Functions** junto con la precedencia manual/automático y el flag `sobreescribir`.
