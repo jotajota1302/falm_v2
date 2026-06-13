@@ -23,6 +23,18 @@ import { FalmService } from '../../core/falm.service';
         </div>
       </section>
 
+      @if (posiciones().length) {
+        <div class="comps">
+          @for (c of posiciones(); track c.tipo) {
+            <a class="comp card rise" routerLink="/clasificacion">
+              <span class="ci">{{ c.icono }}</span>
+              <span class="cn">{{ c.nombre }}</span>
+              <span class="cp num">{{ c.pos }}<small>º</small><i>/{{ c.total }}</i></span>
+            </a>
+          }
+        </div>
+      }
+
       <section class="accion rise">
         <span class="ic">⏰</span>
         <div><strong>La semana</strong><p class="muted">Próximamente: cierre de alineación y fichajes con cuenta atrás.</p></div>
@@ -55,6 +67,15 @@ import { FalmService } from '../../core/falm.service';
     .rank .pos small { font-size: 1.2rem; color: var(--muted); }
     .rank .rl { display: block; font-size: .72rem; color: var(--faint); text-transform: uppercase; letter-spacing: .06em; }
 
+    .comps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
+    .comp { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 14px 8px; text-align: center; }
+    .comp .ci { font-size: 1.3rem; }
+    .comp .cn { font-size: .68rem; text-transform: uppercase; letter-spacing: .04em; color: var(--faint); font-weight: 700;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+    .comp .cp { font-size: 1.6rem; font-weight: 900; color: var(--primary); line-height: 1; letter-spacing: -.03em; }
+    .comp .cp small { font-size: .8rem; color: var(--muted); }
+    .comp .cp i { font-size: .8rem; color: var(--faint); font-style: normal; font-weight: 700; }
+    @media (max-width: 420px) { .comp { padding: 11px 6px; } .comp .cp { font-size: 1.35rem; } }
     .accion { display: flex; align-items: center; gap: 14px; padding: 14px 16px; margin-bottom: 18px;
       background: rgba(255,194,75,.07); border: 1px solid rgba(255,194,75,.2); border-radius: 14px; }
     .accion .ic { font-size: 1.5rem; }
@@ -79,9 +100,13 @@ export class DashboardComponent implements OnInit {
   premios = signal<number>(0);
   jugadores = signal<number>(0);
   presupuesto = signal<number>(0);
+  posiciones = signal<{ tipo: string; nombre: string; icono: string; pos: number; total: number }[]>([]);
   cargando = signal(true);
 
   constructor(private falm: FalmService) {}
+
+  private icono(t: string) { return t === 'CHAMPIONS' ? '🌟' : t === 'CLAUSURA' ? '🔚' : '🏆'; }
+  private etiqueta(t: string) { return t === 'CHAMPIONS' ? 'Champions' : t === 'CLAUSURA' ? 'Clausura' : 'Liga'; }
 
   async ngOnInit() {
     try {
@@ -99,6 +124,18 @@ export class DashboardComponent implements OnInit {
       const mia = clas.find((f) => f.equipo_falm_id === eq.id);
       if (mia) { this.posicion.set(mia.posicion); this.puntos.set(mia.puntos_clasificacion); }
       this.jugadores.set(plantilla.length);
+
+      // Posición en cada competición (Liga snapshot + Champions/Clausura calculadas)
+      const orden = { LIGA: 0, CHAMPIONS: 1, CLAUSURA: 2 } as Record<string, number>;
+      const ordenadas = [...comps].sort((a, b) => (orden[a.tipo] ?? 9) - (orden[b.tipo] ?? 9));
+      const filas = await Promise.all(ordenadas.map(async (c) => {
+        try {
+          const t = c.tipo === 'LIGA' ? clas : await this.falm.clasificacionCalculada(c.id);
+          const f = t.find((x) => x.equipo_falm_id === eq.id);
+          return f && t.length ? { tipo: c.tipo, nombre: this.etiqueta(c.tipo), icono: this.icono(c.tipo), pos: f.posicion, total: t.length } : null;
+        } catch { return null; }
+      }));
+      this.posiciones.set(filas.filter((x): x is NonNullable<typeof x> => !!x));
     } catch { /* defaults */ } finally { this.cargando.set(false); }
   }
 }
