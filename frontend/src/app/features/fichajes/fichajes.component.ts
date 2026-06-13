@@ -1,7 +1,7 @@
 import { Component, OnInit, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { environment } from '../../../environments/environment';
-import { ActivoLibre, Equipo, FalmService, JornadaFalm } from '../../core/falm.service';
+import { ActivoLibre, Equipo, FalmService, ItemPlantilla, JornadaFalm } from '../../core/falm.service';
 import { PlayerCardComponent } from '../../shared/player-card.component';
 import { FichaService } from '../../shared/ficha.service';
 
@@ -43,6 +43,35 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
       </div>
 
       @if (aviso()) { <p class="aviso">{{ aviso() }}</p> }
+
+      <div class="lesion card">
+        <button class="lhead" (click)="verLesion.set(!verLesion())">
+          <span>🩹 Fichaje por lesión</span>
+          <span class="chev">{{ verLesion() ? '▲' : '▼' }}</span>
+        </button>
+        @if (verLesion()) {
+          <div class="lbody">
+            <p class="lhint">Si un jugador tuyo se lesiona de larga duración, solicita un fichaje extra adjuntando la noticia. Lo revisa el gestor.</p>
+            @for (fe of extras(); track fe.id) {
+              <div class="lrow">
+                <span class="ln">{{ fe.lesionado }}</span>
+                @if (fe.url) { <a class="lurl" [href]="fe.url" target="_blank" rel="noopener">noticia ↗</a> }
+                <span class="lest" [class.usado]="fe.usado">{{ fe.usado ? 'Usado' : 'Disponible' }}</span>
+              </div>
+            }
+            <div class="lform">
+              <select [ngModel]="lesionadoId()" (ngModelChange)="lesionadoId.set($event)">
+                <option value="">— jugador lesionado —</option>
+                @for (j of miPlantilla(); track j.activo_id) { <option [value]="j.activo_id">{{ j.nombre }}</option> }
+              </select>
+              <input type="url" placeholder="URL de la noticia (opcional)" [ngModel]="urlLesion()" (ngModelChange)="urlLesion.set($event)" />
+              <button class="btn" [disabled]="!lesionadoId() || enviandoLesion()" (click)="solicitarLesion()">
+                {{ enviandoLesion() ? '…' : 'Solicitar' }}
+              </button>
+            </div>
+          </div>
+        }
+      </div>
 
       <input class="buscar" type="search" placeholder="Buscar jugador o club…"
              [ngModel]="texto()" (ngModelChange)="texto.set($event); limite.set(24)" />
@@ -92,6 +121,21 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
     .enviar:disabled { opacity: .5; cursor: not-allowed; }
     .aviso { background: rgba(0,230,118,.08); border: 1px solid rgba(0,230,118,.22); color: var(--primary);
       padding: 10px 14px; border-radius: 10px; }
+    .lesion { padding: 0; margin-bottom: 14px; overflow: hidden; }
+    .lhead { width: 100%; display: flex; align-items: center; justify-content: space-between; background: none; border: none;
+      color: var(--ink); font-weight: 800; font-size: .9rem; padding: 13px 15px; cursor: pointer; }
+    .lhead .chev { color: var(--muted); font-size: .7rem; }
+    .lbody { padding: 0 15px 15px; display: flex; flex-direction: column; gap: 10px; }
+    .lhint { margin: 0; color: var(--muted); font-size: .82rem; }
+    .lrow { display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: var(--surface-2);
+      border: 1px solid var(--border); border-radius: 9px; }
+    .lrow .ln { font-weight: 700; font-size: .85rem; flex: 1; }
+    .lurl { color: var(--accent); font-size: .78rem; }
+    .lest { font-size: .68rem; font-weight: 800; text-transform: uppercase; color: var(--primary); }
+    .lest.usado { color: var(--faint); }
+    .lform { display: flex; gap: 8px; flex-wrap: wrap; }
+    .lform select { flex: 1; min-width: 150px; }
+    .lform input { flex: 2; min-width: 160px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 9px 12px; }
     .buscar { width: 100%; margin-bottom: 12px; }
     .filtros { display: flex; gap: 7px; margin-bottom: 16px; flex-wrap: wrap; }
     .filtros button { background: var(--surface); border: 1px solid var(--border); color: var(--muted);
@@ -128,6 +172,13 @@ export class FichajesComponent implements OnInit {
   enviando = signal(false);
   error = signal('');
   aviso = signal('');
+  // Fichaje por lesión
+  miPlantilla = signal<ItemPlantilla[]>([]);
+  extras = signal<{ id: string; lesionado: string; url: string | null; usado: boolean }[]>([]);
+  verLesion = signal(false);
+  lesionadoId = signal('');
+  urlLesion = signal('');
+  enviandoLesion = signal(false);
 
   visibles = computed(() => {
     const f = this.texto().trim().toLowerCase();
@@ -171,11 +222,33 @@ export class FichajesComponent implements OnInit {
         this.falm.miEquipo(), this.falm.jornadaActualLiga(), this.falm.mercadoLibre(),
       ]);
       this.equipo.set(eq); this.jornada.set(jor); this.mercado.set(merc);
+      if (eq) {
+        const [mp, ex] = await Promise.all([this.falm.miPlantilla(eq.id), this.falm.fichajesExtra(eq.id)]);
+        this.miPlantilla.set(mp); this.extras.set(ex);
+      }
     } catch (e: any) {
       this.error.set(e?.message ?? 'Error cargando fichajes');
     } finally {
       this.cargando.set(false);
     }
+  }
+
+  async solicitarLesion() {
+    this.aviso.set(''); this.error.set('');
+    if (environment.devEquipoNombre) {
+      this.aviso.set('Modo demo: la solicitud de fichaje por lesión se enviará al activar tu cuenta (login).');
+      return;
+    }
+    const eq = this.equipo();
+    if (!eq || !this.lesionadoId()) return;
+    this.enviandoLesion.set(true);
+    try {
+      await this.falm.crearFichajeExtra(eq.id, this.lesionadoId(), this.urlLesion().trim());
+      this.aviso.set('✅ Solicitud de fichaje por lesión enviada.');
+      this.lesionadoId.set(''); this.urlLesion.set('');
+      this.extras.set(await this.falm.fichajesExtra(eq.id));
+    } catch (e: any) { this.error.set(e?.message ?? 'Error al solicitar'); }
+    finally { this.enviandoLesion.set(false); }
   }
 
   async enviar() {

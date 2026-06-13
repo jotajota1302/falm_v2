@@ -664,6 +664,36 @@ export class FalmService {
     if (error) throw error;
   }
 
+  /** Fichajes extra por lesión de un equipo (con el nombre del lesionado). */
+  async fichajesExtra(equipoId: string): Promise<{ id: string; lesionado: string; url: string | null; usado: boolean }[]> {
+    const { data, error } = await this.sb.client
+      .from('fichaje_extra')
+      .select('id, url_noticia, usado, activo:activo_lesionado_id (tipo, ' +
+        'jugador_lfp:jugador_lfp_id (nombre, apellido), equipo_lfp:equipo_lfp_id (nombre))')
+      .eq('equipo_falm_id', equipoId)
+      .order('fecha_solicitud', { ascending: false });
+    if (error) throw error;
+    return (data ?? []).map((f: any) => {
+      const a = f.activo;
+      const def = a?.tipo === 'DEFENSA';
+      return {
+        id: f.id,
+        lesionado: def ? `Defensa ${a?.equipo_lfp?.nombre ?? ''}`.trim()
+          : `${a?.jugador_lfp?.nombre ?? ''} ${a?.jugador_lfp?.apellido ?? ''}`.trim(),
+        url: f.url_noticia,
+        usado: f.usado,
+      };
+    });
+  }
+
+  /** Solicita un fichaje extra por lesión (escritura; RLS dueño). */
+  async crearFichajeExtra(equipoId: string, activoLesionadoId: string, url: string): Promise<void> {
+    const { error } = await this.sb.client
+      .from('fichaje_extra')
+      .insert({ equipo_falm_id: equipoId, activo_lesionado_id: activoLesionadoId, url_noticia: url || null, usado: false });
+    if (error) throw error;
+  }
+
   /** Premios ganados por un equipo. */
   async misPremios(equipoId: string): Promise<PremioItem[]> {
     const { data, error } = await this.sb.client
