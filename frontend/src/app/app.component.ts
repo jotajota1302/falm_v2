@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from './core/auth.service';
 import { environment } from '../environments/environment';
+import { FichaJugadorComponent } from './shared/ficha-jugador.component';
 
 interface NavItem { path: string; icon: string; label: string; }
 
@@ -9,7 +10,7 @@ interface NavItem { path: string; icon: string; label: string; }
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, FichaJugadorComponent],
   template: `
     @if (auth.isLoggedIn()) {
       <header class="topbar">
@@ -32,6 +33,7 @@ interface NavItem { path: string; icon: string; label: string; }
     } @else {
       <router-outlet />
     }
+    <falm-ficha-jugador />
   `,
   styles: [`
     .topbar {

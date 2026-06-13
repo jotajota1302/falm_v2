@@ -1,6 +1,7 @@
 import { Component, OnInit, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { FalmService, JornadaLfp, PuntosJugador } from '../../core/falm.service';
+import { FichaService } from '../../shared/ficha.service';
 
 const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: 'DEF', DEFENSA: 'DEF',
   Mediocampista: 'MED', MEDIO: 'MED', Delantero: 'DEL', DELANTERO: 'DEL' };
@@ -31,7 +32,7 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
     } @else {
       <div class="lista">
         @for (p of visibles().slice(0, limite()); track p.jugador.id; let i = $index) {
-          <div class="fila card">
+          <div class="fila card" (click)="ficha.open(p.jugador)">
             <span class="rk num">{{ i + 1 }}</span>
             <span class="av" [class]="abr(p.jugador.posicion)">
               @if (p.jugador.foto) { <img [src]="p.jugador.foto" alt="" loading="lazy" (error)="p.jugador.foto = ''" /> }
@@ -70,7 +71,9 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
     .jchip.on { background: var(--primary); color: var(--primary-ink); border-color: var(--primary); }
     .buscar { width: 100%; margin-bottom: 14px; }
     .lista { display: flex; flex-direction: column; gap: 8px; }
-    .fila { display: grid; grid-template-columns: 26px 46px 1fr auto; align-items: center; gap: 11px; padding: 10px 13px; }
+    .fila { display: grid; grid-template-columns: 26px 46px 1fr auto; align-items: center; gap: 11px; padding: 10px 13px;
+      cursor: pointer; transition: border-color .12s ease; }
+    .fila:hover { border-color: var(--border-strong); }
     .rk { text-align: center; color: var(--faint); font-weight: 800; font-size: .9rem; }
     .av { width: 46px; height: 46px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
       font-weight: 800; color: #07120d; overflow: hidden; }
@@ -105,7 +108,7 @@ export class PuntuacionesComponent implements OnInit {
     return f ? arr.filter((p) => p.jugador.nombre.toLowerCase().includes(f) || (p.jugador.equipo || '').toLowerCase().includes(f)) : arr;
   });
 
-  constructor(private falm: FalmService) {}
+  constructor(private falm: FalmService, public ficha: FichaService) {}
   abr(p: string) { return ABR[p] ?? 'MED'; }
 
   async ngOnInit() {

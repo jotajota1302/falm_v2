@@ -315,6 +315,13 @@ export class FalmService {
     return (data ?? []) as PuntosJugador[];
   }
 
+  /** Historial por jornada de un jugador (en vivo del backend). */
+  async jugadorJornadas(id: number): Promise<any[]> {
+    const { data, error } = await this.sb.client.rpc('jugador_jornadas', { p_id: id });
+    if (error) throw error;
+    return (data ?? []) as any[];
+  }
+
   /** Mercado: activos libres en la temporada activa. */
   async mercadoLibre(): Promise<ActivoLibre[]> {
     const { data, error } = await this.sb.client
