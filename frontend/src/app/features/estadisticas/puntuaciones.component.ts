@@ -14,7 +14,12 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
   template: `
     <h1>📊 Estadísticas</h1>
 
-    @if (jornadas().length) {
+    <div class="modos">
+      <button [class.on]="modo() === 'acumulada'" (click)="setModo('acumulada')">🏆 Acumulada</button>
+      <button [class.on]="modo() === 'jornada'" (click)="setModo('jornada')">📅 Por jornada</button>
+    </div>
+
+    @if (modo() === 'jornada' && jornadas().length) {
       <div class="jchips">
         @for (j of jornadas(); track j.numero) {
           <button class="jchip" [class.on]="j.numero === sel()" (click)="elegir(j.numero)">J{{ j.numero }}</button>
@@ -26,7 +31,7 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
            [ngModel]="texto()" (ngModelChange)="texto.set($event); limite.set(30)" />
 
     @if (cargando()) {
-      <p class="muted">Cargando jornada {{ sel() }}…</p>
+      <p class="muted">Cargando{{ modo() === 'jornada' ? ' jornada ' + sel() : ' acumulada' }}…</p>
     } @else if (error()) {
       <p class="err">{{ error() }}</p>
     } @else {
@@ -51,7 +56,8 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
                 @if (p.estrellas) { <b>⭐ {{ p.estrellas }}</b> }
                 @if (p.imbatido) { <b>🧤</b> }
                 @if (p.tarjetasRojas) { <b>🟥</b> } @else if (p.tarjetasAmarillas) { <b>🟨</b> }
-                <span class="min">{{ p.minutosJugados }}'</span>
+                @if (modo() === 'jornada') { <span class="min">{{ p.minutosJugados }}'</span> }
+                @else { <span class="min">{{ jorn(p) }} jorn.</span> }
               </span>
             </div>
             <span class="pts num" [class.neg]="p.puntosTotales < 0">{{ p.puntosTotales }}</span>
@@ -65,6 +71,10 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
   `,
   styles: [`
     h1 { margin: 0 0 14px; }
+    .modos { display: flex; gap: 8px; margin-bottom: 14px; }
+    .modos button { flex: 1; background: var(--surface); border: 1px solid var(--border); color: var(--muted);
+      border-radius: 11px; padding: 10px; cursor: pointer; font-weight: 800; font-size: .85rem; }
+    .modos button.on { background: rgba(0,230,118,.1); color: var(--primary); border-color: var(--primary); }
     .jchips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 12px; }
     .jchip { flex: 0 0 auto; min-width: 44px; height: 38px; border: 1px solid var(--border); background: var(--surface);
       color: var(--muted); border-radius: 10px; cursor: pointer; font-weight: 800; }
@@ -96,6 +106,7 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
 export class PuntuacionesComponent implements OnInit {
   jornadas = signal<JornadaLfp[]>([]);
   sel = signal<number>(0);
+  modo = signal<'jornada' | 'acumulada'>('acumulada');
   jugadores = signal<PuntosJugador[]>([]);
   texto = signal('');
   limite = signal(30);
@@ -110,19 +121,33 @@ export class PuntuacionesComponent implements OnInit {
 
   constructor(private falm: FalmService, public ficha: FichaService) {}
   abr(p: string) { return ABR[p] ?? 'MED'; }
+  jorn(p: any) { return p.jornadas ?? 0; }
 
   async ngOnInit() {
     try {
-      const js = await this.falm.jornadasLfp();
-      this.jornadas.set(js);
-      if (js.length) await this.elegir(js[0].numero);
-      else this.cargando.set(false);
+      this.jornadas.set(await this.falm.jornadasLfp());
+      await this.cargarAcumulada(); // por defecto: acumulada
     } catch (e: any) {
       this.error.set(e?.message ?? 'Error'); this.cargando.set(false);
     }
   }
 
+  async setModo(m: 'jornada' | 'acumulada') {
+    if (m === this.modo()) return;
+    this.modo.set(m); this.limite.set(30); this.error.set('');
+    if (m === 'acumulada') await this.cargarAcumulada();
+    else await this.elegir(this.sel() || this.jornadas()[0]?.numero || 0);
+  }
+
+  private async cargarAcumulada() {
+    this.cargando.set(true);
+    try { this.jugadores.set(await this.falm.puntuacionesAcumuladas()); }
+    catch (e: any) { this.error.set(e?.message ?? 'Error cargando acumulada'); }
+    finally { this.cargando.set(false); }
+  }
+
   async elegir(n: number) {
+    this.modo.set('jornada');
     this.sel.set(n); this.cargando.set(true); this.error.set(''); this.limite.set(30);
     try { this.jugadores.set(await this.falm.puntuacionesJornada(n)); }
     catch (e: any) { this.error.set(e?.message ?? 'Error cargando la jornada'); }

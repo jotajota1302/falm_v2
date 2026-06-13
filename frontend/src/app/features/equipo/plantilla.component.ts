@@ -25,8 +25,8 @@ const ETI: Record<string, string> = { PORTERO: 'Porteros', DEFENSA: 'Defensas', 
           <span class="sub">{{ items().length }} jugadores en plantilla</span>
         </div>
         <div class="presu">
-          <span class="lbl">Presupuesto</span>
-          <span class="val euro num">{{ equipo()!.presupuesto }}</span>
+          <span class="lbl">Puntos plantilla</span>
+          <span class="val num pts">{{ totalPuntos() }}</span>
         </div>
       </header>
 
@@ -41,7 +41,9 @@ const ETI: Record<string, string> = { PORTERO: 'Porteros', DEFENSA: 'Defensas', 
             <falm-player-card class="rise"
               (click)="abrir(j)"
               [nombre]="j.nombre" [club]="j.club" [escudo]="j.escudo ?? null"
-              [foto]="j.foto ?? null" [posicion]="j.posicion" [precio]="j.precio" />
+              [foto]="j.foto ?? null" [posicion]="j.posicion" [precio]="j.precio">
+              <span class="ptsbadge">{{ puntosDe(j) }}<small>pts</small></span>
+            </falm-player-card>
           }
         </div>
       }
@@ -52,7 +54,10 @@ const ETI: Record<string, string> = { PORTERO: 'Porteros', DEFENSA: 'Defensas', 
     .hero .sub { color: var(--muted); font-size: .85rem; }
     .presu { text-align: right; }
     .presu .lbl { display: block; font-size: .7rem; color: var(--faint); text-transform: uppercase; letter-spacing: .05em; }
-    .presu .val { font-size: 1.5rem; }
+    .presu .val { font-size: 1.5rem; } .presu .pts { color: var(--primary); }
+    .ptsbadge { position: absolute; top: 8px; left: 8px; z-index: 2; background: rgba(0,230,118,.92); color: #07120d;
+      font-weight: 900; font-size: .82rem; padding: 2px 8px; border-radius: 999px; box-shadow: 0 2px 6px rgba(0,0,0,.4); }
+    .ptsbadge small { font-size: .6rem; margin-left: 2px; font-weight: 800; }
     .linea { display: flex; align-items: center; gap: 10px; margin: 20px 0 12px; }
     .linea h3 { margin: 0; }
     .linea .n { margin-left: auto; font-weight: 700; }
@@ -63,8 +68,11 @@ const ETI: Record<string, string> = { PORTERO: 'Porteros', DEFENSA: 'Defensas', 
 export class PlantillaComponent implements OnInit {
   equipo = signal<Equipo | null>(null);
   items = signal<ItemPlantilla[]>([]);
+  puntos = signal<Record<string, number>>({});
   cargando = signal(true);
   error = signal('');
+
+  totalPuntos = computed(() => +Object.values(this.puntos()).reduce((s, n) => s + Number(n || 0), 0).toFixed(1));
 
   grupos = computed(() => {
     const by: Record<string, ItemPlantilla[]> = {};
@@ -74,6 +82,7 @@ export class PlantillaComponent implements OnInit {
 
   constructor(private falm: FalmService, public ficha: FichaService) {}
   abr(p: string) { return ({ PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'MED', DELANTERO: 'DEL' } as Record<string, string>)[p] ?? p; }
+  puntosDe(j: ItemPlantilla) { return this.puntos()[j.activo_id] ?? 0; }
   abrir(j: ItemPlantilla) {
     if (j.ext_id) this.ficha.open({ id: j.ext_id, nombre: j.nombre, equipo: j.club, escudo: j.escudo ?? '', foto: j.foto ?? '', posicion: j.posicion });
   }
@@ -82,7 +91,11 @@ export class PlantillaComponent implements OnInit {
     try {
       const eq = await this.falm.miEquipo();
       this.equipo.set(eq);
-      if (eq) this.items.set(await this.falm.miPlantilla(eq.id));
+      if (eq) {
+        const [items, puntos] = await Promise.all([this.falm.miPlantilla(eq.id), this.falm.puntosEquipo(eq.id)]);
+        this.items.set(items);
+        this.puntos.set(puntos);
+      }
     } catch (e: any) {
       this.error.set(e?.message ?? 'Error cargando la plantilla');
     } finally {

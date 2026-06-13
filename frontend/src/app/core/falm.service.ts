@@ -560,6 +560,20 @@ export class FalmService {
     return (data ?? []) as PuntosJugador[];
   }
 
+  /** Ranking de puntos ACUMULADOS por jugador (toda la temporada). */
+  async puntuacionesAcumuladas(): Promise<PuntosJugador[]> {
+    const { data, error } = await this.sb.client.rpc('puntuaciones_acumuladas');
+    if (error) throw error;
+    return (data ?? []) as PuntosJugador[];
+  }
+
+  /** Puntos acumulados por activo de un equipo (mapa activo_id -> puntos). */
+  async puntosEquipo(equipoId: string): Promise<Record<string, number>> {
+    const { data, error } = await this.sb.client.rpc('puntos_equipo', { p_equipo: equipoId });
+    if (error) throw error;
+    return (data ?? {}) as Record<string, number>;
+  }
+
   /** Despierta el backend (dyno) al abrir la app, para que las RPC en vivo vayan rápidas. */
   warmup(): void { this.sb.client.rpc('warmup').then(() => {}, () => {}); }
 
