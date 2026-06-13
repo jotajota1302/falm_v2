@@ -115,7 +115,6 @@ export class AdminService {
       posicion: p.activo?.jugador_lfp?.posicion ?? '',
     }));
   }
-}
 
   // ---- Simulación (temporada de pruebas) -----------------------------------
   async temporadaPruebas(): Promise<string | null> {
