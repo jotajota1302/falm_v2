@@ -82,7 +82,42 @@ export class AdminService {
     if (error) throw error;
     return data;
   }
+
+  // ---- Pretemporada ---------------------------------------------------------
+  async temporadas(): Promise<AdminTemporada[]> {
+    const { data, error } = await this.sb.client
+      .from('temporada').select('id, nombre, anio_inicio, activa').order('anio_inicio', { ascending: false });
+    if (error) throw error;
+    return (data ?? []).map((t: any) => ({ id: t.id, nombre: t.nombre, anio: t.anio_inicio, activa: t.activa }));
+  }
+
+  /** Draft activo (no consolidado) de la temporada activa, con su estado/turno. */
+  async draftActivo(): Promise<any | null> {
+    const { data: t } = await this.sb.client.from('temporada').select('id').eq('activa', true).maybeSingle();
+    if (!t) return null;
+    const { data: d } = await this.sb.client.from('draft')
+      .select('id').eq('temporada_id', (t as any).id).in('estado', ['CREADO', 'EN_CURSO', 'COMPLETADO'])
+      .order('created_at', { ascending: false }).limit(1).maybeSingle();
+    if (!d) return null;
+    const { data: est, error } = await this.sb.client.rpc('draft_estado', { p_draft: (d as any).id });
+    if (error) throw error;
+    return est;
+  }
+
+  async draftPicks(draftId: string): Promise<{ orden: number; ronda: number; equipo: string; jugador: string; posicion: string }[]> {
+    const { data, error } = await this.sb.client.from('draft_pick')
+      .select('orden_seleccion, ronda, equipo:equipo_falm_id (nombre), activo:activo_id (jugador_lfp:jugador_lfp_id (nombre, apellido, posicion))')
+      .eq('draft_id', draftId).order('orden_seleccion', { ascending: false }).limit(20);
+    if (error) throw error;
+    return (data ?? []).map((p: any) => ({
+      orden: p.orden_seleccion, ronda: p.ronda, equipo: p.equipo?.nombre ?? '?',
+      jugador: `${p.activo?.jugador_lfp?.nombre ?? ''} ${p.activo?.jugador_lfp?.apellido ?? ''}`.trim() || '?',
+      posicion: p.activo?.jugador_lfp?.posicion ?? '',
+    }));
+  }
 }
+
+export interface AdminTemporada { id: string; nombre: string; anio: number; activa: boolean; }
 
 export interface AdminJugador {
   activoId: string; jugadorLfpId: string; nombre: string; posicion: string;
