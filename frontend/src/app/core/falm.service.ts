@@ -304,6 +304,16 @@ export class FalmService {
     }
   }
 
+  /** Ranking de beneficios (premios) de todos los equipos. */
+  async rankingBeneficios(): Promise<{ nombre: string; beneficio: number }[]> {
+    const { data, error } = await this.sb.client
+      .from('equipo_falm')
+      .select('nombre, beneficio')
+      .order('beneficio', { ascending: false });
+    if (error) throw error;
+    return (data ?? []) as { nombre: string; beneficio: number }[];
+  }
+
   /** Jornadas LFP válidas (para el selector de estadísticas). */
   async jornadasLfp(): Promise<JornadaLfp[]> {
     const { data, error } = await this.sb.client.rpc('jornadas_lfp_validas');

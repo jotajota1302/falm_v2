@@ -107,9 +107,10 @@ export class FichaJugadorComponent {
   });
 
   barras = computed(() => {
-    const h = [...this.jornadas()].sort((a, b) => Number(a.jornada) - Number(b.jornada));
+    const jn = (x: any) => Number(x.jornada?.numero ?? x.jornada ?? 0);
+    const h = [...this.jornadas()].sort((a, b) => jn(a) - jn(b));
     const max = Math.max(1, ...h.map((x) => Math.abs(Number(x.puntosJornada ?? 0))));
-    return h.map((x) => ({ j: Number(x.jornada), p: Number(x.puntosJornada ?? 0), h: Math.abs(Number(x.puntosJornada ?? 0)) / max * 100 }));
+    return h.map((x) => ({ j: jn(x), p: Number(x.puntosJornada ?? 0), h: Math.abs(Number(x.puntosJornada ?? 0)) / max * 100 }));
   });
 
   constructor(public ficha: FichaService, private falm: FalmService) {
