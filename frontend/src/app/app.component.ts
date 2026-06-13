@@ -17,6 +17,7 @@ interface NavItem { path: string; icon: string; label: string; }
       <header class="topbar">
         <span class="brand"><span class="ball">⚽</span> FALM</span>
         <span class="team">{{ team }}</span>
+        <a class="gear" routerLink="/admin" aria-label="Administración" title="Administración">⚙️</a>
         <button class="logout" (click)="logout()" aria-label="Salir">⎋</button>
       </header>
 
@@ -49,6 +50,9 @@ interface NavItem { path: string; icon: string; label: string; }
     .brand .ball { filter: drop-shadow(0 0 6px var(--glow)); }
     .team { margin-left: auto; font-weight: 700; font-size: .82rem; color: var(--primary);
       text-transform: uppercase; letter-spacing: .04em; }
+    .gear { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px;
+      border-radius: 9px; font-size: .95rem; opacity: .6; transition: opacity .14s ease; }
+    .gear:hover { opacity: 1; }
     .logout { background: var(--surface-2); border: 1px solid var(--border); color: var(--muted);
       width: 34px; height: 34px; border-radius: 9px; cursor: pointer; font-size: 1rem; }
 

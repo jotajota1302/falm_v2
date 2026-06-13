@@ -67,6 +67,17 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/competicion/premios.component').then((m) => m.PremiosComponent),
       },
+      {
+        path: 'admin',
+        loadComponent: () => import('./features/admin/admin.component').then((m) => m.AdminComponent),
+        children: [
+          { path: '', redirectTo: 'jugadores', pathMatch: 'full' },
+          { path: 'jugadores', loadComponent: () => import('./features/admin/jugadores.component').then((m) => m.AdminJugadoresComponent) },
+          { path: 'puntuaciones', loadComponent: () => import('./features/admin/puntuaciones.component').then((m) => m.AdminPuntuacionesComponent) },
+          { path: 'operaciones', loadComponent: () => import('./features/admin/operaciones.component').then((m) => m.AdminOperacionesComponent) },
+          { path: 'equipos', loadComponent: () => import('./features/admin/equipos.component').then((m) => m.AdminEquiposComponent) },
+        ],
+      },
     ],
   },
   { path: '**', redirectTo: '' },
