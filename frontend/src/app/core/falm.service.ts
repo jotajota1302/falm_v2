@@ -82,6 +82,19 @@ export interface ActivoLibre {
   ext_id?: number | null;
 }
 
+export interface ActivoMini { nombre: string; posicion: string; foto?: string | null; escudo?: string | null; }
+export interface OfertaIntercambio {
+  id: string;
+  estado: 'PENDIENTE' | 'ACEPTADA' | 'RECHAZADA' | 'CANCELADA' | 'EXPIRADA';
+  comentario: string | null;
+  fecha: string;
+  soyOferente: boolean;
+  oferente: string;
+  receptor: string;
+  ofrecidos: ActivoMini[];
+  solicitados: ActivoMini[];
+}
+
 export type RolAlineacion = 'TITULAR' | 'SUPLENTE_DEFENSA' | 'SUPLENTE_MEDIO' | 'SUPLENTE_DELANTERO' | null;
 
 export interface AlineacionGuardada {
@@ -479,6 +492,82 @@ export class FalmService {
     const filas = opciones.map((o) => ({ peticion_id: (pet as any).id, activo_id: o.activo_id, prioridad: o.prioridad }));
     const { error: e2 } = await this.sb.client.from('peticion_fichaje_opcion').insert(filas);
     if (e2) throw e2;
+  }
+
+  /** Equipos FALM de la temporada activa (para elegir rival en intercambios). */
+  async equiposFalm(excluirId?: string): Promise<{ id: string; nombre: string }[]> {
+    const { data, error } = await this.sb.client
+      .from('equipo_falm')
+      .select('id, nombre, temporada!inner(activa)')
+      .eq('temporada.activa', true)
+      .order('nombre', { ascending: true });
+    if (error) throw error;
+    return (data ?? []).filter((e: any) => e.id !== excluirId).map((e: any) => ({ id: e.id, nombre: e.nombre }));
+  }
+
+  /** Crea una oferta de intercambio (escritura; RLS dueño del oferente). Expira a 7 días. */
+  async crearOferta(
+    oferenteId: string, receptorId: string,
+    ofrecidos: string[], solicitados: string[], comentario: string
+  ): Promise<void> {
+    const { data: of, error } = await this.sb.client
+      .from('oferta_intercambio')
+      .insert({ equipo_oferente_id: oferenteId, equipo_receptor_id: receptorId, estado: 'PENDIENTE', comentario })
+      .select('id')
+      .single();
+    if (error) throw error;
+    const filas = [
+      ...ofrecidos.map((activo_id) => ({ oferta_id: (of as any).id, activo_id, tipo: 'OFRECIDO' })),
+      ...solicitados.map((activo_id) => ({ oferta_id: (of as any).id, activo_id, tipo: 'SOLICITADO' })),
+    ];
+    const { error: e2 } = await this.sb.client.from('oferta_activo').insert(filas);
+    if (e2) throw e2;
+  }
+
+  /** Ofertas de intercambio donde el equipo es oferente o receptor, con activos y nombres. */
+  async ofertas(equipoId: string): Promise<OfertaIntercambio[]> {
+    const { data, error } = await this.sb.client
+      .from('oferta_intercambio')
+      .select(
+        'id, estado, comentario, fecha_creacion, equipo_oferente_id, equipo_receptor_id, ' +
+        'oferente:equipo_oferente_id (nombre), receptor:equipo_receptor_id (nombre), ' +
+        'oferta_activo (tipo, activo:activo_id (id, tipo, ' +
+          'jugador_lfp:jugador_lfp_id (nombre, apellido, posicion, foto, equipo_lfp:equipo_lfp_id (escudo)), ' +
+          'equipo_lfp:equipo_lfp_id (nombre, escudo)))'
+      )
+      .or(`equipo_oferente_id.eq.${equipoId},equipo_receptor_id.eq.${equipoId}`)
+      .order('fecha_creacion', { ascending: false });
+    if (error) throw error;
+    const mapAct = (a: any) => {
+      const def = a.tipo === 'DEFENSA';
+      return {
+        nombre: def ? `Defensa ${a.equipo_lfp?.nombre ?? ''}`.trim()
+          : `${a.jugador_lfp?.nombre ?? ''} ${a.jugador_lfp?.apellido ?? ''}`.trim(),
+        posicion: def ? 'PORTERO' : a.jugador_lfp?.posicion,
+        foto: def ? null : a.jugador_lfp?.foto,
+        escudo: def ? a.equipo_lfp?.escudo : a.jugador_lfp?.equipo_lfp?.escudo,
+      };
+    };
+    return (data ?? []).map((o: any) => ({
+      id: o.id,
+      estado: o.estado,
+      comentario: o.comentario,
+      fecha: o.fecha_creacion,
+      soyOferente: o.equipo_oferente_id === equipoId,
+      oferente: o.oferente?.nombre ?? '?',
+      receptor: o.receptor?.nombre ?? '?',
+      ofrecidos: (o.oferta_activo ?? []).filter((x: any) => x.tipo === 'OFRECIDO').map((x: any) => mapAct(x.activo)),
+      solicitados: (o.oferta_activo ?? []).filter((x: any) => x.tipo === 'SOLICITADO').map((x: any) => mapAct(x.activo)),
+    }));
+  }
+
+  /** Responde a una oferta (ACEPTADA/RECHAZADA/CANCELADA). Escritura; RLS. */
+  async responderOferta(id: string, estado: 'ACEPTADA' | 'RECHAZADA' | 'CANCELADA'): Promise<void> {
+    const { error } = await this.sb.client
+      .from('oferta_intercambio')
+      .update({ estado, fecha_respuesta: new Date().toISOString() })
+      .eq('id', id);
+    if (error) throw error;
   }
 
   /** Premios ganados por un equipo. */

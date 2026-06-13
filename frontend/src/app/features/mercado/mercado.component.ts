@@ -15,7 +15,10 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
   template: `
     <div class="cab">
       <h1>🛒 Mercado</h1>
-      <a class="btn" routerLink="/fichajes">Pedir fichaje</a>
+      <div class="cab-acc">
+        <a class="btn ghost" routerLink="/intercambios">🤝 Intercambios</a>
+        <a class="btn" routerLink="/fichajes">Pedir fichaje</a>
+      </div>
     </div>
 
     <input class="buscar" type="search" placeholder="Buscar jugador o club…"
@@ -50,7 +53,9 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
     }
   `,
   styles: [`
-    .cab { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+    .cab { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+    .cab-acc { display: flex; gap: 8px; }
+    .btn.ghost { background: var(--surface-2); color: var(--ink); border: 1px solid var(--border); }
     h1 { margin: 0; }
     .buscar { width: 100%; margin-bottom: 12px; }
     .filtros { display: flex; gap: 7px; margin-bottom: 16px; flex-wrap: wrap; }
