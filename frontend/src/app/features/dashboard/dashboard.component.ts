@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { FalmService } from '../../core/falm.service';
 
@@ -37,7 +37,11 @@ import { FalmService } from '../../core/falm.service';
 
       <section class="accion rise">
         <span class="ic">⏰</span>
-        <div><strong>La semana</strong><p class="muted">Próximamente: cierre de alineación y fichajes con cuenta atrás.</p></div>
+        <div class="cd">
+          <strong>Cierre de fichajes</strong>
+          <p class="muted">{{ cuenta() }}</p>
+        </div>
+        <a class="btn-cd" routerLink="/fichajes">Pedir fichaje</a>
       </section>
 
       <div class="grid">
@@ -79,7 +83,9 @@ import { FalmService } from '../../core/falm.service';
     .accion { display: flex; align-items: center; gap: 14px; padding: 14px 16px; margin-bottom: 18px;
       background: rgba(255,194,75,.07); border: 1px solid rgba(255,194,75,.2); border-radius: 14px; }
     .accion .ic { font-size: 1.5rem; }
-    .accion strong { display: block; } .accion p { margin: 2px 0 0; font-size: .85rem; }
+    .accion .cd { flex: 1; } .accion strong { display: block; } .accion p { margin: 2px 0 0; font-size: .85rem; }
+    .btn-cd { flex: 0 0 auto; background: var(--gold); color: #1a1206; font-weight: 800; font-size: .8rem;
+      padding: 8px 14px; border-radius: 10px; white-space: nowrap; }
 
     .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
     .stat { display: flex; flex-direction: column; gap: 2px; padding: 18px;
@@ -93,7 +99,9 @@ import { FalmService } from '../../core/falm.service';
     .muted { color: var(--muted); }
   `],
 })
-export class DashboardComponent implements OnInit {
+export class DashboardComponent implements OnInit, OnDestroy {
+  cuenta = signal('');
+  private timer: any = null;
   nombre = signal('');
   posicion = signal<number | null>(null);
   puntos = signal<number>(0);
@@ -105,10 +113,35 @@ export class DashboardComponent implements OnInit {
 
   constructor(private falm: FalmService) {}
 
+  ngOnDestroy() { if (this.timer) clearInterval(this.timer); }
+
+  /** Próximo martes 23:59 (hora local): deadline semanal de fichajes. */
+  private proximoCierre(): Date {
+    const ahora = new Date();
+    const d = new Date(ahora);
+    d.setHours(23, 59, 0, 0);
+    // días hasta el próximo martes (2). Si hoy es martes pero ya pasaron las 23:59, va al siguiente.
+    let dias = (2 - d.getDay() + 7) % 7;
+    if (dias === 0 && ahora.getTime() > d.getTime()) dias = 7;
+    d.setDate(d.getDate() + dias);
+    return d;
+  }
+
+  private tick() {
+    const ms = this.proximoCierre().getTime() - Date.now();
+    if (ms <= 0) { this.cuenta.set('¡Procesando fichajes!'); return; }
+    const dd = Math.floor(ms / 86400000);
+    const hh = Math.floor((ms % 86400000) / 3600000);
+    const mm = Math.floor((ms % 3600000) / 60000);
+    this.cuenta.set(dd > 0 ? `Faltan ${dd}d ${hh}h para el martes 23:59` : `Faltan ${hh}h ${mm}m — ¡hoy cierra a las 23:59!`);
+  }
+
   private icono(t: string) { return t === 'CHAMPIONS' ? '🌟' : t === 'CLAUSURA' ? '🔚' : '🏆'; }
   private etiqueta(t: string) { return t === 'CHAMPIONS' ? 'Champions' : t === 'CLAUSURA' ? 'Clausura' : 'Liga'; }
 
   async ngOnInit() {
+    this.tick();
+    this.timer = setInterval(() => this.tick(), 60000);
     try {
       const eq = await this.falm.miEquipo();
       if (!eq) return;
