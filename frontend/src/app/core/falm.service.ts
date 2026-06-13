@@ -328,6 +328,9 @@ export class FalmService {
     return (data ?? []) as PuntosJugador[];
   }
 
+  /** Despierta el backend (dyno) al abrir la app, para que las RPC en vivo vayan rápidas. */
+  warmup(): void { this.sb.client.rpc('warmup').then(() => {}, () => {}); }
+
   /** Historial por jornada de un jugador (en vivo del backend). */
   async jugadorJornadas(id: number): Promise<any[]> {
     const { data, error } = await this.sb.client.rpc('jugador_jornadas', { p_id: id });

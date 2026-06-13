@@ -30,6 +30,8 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
 
           @if (cargando()) {
             <p class="muted">Cargando estadísticas…</p>
+          } @else if (fallo()) {
+            <p class="muted">No se pudieron cargar las estadísticas. Cierra y vuelve a intentar en un momento.</p>
           } @else {
             <div class="acum">
               <div class="s"><b class="num">{{ acum().puntos }}</b><span>Puntos</span></div>
@@ -91,6 +93,7 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
 export class FichaJugadorComponent {
   cargando = signal(false);
   sinFoto = signal(false);
+  fallo = signal(false);
   jornadas = signal<any[]>([]);
 
   acum = computed(() => {
@@ -126,8 +129,14 @@ export class FichaJugadorComponent {
 
   private async cargar(id: number) {
     this.cargando.set(true);
-    try { this.jornadas.set(await this.falm.jugadorJornadas(id)); }
-    catch { this.jornadas.set([]); }
-    finally { this.cargando.set(false); }
+    this.fallo.set(false);
+    let data: any[] = [];
+    for (let i = 0; i < 2; i++) {
+      try { data = await this.falm.jugadorJornadas(id); if (data.length) break; }
+      catch { /* dyno despertando: reintenta */ }
+    }
+    this.jornadas.set(data);
+    this.fallo.set(data.length === 0);
+    this.cargando.set(false);
   }
 }

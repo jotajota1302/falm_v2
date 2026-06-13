@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from './core/auth.service';
+import { FalmService } from './core/falm.service';
 import { environment } from '../environments/environment';
 import { FichaJugadorComponent } from './shared/ficha-jugador.component';
 
@@ -95,7 +96,9 @@ export class AppComponent {
     { path: '/premios', icon: '💰', label: 'Premios' },
   ];
 
-  constructor(public auth: AuthService) {}
+  constructor(public auth: AuthService, falm: FalmService) {
+    falm.warmup(); // despierta el dyno del backend al arrancar
+  }
 
   async logout() {
     await this.auth.signOut();
