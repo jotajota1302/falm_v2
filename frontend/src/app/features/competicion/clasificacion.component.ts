@@ -77,8 +77,8 @@ export class ClasificacionComponent implements OnInit {
 
   constructor(private falm: FalmService) {}
 
-  inicial(n: string) { return (n || '?').trim().charAt(0).toUpperCase(); }
-  color(n: string) {
+  inicial(n?: string) { return (n || '?').trim().charAt(0).toUpperCase(); }
+  color(n?: string) {
     let h = 0; for (const ch of n || '') h = (h * 31 + ch.charCodeAt(0)) >>> 0;
     return COLORES[h % COLORES.length];
   }
