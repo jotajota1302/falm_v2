@@ -70,6 +70,16 @@ export interface EnfrentamientoFila {
   jornada_jugada: boolean;
 }
 
+export interface LlaveLeg { local: string; visitante: string; pl: number; pv: number; }
+export interface Llave {
+  a: string; b: string;
+  legs: LlaveLeg[];
+  aggA: number; aggB: number;
+  ganador: string | null;
+  subtitulo?: string;   // "Final" / "3er y 4º puesto" cuando aplica
+}
+export interface RondaEliminatoria { ronda: string; llaves: Llave[]; }
+
 export interface ActivoLibre {
   activo_id: string;
   tipo: 'JUGADOR' | 'DEFENSA';
@@ -334,6 +344,90 @@ export class FalmService {
         puntos_clasif_visitante: cv,
         jornada_jugada: f.puntos_local != null,
       };
+    });
+  }
+
+  /**
+   * Cuadro eliminatorio de una competición a doble partido (Champions).
+   * Empareja las llaves (ida/vuelta entre el mismo par), agrega los puntos,
+   * agrupa por ronda (pares de jornadas) y etiqueta desde el final
+   * (Final / Semifinales / Cuartos…), detectando ronda previa y 3er/4º puesto.
+   */
+  async eliminatorias(competicionId: string): Promise<RondaEliminatoria[]> {
+    const js = await this.jornadas(competicionId);
+    const jids = js.map((j) => j.id);
+    const numById = new Map(js.map((j) => [j.id, j.numero]));
+    if (jids.length === 0) return [];
+
+    const { data, error } = await this.sb.client
+      .from('enfrentamiento')
+      .select('jornada_falm_id, equipo_local_id, equipo_visitante_id, puntos_local, puntos_visitante')
+      .in('jornada_falm_id', jids);
+    if (error) throw error;
+    const filas: any[] = data ?? [];
+    if (filas.length === 0) return [];
+
+    const ids = [...new Set(filas.flatMap((f) => [f.equipo_local_id, f.equipo_visitante_id]))];
+    const { data: eqs, error: e2 } = await this.sb.client.from('equipo_falm').select('id, nombre').in('id', ids);
+    if (e2) throw e2;
+    const nombre = new Map((eqs ?? []).map((e: any) => [e.id, e.nombre]));
+
+    // Agrupar en llaves por par de equipos (no ordenado), guardando la jornada mínima.
+    type Acc = { a: string; b: string; legs: LlaveLeg[]; aggA: number; aggB: number; minJor: number };
+    const llaves = new Map<string, Acc>();
+    for (const f of filas) {
+      const ln = nombre.get(f.equipo_local_id) ?? '?', vn = nombre.get(f.equipo_visitante_id) ?? '?';
+      const [a, b] = [ln, vn].sort();
+      const key = a + '||' + b;
+      const jor = numById.get(f.jornada_falm_id) ?? 0;
+      const pl = Number(f.puntos_local ?? 0), pv = Number(f.puntos_visitante ?? 0);
+      let acc = llaves.get(key);
+      if (!acc) { acc = { a, b, legs: [], aggA: 0, aggB: 0, minJor: jor }; llaves.set(key, acc); }
+      acc.legs.push({ local: ln, visitante: vn, pl, pv });
+      acc.aggA += ln === a ? pl : pv;
+      acc.aggB += ln === a ? pv : pl;
+      acc.minJor = Math.min(acc.minJor, jor);
+    }
+
+    // Agrupar llaves por ronda (bucket = pares de jornadas) y ordenar.
+    const buckets = new Map<number, Acc[]>();
+    for (const acc of llaves.values()) {
+      const r = Math.floor((acc.minJor - 1) / 2);
+      (buckets.get(r) ?? buckets.set(r, []).get(r)!).push(acc);
+    }
+    const rondas = [...buckets.entries()].sort((x, y) => x[0] - y[0]).map(([, v]) => v);
+
+    // Etiquetas desde el final entre rondas "principales" (las previas alimentan a una mayor).
+    const escalera = ['Final', 'Semifinales', 'Cuartos de final', 'Octavos de final', 'Dieciseisavos de final'];
+    const esPrevia = rondas.map((r, i) => i + 1 < rondas.length && r.length < rondas[i + 1].length);
+    const principales = rondas.map((_, i) => !esPrevia[i]);
+    const idxPrinc = rondas.map((_, i) => i).filter((i) => principales[i]);
+    const etiqueta = new Map<number, string>();
+    idxPrinc.forEach((rIdx, k) => {
+      const desdeFinal = idxPrinc.length - 1 - k;
+      etiqueta.set(rIdx, escalera[desdeFinal] ?? `Ronda ${rIdx + 1}`);
+    });
+    rondas.forEach((_, i) => { if (esPrevia[i]) etiqueta.set(i, 'Ronda previa'); });
+
+    const ganador = (a: Acc): string | null => a.aggA > a.aggB ? a.a : a.aggB > a.aggA ? a.b : null;
+
+    // Para la última ronda: distinguir Final (entre ganadores de la ronda previa) y 3er/4º (perdedores).
+    const ultIdx = rondas.length - 1;
+    const idxPrevAlFinal = idxPrinc.length >= 2 ? idxPrinc[idxPrinc.length - 2] : -1;
+    const ganadoresPrev = new Set<string>();
+    if (idxPrevAlFinal >= 0) for (const t of rondas[idxPrevAlFinal]) { const g = ganador(t); if (g) ganadoresPrev.add(g); }
+
+    return rondas.map((r, i) => {
+      const llavesR: Llave[] = r.map((t) => ({ a: t.a, b: t.b, legs: t.legs, aggA: t.aggA, aggB: t.aggB, ganador: ganador(t) }));
+      const titulo = etiqueta.get(i) ?? `Ronda ${i + 1}`;
+      // En la última ronda: la llave entre los ganadores de la semifinal es la Final; la otra, 3er/4º puesto.
+      if (i === ultIdx && llavesR.length === 2 && ganadoresPrev.size === 2) {
+        for (const l of llavesR) {
+          l.subtitulo = ganadoresPrev.has(l.a) && ganadoresPrev.has(l.b) ? 'Final' : '3er y 4º puesto';
+        }
+        llavesR.sort((x, y) => (x.subtitulo === 'Final' ? -1 : 1) - (y.subtitulo === 'Final' ? -1 : 1));
+      }
+      return { ronda: titulo, llaves: llavesR };
     });
   }
 

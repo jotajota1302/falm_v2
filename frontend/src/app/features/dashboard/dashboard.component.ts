@@ -29,7 +29,8 @@ import { FalmService } from '../../core/falm.service';
             <a class="comp card rise" routerLink="/clasificacion">
               <span class="ci">{{ c.icono }}</span>
               <span class="cn">{{ c.nombre }}</span>
-              <span class="cp num">{{ c.pos }}<small>º</small><i>/{{ c.total }}</i></span>
+              <span class="cp num">{{ c.principal }}</span>
+              @if (c.secundario) { <span class="cs">{{ c.secundario }}</span> }
             </a>
           }
         </div>
@@ -76,10 +77,9 @@ import { FalmService } from '../../core/falm.service';
     .comp .ci { font-size: 1.3rem; }
     .comp .cn { font-size: .68rem; text-transform: uppercase; letter-spacing: .04em; color: var(--faint); font-weight: 700;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
-    .comp .cp { font-size: 1.6rem; font-weight: 900; color: var(--primary); line-height: 1; letter-spacing: -.03em; }
-    .comp .cp small { font-size: .8rem; color: var(--muted); }
-    .comp .cp i { font-size: .8rem; color: var(--faint); font-style: normal; font-weight: 700; }
-    @media (max-width: 420px) { .comp { padding: 11px 6px; } .comp .cp { font-size: 1.35rem; } }
+    .comp .cp { font-size: 1.5rem; font-weight: 900; color: var(--primary); line-height: 1.05; letter-spacing: -.03em; }
+    .comp .cs { font-size: .68rem; color: var(--faint); font-weight: 700; }
+    @media (max-width: 420px) { .comp { padding: 11px 6px; } .comp .cp { font-size: 1.1rem; } }
     .accion { display: flex; align-items: center; gap: 14px; padding: 14px 16px; margin-bottom: 18px;
       background: rgba(255,194,75,.07); border: 1px solid rgba(255,194,75,.2); border-radius: 14px; }
     .accion .ic { font-size: 1.5rem; }
@@ -108,7 +108,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   premios = signal<number>(0);
   jugadores = signal<number>(0);
   presupuesto = signal<number>(0);
-  posiciones = signal<{ tipo: string; nombre: string; icono: string; pos: number; total: number }[]>([]);
+  posiciones = signal<{ tipo: string; nombre: string; icono: string; principal: string; secundario: string }[]>([]);
   cargando = signal(true);
 
   constructor(private falm: FalmService) {}
@@ -139,6 +139,23 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private icono(t: string) { return t === 'CHAMPIONS' ? '🌟' : t === 'CLAUSURA' ? '🔚' : '🏆'; }
   private etiqueta(t: string) { return t === 'CHAMPIONS' ? 'Champions' : t === 'CLAUSURA' ? 'Clausura' : 'Liga'; }
 
+  /** Fase alcanzada por el equipo en la eliminatoria de Champions. */
+  private async faseChampions(compId: string, equipo: string): Promise<string | null> {
+    const rondas = await this.falm.eliminatorias(compId);
+    let ultima: { ronda: string; llave: any } | null = null;
+    for (const r of rondas) {
+      const llave = r.llaves.find((k) => k.a === equipo || k.b === equipo);
+      if (llave) ultima = { ronda: r.ronda, llave };
+    }
+    if (!ultima) return null;
+    const { ronda, llave } = ultima;
+    if (ronda === 'Final') {
+      if (llave.subtitulo === 'Final' || !llave.subtitulo) return llave.ganador === equipo ? '🏆 Campeón' : 'Finalista';
+      return llave.ganador === equipo ? '🥉 3º puesto' : '4º puesto';
+    }
+    return ronda; // eliminado en esa ronda
+  }
+
   async ngOnInit() {
     this.tick();
     this.timer = setInterval(() => this.tick(), 60000);
@@ -158,14 +175,20 @@ export class DashboardComponent implements OnInit, OnDestroy {
       if (mia) { this.posicion.set(mia.posicion); this.puntos.set(mia.puntos_clasificacion); }
       this.jugadores.set(plantilla.length);
 
-      // Posición en cada competición (Liga snapshot + Champions/Clausura calculadas)
+      // Liga/Clausura: posición. Champions: fase alcanzada (es eliminatoria).
       const orden = { LIGA: 0, CHAMPIONS: 1, CLAUSURA: 2 } as Record<string, number>;
       const ordenadas = [...comps].sort((a, b) => (orden[a.tipo] ?? 9) - (orden[b.tipo] ?? 9));
       const filas = await Promise.all(ordenadas.map(async (c) => {
         try {
+          if (c.tipo === 'CHAMPIONS') {
+            const fase = await this.faseChampions(c.id, eq.nombre);
+            return fase ? { tipo: c.tipo, nombre: this.etiqueta(c.tipo), icono: this.icono(c.tipo), principal: fase, secundario: '' } : null;
+          }
           const t = c.tipo === 'LIGA' ? clas : await this.falm.clasificacionCalculada(c.id);
           const f = t.find((x) => x.equipo_falm_id === eq.id);
-          return f && t.length ? { tipo: c.tipo, nombre: this.etiqueta(c.tipo), icono: this.icono(c.tipo), pos: f.posicion, total: t.length } : null;
+          return f && t.length
+            ? { tipo: c.tipo, nombre: this.etiqueta(c.tipo), icono: this.icono(c.tipo), principal: f.posicion + 'º', secundario: 'de ' + t.length }
+            : null;
         } catch { return null; }
       }));
       this.posiciones.set(filas.filter((x): x is NonNullable<typeof x> => !!x));

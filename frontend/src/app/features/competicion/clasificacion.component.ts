@@ -1,5 +1,5 @@
 import { Component, OnInit, signal } from '@angular/core';
-import { Competicion, FalmService, FilaClasificacion } from '../../core/falm.service';
+import { Competicion, FalmService, FilaClasificacion, RondaEliminatoria } from '../../core/falm.service';
 
 const COLORES = ['#00e676', '#38bdf8', '#fb7185', '#a3e635', '#ffc24b', '#c084fc', '#f97316', '#2dd4bf', '#f472b6', '#60a5fa'];
 
@@ -24,6 +24,35 @@ const COLORES = ['#00e676', '#38bdf8', '#fb7185', '#a3e635', '#ffc24b', '#c084fc
       <p class="muted">Cargando…</p>
     } @else if (error()) {
       <p class="err">{{ error() }}</p>
+    } @else if (modo() === 'bracket') {
+      @if (rondas().length === 0) { <p class="muted">Aún no hay eliminatoria.</p> }
+      <div class="bracket">
+        @for (r of rondas(); track r.ronda) {
+          <div class="ronda">
+            <h3 class="rt">{{ r.ronda }}</h3>
+            @for (k of r.llaves; track k.a + k.b) {
+              <div class="llave card rise">
+                @if (k.subtitulo) { <span class="sub">{{ k.subtitulo }}</span> }
+                <div class="eq" [class.gana]="k.ganador === k.a">
+                  <span class="av" [style.background]="color(k.a)">{{ inicial(k.a) }}</span>
+                  <span class="nm">{{ k.a }}</span>
+                  <span class="ag num">{{ k.aggA }}</span>
+                </div>
+                <div class="eq" [class.gana]="k.ganador === k.b">
+                  <span class="av" [style.background]="color(k.b)">{{ inicial(k.b) }}</span>
+                  <span class="nm">{{ k.b }}</span>
+                  <span class="ag num">{{ k.aggB }}</span>
+                </div>
+                <div class="legs">
+                  @for (l of k.legs; track $index) {
+                    <span class="leg">{{ l.local }} {{ l.pl }}–{{ l.pv }} {{ l.visitante }}</span>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
     } @else if (filas().length === 0) {
       <p class="muted">Aún no hay clasificación.</p>
     } @else {
@@ -62,6 +91,20 @@ const COLORES = ['#00e676', '#38bdf8', '#fb7185', '#a3e635', '#ffc24b', '#c084fc
     .comp .ci { font-size: 1rem; }
     .comp.on { background: rgba(0,230,118,.1); color: var(--primary); border-color: var(--primary);
       box-shadow: inset 0 0 0 1px var(--primary); }
+    .bracket { display: flex; flex-direction: column; gap: 18px; }
+    .ronda { display: flex; flex-direction: column; gap: 10px; }
+    .rt { margin: 0; font-size: 1rem; color: var(--gold); }
+    .llave { position: relative; padding: 12px 14px; }
+    .llave .sub { position: absolute; top: 10px; right: 12px; font-size: .62rem; font-weight: 800; text-transform: uppercase;
+      letter-spacing: .04em; color: var(--faint); background: var(--surface-2); border: 1px solid var(--border); padding: 2px 8px; border-radius: 999px; }
+    .eq { display: flex; align-items: center; gap: 10px; padding: 5px 0; }
+    .eq .av { flex: 0 0 auto; width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center;
+      justify-content: center; font-weight: 800; font-size: .8rem; color: #07120d; }
+    .eq .nm { flex: 1; font-weight: 700; font-size: .9rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .eq .ag { font-weight: 900; font-size: 1.1rem; color: var(--muted); }
+    .eq.gana .nm { color: var(--ink); } .eq.gana .ag { color: var(--primary); }
+    .legs { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
+    .leg { font-size: .72rem; color: var(--faint); }
     .tabla { overflow: hidden; }
     .row { display: grid; grid-template-columns: 42px 1fr 36px 30px 30px 30px 54px;
       align-items: center; padding: 11px 12px; border-bottom: 1px solid var(--border); }
@@ -91,6 +134,8 @@ export class ClasificacionComponent implements OnInit {
   competiciones = signal<Competicion[]>([]);
   competicionId = signal('');
   filas = signal<FilaClasificacion[]>([]);
+  rondas = signal<RondaEliminatoria[]>([]);
+  modo = signal<'tabla' | 'bracket'>('tabla');
   cargando = signal(true);
   error = signal('');
 
@@ -124,18 +169,26 @@ export class ClasificacionComponent implements OnInit {
     const c = this.competiciones().find((x) => x.id === id);
     if (!c) return;
     this.competicionId.set(id);
-    this.cargando.set(true); this.error.set(''); this.filas.set([]);
+    this.cargando.set(true); this.error.set(''); this.filas.set([]); this.rondas.set([]);
     try { await this.cargar(c); }
     catch (e: any) { this.error.set(e?.message ?? 'Error'); }
     finally { this.cargando.set(false); }
   }
 
-  /** Liga usa el snapshot oficial; Champions/Clausura se calculan desde enfrentamientos. */
+  /**
+   * Liga: snapshot oficial. Clausura: tabla calculada. Champions: cuadro eliminatorio
+   * (es a doble partido, mostrarlo como liga sería engañoso).
+   */
   private async cargar(c: Competicion) {
-    const filas = c.tipo === 'LIGA'
-      ? await this.falm.clasificacion(c.id)
-      : await this.falm.clasificacionCalculada(c.id);
-    this.filas.set(filas);
+    if (c.tipo === 'CHAMPIONS') {
+      this.modo.set('bracket');
+      this.rondas.set(await this.falm.eliminatorias(c.id));
+    } else {
+      this.modo.set('tabla');
+      this.filas.set(c.tipo === 'LIGA'
+        ? await this.falm.clasificacion(c.id)
+        : await this.falm.clasificacionCalculada(c.id));
+    }
     this.cargando.set(false);
   }
 }
