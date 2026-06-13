@@ -46,7 +46,21 @@ Regla del flag `sobreescribir` (de `PuntuacionService:589-608`):
 
 `falm.upsert_puntuacion(activo, jornada_lfp, puntos, desglose, tipo, sobreescribir)` devuelve `INSERTADO`/`ACTUALIZADO`/`OMITIDO`. **Validada**: 5 transiciones (nuevo→INSERTADO, AUTO+false→OMITIDO, AUTO+true→ACTUALIZADO, MANUAL+true→ACTUALIZADO, MANUAL+false→ACTUALIZADO).
 
-## Pendiente
+## `falm.sincronizar_porterias(jornada_lfp, forzar)` — IMPLEMENTADA y VALIDADA
 
-- `falm.sincronizar_porterias(jornada_lfp)`: copia los puntos del portero titular real a los activos DEFENSA (porteros virtuales), **preservando puntos manuales** (guardar antes / restaurar después; bugfix v2.9.9). Selección del titular: el de menor `orden` que jugó (minutos>0).
-- Edge Function / micro-scraper: solo la obtención de datos (navegador), que escribe el `desglose`, llama a `calcular_puntos` y luego a `upsert_puntuacion`.
+Copia los puntos del **portero titular real** a cada `activo DEFENSA` (portero virtual) del mismo club.
+- **Selección del titular** (simplificación V2, sin tabla `PorteroPorteria`): el `jugador_lfp` con `posicion=PORTERO` del club cuyo activo tiene `puntuacion` esa jornada **con más minutos**.
+- **Preserva puntos MANUALES** del portero virtual salvo `forzar=true` (bugfix v2.9.9). Escribe con tipo `SINCRONIZADO_PORTERIA`. Devuelve nº sincronizados.
+
+**Validada:** toma 4 del titular (90′) y no del suplente (0′); con manual=7 y `forzar=false` preserva (0 sincronizados, sigue 7/MANUAL); con `forzar=true` sobreescribe a 4/SINCRONIZADO_PORTERIA.
+
+## Motor de scoring SQL: COMPLETO
+
+Las tres funciones (`calcular_puntos`, `upsert_puntuacion`, `sincronizar_porterias`) están implementadas y validadas con casos. El scraping (micro-servicio, único componente que necesita servidor) solo obtendrá el `desglose` por jugador y llamará a estas funciones vía RPC.
+
+## Pendiente del bloque #6
+
+- Edge Function `procesar-fichajes` (cron martes 23:59, 3 desempates en 2 fases, mueve plantillas).
+- `calcular-premios` (reparto con empates v2.9.10 → snapshots en `premio`); puede ser SQL.
+- Expiración de ofertas a 7 días (`pg_cron`).
+- Micro-scraper (Cloud Run) que alimenta el `desglose`.
