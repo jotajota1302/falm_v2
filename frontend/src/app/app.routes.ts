@@ -26,11 +26,21 @@ export const routes: Routes = [
           import('./features/equipo/plantilla.component').then((m) => m.PlantillaComponent),
       },
       {
+        path: 'mercado',
+        loadComponent: () =>
+          import('./features/mercado/mercado.component').then((m) => m.MercadoComponent),
+      },
+      {
         path: 'clasificacion',
         loadComponent: () =>
           import('./features/competicion/clasificacion.component').then(
             (m) => m.ClasificacionComponent
           ),
+      },
+      {
+        path: 'jornadas',
+        loadComponent: () =>
+          import('./features/competicion/jornadas.component').then((m) => m.JornadasComponent),
       },
       {
         path: 'premios',

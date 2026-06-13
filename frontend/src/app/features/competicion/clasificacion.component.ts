@@ -23,7 +23,7 @@ import { FalmService, FilaClasificacion, Competicion } from '../../core/falm.ser
     } @else if (filas().length === 0) {
       <p class="muted">Aún no hay clasificación (sin jornadas jugadas o sin datos de temporada).</p>
     } @else {
-      <table>
+      <table class="falm card">
         <thead>
           <tr><th>#</th><th>Equipo</th><th>PJ</th><th>Pts</th><th>V</th><th>Vm</th><th>E</th><th>Dm</th><th>D</th><th>PF</th><th>PC</th></tr>
         </thead>
@@ -46,15 +46,13 @@ import { FalmService, FilaClasificacion, Competicion } from '../../core/falm.ser
   `,
   styles: [`
     h1 { margin:0 0 16px; }
-    .tabs { display:flex; gap:8px; margin-bottom:16px; }
-    .tabs button { padding:8px 14px; border:1px solid #cbd5e1; background:#fff; border-radius:999px; cursor:pointer; }
-    .tabs button.active { background:#0f172a; color:#fff; border-color:#0f172a; }
-    table { width:100%; border-collapse:collapse; background:#fff; border-radius:12px; overflow:hidden; }
-    th, td { padding:10px 8px; text-align:center; border-bottom:1px solid #f1f5f9; font-size:.9rem; }
-    th { background:#f8fafc; color:#64748b; font-weight:600; }
+    .tabs { display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; }
+    .tabs button { padding:8px 14px; border:1px solid var(--border); background:var(--surface); border-radius:999px; cursor:pointer; }
+    .tabs button.active { background:var(--primary); color:#fff; border-color:var(--primary); }
+    table.falm { overflow:hidden; }
     td.eq { text-align:left; font-weight:600; }
-    td.pts { font-weight:700; }
-    .muted { color:#94a3b8; } .err { color:#dc2626; }
+    td.pts { font-weight:800; color:var(--primary); }
+    .muted { color:var(--muted); } .err { color:var(--bad); }
   `],
 })
 export class ClasificacionComponent implements OnInit {

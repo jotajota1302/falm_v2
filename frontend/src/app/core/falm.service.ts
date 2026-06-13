@@ -49,6 +49,31 @@ export interface PremioItem {
   concepto: string;     // "Jornada N" o nombre de competición
 }
 
+export interface JornadaFalm {
+  id: string;
+  numero: number;
+}
+
+export interface EnfrentamientoFila {
+  enfrentamiento_id: string;
+  equipo_local: string;
+  equipo_visitante: string;
+  puntos_local: number;
+  puntos_visitante: number;
+  puntos_clasif_local: number;
+  puntos_clasif_visitante: number;
+  jornada_jugada: boolean;
+}
+
+export interface ActivoLibre {
+  activo_id: string;
+  tipo: 'JUGADOR' | 'DEFENSA';
+  posicion: string;
+  nombre: string;
+  club: string;
+  precio_mercado: number;
+}
+
 /** Acceso de lectura al schema falm. Las mutaciones críticas van por RPC/Edge (no aquí). */
 @Injectable({ providedIn: 'root' })
 export class FalmService {
@@ -138,6 +163,56 @@ export class FalmService {
         precio: p.precio,
       } as ItemPlantilla;
     });
+  }
+
+  /** Jornadas de una competición. */
+  async jornadas(competicionId: string): Promise<JornadaFalm[]> {
+    const { data, error } = await this.sb.client
+      .from('jornada_falm')
+      .select('id, numero')
+      .eq('competicion_id', competicionId)
+      .order('numero', { ascending: true });
+    if (error) throw error;
+    return data ?? [];
+  }
+
+  /** Enfrentamientos (con resultado) de una jornada, con nombres de equipo. */
+  async enfrentamientos(jornadaFalmId: string): Promise<EnfrentamientoFila[]> {
+    const { data, error } = await this.sb.client
+      .from('v_enfrentamiento_resultado')
+      .select('*')
+      .eq('jornada_falm_id', jornadaFalmId);
+    if (error) throw error;
+    const filas: any[] = data ?? [];
+    if (filas.length === 0) return [];
+
+    const ids = [...new Set(filas.flatMap((f) => [f.equipo_local_id, f.equipo_visitante_id]))];
+    const { data: eqs, error: e2 } = await this.sb.client
+      .from('equipo_falm')
+      .select('id, nombre')
+      .in('id', ids);
+    if (e2) throw e2;
+    const n = new Map((eqs ?? []).map((e: any) => [e.id, e.nombre]));
+    return filas.map((f) => ({
+      enfrentamiento_id: f.enfrentamiento_id,
+      equipo_local: n.get(f.equipo_local_id) ?? '?',
+      equipo_visitante: n.get(f.equipo_visitante_id) ?? '?',
+      puntos_local: f.puntos_local,
+      puntos_visitante: f.puntos_visitante,
+      puntos_clasif_local: f.puntos_clasif_local,
+      puntos_clasif_visitante: f.puntos_clasif_visitante,
+      jornada_jugada: f.jornada_jugada,
+    }));
+  }
+
+  /** Mercado: activos libres en la temporada activa. */
+  async mercadoLibre(): Promise<ActivoLibre[]> {
+    const { data, error } = await this.sb.client
+      .from('v_activo_libre')
+      .select('*')
+      .order('precio_mercado', { ascending: false });
+    if (error) throw error;
+    return (data ?? []) as ActivoLibre[];
   }
 
   /** Premios ganados por un equipo. */
