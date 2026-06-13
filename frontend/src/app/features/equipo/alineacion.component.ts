@@ -1,6 +1,5 @@
 import { Component, OnInit, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { environment } from '../../../environments/environment';
 import {
   AlineacionGuardada, Competicion, Equipo, FalmService, FORMACIONES, ItemPlantilla, JornadaFalm, RolAlineacion,
 } from '../../core/falm.service';
@@ -292,16 +291,15 @@ export class AlineacionComponent implements OnInit {
 
   async guardar() {
     this.aviso.set('');
-    if (environment.devEquipoNombre) {
-      this.aviso.set('Modo demo: tu alineación no se guarda hasta activar tu cuenta. La pantalla es funcional.');
-      return;
-    }
     const eq = this.equipo(); const jor = this.jornada();
     if (!eq || !jor) return;
     this.guardando.set(true);
     try {
       await this.falm.guardarAlineacion(eq.id, jor.id, this.formacion(), this.roles());
-      this.aviso.set('✅ Alineación guardada.');
+      this.heredada.set(false);
+      // Recalcula resultados + clasificación con el motor de V2 para ver el efecto al momento.
+      try { await this.falm.recalcular(); this.aviso.set('✅ Alineación guardada y clasificación recalculada.'); }
+      catch { this.aviso.set('✅ Alineación guardada.'); }
     } catch (e: any) { this.aviso.set(e?.message ?? 'Error al guardar'); }
     finally { this.guardando.set(false); }
   }

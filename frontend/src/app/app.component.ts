@@ -1,7 +1,9 @@
 import { Component } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from './core/auth.service';
 import { FalmService } from './core/falm.service';
+import { SeasonService } from './core/season.service';
 import { environment } from '../environments/environment';
 import { FichaJugadorComponent } from './shared/ficha-jugador.component';
 
@@ -11,11 +13,18 @@ interface NavItem { path: string; icon: string; label: string; }
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, FichaJugadorComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, FichaJugadorComponent, FormsModule],
   template: `
     @if (auth.isLoggedIn()) {
       <header class="topbar">
         <span class="brand"><span class="ball">⚽</span> FALM</span>
+        @if (season.temporadas().length > 1) {
+          <select class="temp" [ngModel]="season.actualId()" (ngModelChange)="cambiarTemporada($event)" title="Temporada">
+            @for (t of season.temporadas(); track t.id) {
+              <option [value]="t.id">{{ t.nombre }}{{ t.activa ? '' : ' ·pruebas' }}</option>
+            }
+          </select>
+        }
         <span class="team">{{ team }}</span>
         <a class="gear" routerLink="/admin" aria-label="Administración" title="Administración">⚙️</a>
         <button class="logout" (click)="logout()" aria-label="Salir">⎋</button>
@@ -48,8 +57,11 @@ interface NavItem { path: string; icon: string; label: string; }
     }
     .brand { font-weight: 900; font-size: 1.15rem; letter-spacing: -.04em; }
     .brand .ball { filter: drop-shadow(0 0 6px var(--glow)); }
+    .temp { margin-left: auto; background: var(--surface-2); border: 1px solid var(--border); color: var(--ink);
+      border-radius: 9px; padding: 6px 8px; font-size: .76rem; font-weight: 700; max-width: 140px; }
     .team { margin-left: auto; font-weight: 700; font-size: .82rem; color: var(--primary);
       text-transform: uppercase; letter-spacing: .04em; }
+    .temp + .team { margin-left: 10px; }
     .gear { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px;
       border-radius: 9px; font-size: .95rem; opacity: .6; transition: opacity .14s ease; }
     .gear:hover { opacity: 1; }
@@ -100,8 +112,14 @@ export class AppComponent {
     { path: '/premios', icon: '💰', label: 'Premios' },
   ];
 
-  constructor(public auth: AuthService, falm: FalmService) {
+  constructor(public auth: AuthService, public season: SeasonService, falm: FalmService) {
+    season.ensure();
     falm.warmup(); // despierta el dyno del backend al arrancar
+  }
+
+  cambiarTemporada(id: string) {
+    this.season.set(id);
+    location.reload(); // recarga para que todas las pantallas relean la temporada elegida
   }
 
   async logout() {

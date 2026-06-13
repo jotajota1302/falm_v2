@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { environment } from '../../environments/environment';
 import { SupabaseService } from './supabase.service';
+import { SeasonService } from './season.service';
 
 /** Fila de la vista falm.v_clasificacion. */
 export interface FilaClasificacion {
@@ -127,16 +128,29 @@ export interface PuntosJugador {
 /** Acceso de lectura al schema falm. Las mutaciones críticas van por RPC/Edge (no aquí). */
 @Injectable({ providedIn: 'root' })
 export class FalmService {
-  constructor(private sb: SupabaseService) {}
+  constructor(private sb: SupabaseService, private season: SeasonService) {}
 
-  /** Competiciones de la temporada activa. */
+  /** Competiciones de la temporada seleccionada. */
   async competiciones(): Promise<Competicion[]> {
+    const id = await this.season.ensure();
     const { data, error } = await this.sb.client
       .from('competicion')
-      .select('id, tipo, nombre, temporada!inner(activa)')
-      .eq('temporada.activa', true);
+      .select('id, tipo, nombre')
+      .eq('temporada_id', id);
     if (error) throw error;
     return (data ?? []).map((c: any) => ({ id: c.id, tipo: c.tipo, nombre: c.nombre }));
+  }
+
+  /**
+   * Recalcula resultados + clasificación de la temporada seleccionada (motor V2).
+   * NO toca la temporada ACTIVA (sus resultados son snapshots reales importados);
+   * solo aplica a temporadas de pruebas/simulación.
+   */
+  async recalcular(): Promise<void> {
+    const id = await this.season.ensure();
+    if (this.season.actual()?.activa) return;
+    const { error } = await this.sb.client.rpc('recalcular_clasificacion', { p_temp: id });
+    if (error) throw error;
   }
 
   /**
@@ -144,9 +158,11 @@ export class FalmService {
    * ordenados por puntos. (En producción V2 con pipeline jugado se usaría v_clasificacion.)
    */
   async clasificacion(competicionId: string): Promise<FilaClasificacion[]> {
+    const id = await this.season.ensure();
     const { data, error } = await this.sb.client
       .from('equipo_falm')
       .select('id, nombre, puntos_clasif, puntos_totales, puntos_contra, victorias, victorias_min, empates, derrotas_min, derrotas')
+      .eq('temporada_id', id)
       .order('puntos_clasif', { ascending: false });
     if (error) throw error;
     return (data ?? []).map((e: any, i: number) => ({
@@ -242,10 +258,11 @@ export class FalmService {
    * poder ver Mi plantilla / Mis premios sin asociar usuarios reales.
    */
   async miEquipo(): Promise<Equipo | null> {
+    const tid = await this.season.ensure();
     let q = this.sb.client
       .from('equipo_falm')
-      .select('id, nombre, presupuesto, beneficio, temporada!inner(activa)')
-      .eq('temporada.activa', true);
+      .select('id, nombre, presupuesto, beneficio')
+      .eq('temporada_id', tid);
 
     if (environment.devEquipoNombre) {
       q = q.eq('nombre', environment.devEquipoNombre);
@@ -507,31 +524,22 @@ export class FalmService {
     formacion: string,
     roles: Record<string, RolAlineacion>
   ): Promise<void> {
-    const { data: ali, error } = await this.sb.client
-      .from('alineacion')
-      .upsert(
-        { equipo_falm_id: equipoId, jornada_falm_id: jornadaFalmId, formacion },
-        { onConflict: 'equipo_falm_id,jornada_falm_id' }
-      )
-      .select('id')
-      .single();
+    // Vía RPC SECURITY DEFINER: la escritura directa la bloquea RLS sin dueño/login.
+    const limpios: Record<string, string> = {};
+    for (const [activo_id, rol] of Object.entries(roles)) if (rol) limpios[activo_id] = rol;
+    const { error } = await this.sb.client.rpc('guardar_alineacion', {
+      p_equipo: equipoId, p_jornada: jornadaFalmId, p_formacion: formacion, p_roles: limpios,
+    });
     if (error) throw error;
-
-    await this.sb.client.from('alineacion_activo').delete().eq('alineacion_id', (ali as any).id);
-    const filas = Object.entries(roles)
-      .filter(([, r]) => !!r)
-      .map(([activo_id, rol], i) => ({ alineacion_id: (ali as any).id, activo_id, rol, orden: i + 1 }));
-    if (filas.length) {
-      const { error: e2 } = await this.sb.client.from('alineacion_activo').insert(filas);
-      if (e2) throw e2;
-    }
   }
 
   /** Ranking de beneficios (premios) de todos los equipos. */
   async rankingBeneficios(): Promise<{ nombre: string; beneficio: number }[]> {
+    const id = await this.season.ensure();
     const { data, error } = await this.sb.client
       .from('equipo_falm')
       .select('nombre, beneficio')
+      .eq('temporada_id', id)
       .order('beneficio', { ascending: false });
     if (error) throw error;
     return (data ?? []) as { nombre: string; beneficio: number }[];
@@ -590,10 +598,11 @@ export class FalmService {
 
   /** Equipos FALM de la temporada activa (para elegir rival en intercambios). */
   async equiposFalm(excluirId?: string): Promise<{ id: string; nombre: string }[]> {
+    const id = await this.season.ensure();
     const { data, error } = await this.sb.client
       .from('equipo_falm')
-      .select('id, nombre, temporada!inner(activa)')
-      .eq('temporada.activa', true)
+      .select('id, nombre')
+      .eq('temporada_id', id)
       .order('nombre', { ascending: true });
     if (error) throw error;
     return (data ?? []).filter((e: any) => e.id !== excluirId).map((e: any) => ({ id: e.id, nombre: e.nombre }));
