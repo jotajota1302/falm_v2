@@ -143,6 +143,76 @@ export class FalmService {
   }
 
   /**
+   * Clasificación calculada desde los enfrentamientos de una competición
+   * (Champions / Clausura, que no tienen snapshot en equipo_falm).
+   * Aplica el reparto 3 / 2-1 / 1.5-1.5 y agrega V/E/D y puntos a favor/contra.
+   */
+  async clasificacionCalculada(competicionId: string): Promise<FilaClasificacion[]> {
+    const js = await this.jornadas(competicionId);
+    const jids = js.map((j) => j.id);
+    if (jids.length === 0) return [];
+
+    const { data, error } = await this.sb.client
+      .from('enfrentamiento')
+      .select('equipo_local_id, equipo_visitante_id, puntos_local, puntos_visitante')
+      .in('jornada_falm_id', jids);
+    if (error) throw error;
+    const filas: any[] = data ?? [];
+
+    const ids = [...new Set(filas.flatMap((f) => [f.equipo_local_id, f.equipo_visitante_id]))];
+    const { data: eqs, error: e2 } = await this.sb.client
+      .from('equipo_falm').select('id, nombre').in('id', ids);
+    if (e2) throw e2;
+
+    type Acc = { id: string; nombre: string; pj: number; pf: number; pc: number;
+      v: number; vmin: number; e: number; dmin: number; d: number; pts: number };
+    const acc = new Map<string, Acc>();
+    for (const q of eqs ?? [])
+      acc.set(q.id, { id: q.id, nombre: q.nombre, pj: 0, pf: 0, pc: 0, v: 0, vmin: 0, e: 0, dmin: 0, d: 0, pts: 0 });
+
+    const reparto = (a: number, b: number): [number, number] => {
+      const dd = a - b;
+      if (dd >= 3) return [3, 0];
+      if (dd >= 0.5) return [2, 1];
+      if (dd > -0.5) return [1.5, 1.5];
+      if (dd > -3) return [1, 2];
+      return [0, 3];
+    };
+
+    for (const f of filas) {
+      if (f.puntos_local == null || f.puntos_visitante == null) continue;
+      const L = acc.get(f.equipo_local_id), V = acc.get(f.equipo_visitante_id);
+      if (!L || !V) continue;
+      const pl = Number(f.puntos_local), pv = Number(f.puntos_visitante);
+      const [cl, cv] = reparto(pl, pv);
+      L.pj++; V.pj++; L.pf += pl; L.pc += pv; V.pf += pv; V.pc += pl; L.pts += cl; V.pts += cv;
+      if (cl === 3) { L.v++; V.d++; }
+      else if (cl === 2) { L.vmin++; V.dmin++; }
+      else if (cl === 1.5) { L.e++; V.e++; }
+      else if (cl === 1) { L.dmin++; V.vmin++; }
+      else { L.d++; V.v++; }
+    }
+
+    return [...acc.values()]
+      .sort((a, b) => b.pts - a.pts || b.pf - a.pf)
+      .map((a, i) => ({
+        competicion_id: competicionId,
+        equipo_falm_id: a.id,
+        equipo_nombre: a.nombre,
+        posicion: i + 1,
+        puntos_clasificacion: +a.pts.toFixed(1),
+        puntos_favor: +a.pf.toFixed(1),
+        puntos_contra: +a.pc.toFixed(1),
+        victorias: a.v,
+        victorias_minimas: a.vmin,
+        empates: a.e,
+        derrotas_minimas: a.dmin,
+        derrotas: a.d,
+        partidos_jugados: a.pj,
+      }));
+  }
+
+  /**
    * El equipo del usuario en la temporada activa.
    * En modo dev (environment.devEquipoNombre) se fija un equipo por nombre, para
    * poder ver Mi plantilla / Mis premios sin asociar usuarios reales.

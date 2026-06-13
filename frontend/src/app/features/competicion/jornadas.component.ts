@@ -10,6 +10,16 @@ const COLORES = ['#00e676', '#38bdf8', '#fb7185', '#a3e635', '#ffc24b', '#c084fc
   template: `
     <h1>📅 Partidos</h1>
 
+    @if (competiciones().length > 1) {
+      <div class="comps">
+        @for (c of competiciones(); track c.id) {
+          <button class="comp" [class.on]="c.id === competicionId()" (click)="seleccionarCompeticion(c.id)">
+            <span class="ci">{{ icono(c.tipo) }}</span> {{ etiqueta(c.tipo) }}
+          </button>
+        }
+      </div>
+    }
+
     @if (jornadas().length > 0) {
       <div class="jchips">
         @for (j of jornadas(); track j.id) {
@@ -49,6 +59,13 @@ const COLORES = ['#00e676', '#38bdf8', '#fb7185', '#a3e635', '#ffc24b', '#c084fc
   `,
   styles: [`
     h1 { margin: 0 0 14px; }
+    .comps { display: flex; gap: 8px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 4px; }
+    .comp { flex: 0 0 auto; display: flex; align-items: center; gap: 6px; padding: 9px 15px; border-radius: 11px;
+      border: 1px solid var(--border); background: var(--surface); color: var(--muted); cursor: pointer;
+      font-weight: 800; font-size: .82rem; white-space: nowrap; transition: all .14s ease; }
+    .comp .ci { font-size: 1rem; }
+    .comp.on { background: rgba(0,230,118,.1); color: var(--primary); border-color: var(--primary);
+      box-shadow: inset 0 0 0 1px var(--primary); }
     .jchips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 14px; }
     .jchip { flex: 0 0 auto; min-width: 44px; height: 38px; border: 1px solid var(--border); background: var(--surface);
       color: var(--muted); border-radius: 10px; cursor: pointer; font-weight: 800; }
@@ -79,15 +96,29 @@ export class JornadasComponent implements OnInit {
   constructor(private falm: FalmService) {}
   ini(n: string) { return (n || '?').charAt(0).toUpperCase(); }
   color(n: string) { let h = 0; for (const c of n || '') h = (h * 31 + c.charCodeAt(0)) >>> 0; return COLORES[h % COLORES.length]; }
+  icono(t: string) { return t === 'CHAMPIONS' ? '🌟' : t === 'CLAUSURA' ? '🔚' : '🏆'; }
+  etiqueta(t: string) { return t === 'CHAMPIONS' ? 'Champions' : t === 'CLAUSURA' ? 'Clausura' : 'Liga'; }
 
   async ngOnInit() {
     try {
       const comps = await this.falm.competiciones();
+      // Orden estable: Liga, Champions, Clausura
+      const orden = { LIGA: 0, CHAMPIONS: 1, CLAUSURA: 2 } as Record<string, number>;
+      comps.sort((a, b) => (orden[a.tipo] ?? 9) - (orden[b.tipo] ?? 9));
       this.competiciones.set(comps);
       const liga = comps.find((c) => c.tipo === 'LIGA') ?? comps[0];
       if (liga) { this.competicionId.set(liga.id); await this.cargarJornadas(liga.id); }
       else this.cargando.set(false);
     } catch (e: any) { this.error.set(e?.message ?? 'Error'); this.cargando.set(false); }
+  }
+
+  async seleccionarCompeticion(id: string) {
+    if (id === this.competicionId()) return;
+    this.competicionId.set(id);
+    this.cargando.set(true); this.error.set('');
+    this.enfrentamientos.set([]); this.jornadas.set([]);
+    try { await this.cargarJornadas(id); }
+    catch (e: any) { this.error.set(e?.message ?? 'Error'); this.cargando.set(false); }
   }
 
   async cargarJornadas(compId: string) {

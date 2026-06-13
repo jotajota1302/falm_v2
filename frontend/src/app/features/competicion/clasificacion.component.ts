@@ -10,6 +10,16 @@ const COLORES = ['#00e676', '#38bdf8', '#fb7185', '#a3e635', '#ffc24b', '#c084fc
   template: `
     <h1>🏆 Clasificación</h1>
 
+    @if (competiciones().length > 1) {
+      <div class="comps">
+        @for (c of competiciones(); track c.id) {
+          <button class="comp" [class.on]="c.id === competicionId()" (click)="seleccionar(c.id)">
+            <span class="ci">{{ icono(c.tipo) }}</span> {{ etiqueta(c.tipo) }}
+          </button>
+        }
+      </div>
+    }
+
     @if (cargando()) {
       <p class="muted">Cargando…</p>
     } @else if (error()) {
@@ -45,6 +55,13 @@ const COLORES = ['#00e676', '#38bdf8', '#fb7185', '#a3e635', '#ffc24b', '#c084fc
   `,
   styles: [`
     h1 { margin: 0 0 16px; }
+    .comps { display: flex; gap: 8px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 4px; }
+    .comp { flex: 0 0 auto; display: flex; align-items: center; gap: 6px; padding: 9px 15px; border-radius: 11px;
+      border: 1px solid var(--border); background: var(--surface); color: var(--muted); cursor: pointer;
+      font-weight: 800; font-size: .82rem; white-space: nowrap; transition: all .14s ease; }
+    .comp .ci { font-size: 1rem; }
+    .comp.on { background: rgba(0,230,118,.1); color: var(--primary); border-color: var(--primary);
+      box-shadow: inset 0 0 0 1px var(--primary); }
     .tabla { overflow: hidden; }
     .row { display: grid; grid-template-columns: 42px 1fr 36px 30px 30px 30px 54px;
       align-items: center; padding: 11px 12px; border-bottom: 1px solid var(--border); }
@@ -71,6 +88,8 @@ const COLORES = ['#00e676', '#38bdf8', '#fb7185', '#a3e635', '#ffc24b', '#c084fc
   `],
 })
 export class ClasificacionComponent implements OnInit {
+  competiciones = signal<Competicion[]>([]);
+  competicionId = signal('');
   filas = signal<FilaClasificacion[]>([]);
   cargando = signal(true);
   error = signal('');
@@ -82,16 +101,41 @@ export class ClasificacionComponent implements OnInit {
     let h = 0; for (const ch of n || '') h = (h * 31 + ch.charCodeAt(0)) >>> 0;
     return COLORES[h % COLORES.length];
   }
+  icono(t: string) { return t === 'CHAMPIONS' ? '🌟' : t === 'CLAUSURA' ? '🔚' : '🏆'; }
+  etiqueta(t: string) { return t === 'CHAMPIONS' ? 'Champions' : t === 'CLAUSURA' ? 'Clausura' : 'Liga'; }
 
   async ngOnInit() {
     try {
       const comps: Competicion[] = await this.falm.competiciones();
+      const orden = { LIGA: 0, CHAMPIONS: 1, CLAUSURA: 2 } as Record<string, number>;
+      comps.sort((a, b) => (orden[a.tipo] ?? 9) - (orden[b.tipo] ?? 9));
+      this.competiciones.set(comps);
       const liga = comps.find((c) => c.tipo === 'LIGA') ?? comps[0];
-      if (liga) this.filas.set(await this.falm.clasificacion(liga.id));
+      if (liga) { this.competicionId.set(liga.id); await this.cargar(liga); }
+      else this.cargando.set(false);
     } catch (e: any) {
       this.error.set(e?.message ?? 'Error cargando la clasificación');
-    } finally {
       this.cargando.set(false);
     }
+  }
+
+  async seleccionar(id: string) {
+    if (id === this.competicionId()) return;
+    const c = this.competiciones().find((x) => x.id === id);
+    if (!c) return;
+    this.competicionId.set(id);
+    this.cargando.set(true); this.error.set(''); this.filas.set([]);
+    try { await this.cargar(c); }
+    catch (e: any) { this.error.set(e?.message ?? 'Error'); }
+    finally { this.cargando.set(false); }
+  }
+
+  /** Liga usa el snapshot oficial; Champions/Clausura se calculan desde enfrentamientos. */
+  private async cargar(c: Competicion) {
+    const filas = c.tipo === 'LIGA'
+      ? await this.falm.clasificacion(c.id)
+      : await this.falm.clasificacionCalculada(c.id);
+    this.filas.set(filas);
+    this.cargando.set(false);
   }
 }
