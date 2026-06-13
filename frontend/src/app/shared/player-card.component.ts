@@ -30,7 +30,7 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
   `,
   styles: [`
     .cromo {
-      position: relative; overflow: hidden;
+      position: relative; overflow: hidden; cursor: pointer;
       border: 1px solid var(--border); border-radius: 16px;
       background: linear-gradient(180deg, var(--surface), var(--bg-elev));
       padding: 10px; display: flex; flex-direction: column;

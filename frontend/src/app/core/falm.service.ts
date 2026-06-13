@@ -42,6 +42,7 @@ export interface ItemPlantilla {
   precio: number;
   foto?: string | null;
   escudo?: string | null;
+  ext_id?: number | null;
 }
 
 export interface PremioItem {
@@ -77,6 +78,7 @@ export interface ActivoLibre {
   precio_mercado: number;
   foto?: string | null;
   escudo?: string | null;
+  ext_id?: number | null;
 }
 
 export type RolAlineacion = 'TITULAR' | 'SUPLENTE_DEFENSA' | 'SUPLENTE_MEDIO' | 'SUPLENTE_DELANTERO' | null;
@@ -172,7 +174,7 @@ export class FalmService {
       .from('plantilla')
       .select(
         'precio, activo:activo_id (id, tipo, ' +
-          'jugador_lfp:jugador_lfp_id (nombre, apellido, posicion, foto, equipo_lfp:equipo_lfp_id (nombre, tla, escudo)), ' +
+          'jugador_lfp:jugador_lfp_id (nombre, apellido, posicion, foto, ext_id, equipo_lfp:equipo_lfp_id (nombre, tla, escudo)), ' +
           'equipo_lfp:equipo_lfp_id (nombre, tla, escudo))'
       )
       .eq('equipo_falm_id', equipoId)
@@ -192,6 +194,7 @@ export class FalmService {
         precio: p.precio,
         foto: esDefensa ? null : a.jugador_lfp?.foto,
         escudo: esDefensa ? a.equipo_lfp?.escudo : a.jugador_lfp?.equipo_lfp?.escudo,
+        ext_id: esDefensa ? null : a.jugador_lfp?.ext_id,
       } as ItemPlantilla;
     });
   }

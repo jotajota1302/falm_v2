@@ -1,6 +1,7 @@
 import { Component, OnInit, computed, signal } from '@angular/core';
 import { Equipo, FalmService, ItemPlantilla } from '../../core/falm.service';
 import { PlayerCardComponent } from '../../shared/player-card.component';
+import { FichaService } from '../../shared/ficha.service';
 
 const ORDEN: Record<string, number> = { PORTERO: 0, DEFENSA: 1, MEDIO: 2, DELANTERO: 3 };
 const ETI: Record<string, string> = { PORTERO: 'Porteros', DEFENSA: 'Defensas', MEDIO: 'Mediocampistas', DELANTERO: 'Delanteros' };
@@ -38,6 +39,7 @@ const ETI: Record<string, string> = { PORTERO: 'Porteros', DEFENSA: 'Defensas', 
         <div class="grid">
           @for (j of g.items; track j.activo_id) {
             <falm-player-card class="rise"
+              (click)="abrir(j)"
               [nombre]="j.nombre" [club]="j.club" [escudo]="j.escudo ?? null"
               [foto]="j.foto ?? null" [posicion]="j.posicion" [precio]="j.precio" />
           }
@@ -70,8 +72,11 @@ export class PlantillaComponent implements OnInit {
     return Object.keys(by).sort((a, b) => ORDEN[a] - ORDEN[b]).map((pos) => ({ pos, eti: ETI[pos] ?? pos, items: by[pos] }));
   });
 
-  constructor(private falm: FalmService) {}
+  constructor(private falm: FalmService, public ficha: FichaService) {}
   abr(p: string) { return ({ PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'MED', DELANTERO: 'DEL' } as Record<string, string>)[p] ?? p; }
+  abrir(j: ItemPlantilla) {
+    if (j.ext_id) this.ficha.open({ id: j.ext_id, nombre: j.nombre, equipo: j.club, escudo: j.escudo ?? '', foto: j.foto ?? '', posicion: j.posicion });
+  }
 
   async ngOnInit() {
     try {

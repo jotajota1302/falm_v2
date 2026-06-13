@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ActivoLibre, FalmService } from '../../core/falm.service';
 import { PlayerCardComponent } from '../../shared/player-card.component';
+import { FichaService } from '../../shared/ficha.service';
 
 const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
 
@@ -38,6 +39,7 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
       <div class="grid">
         @for (a of visibles().slice(0, limite()); track a.activo_id) {
           <falm-player-card
+            (click)="abrir(a)"
             [nombre]="a.nombre" [club]="a.club" [escudo]="a.escudo ?? null"
             [foto]="a.foto ?? null" [posicion]="a.posicion" [precio]="a.precio_mercado" />
         }
@@ -84,8 +86,11 @@ export class MercadoComponent implements OnInit {
     );
   });
 
-  constructor(private falm: FalmService) {}
+  constructor(private falm: FalmService, public ficha: FichaService) {}
   abr(p: string) { return ({ PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'MED', DELANTERO: 'DEL' } as Record<string, string>)[p] ?? p; }
+  abrir(a: ActivoLibre) {
+    if (a.ext_id) this.ficha.open({ id: a.ext_id, nombre: a.nombre, equipo: a.club, escudo: a.escudo ?? '', foto: a.foto ?? '', posicion: a.posicion });
+  }
   togglePos(p: string) { this.posFiltro.set(this.posFiltro() === p ? '' : p); this.limite.set(24); }
 
   async ngOnInit() {
