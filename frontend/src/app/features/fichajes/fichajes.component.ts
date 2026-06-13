@@ -57,12 +57,12 @@ import { ActivoLibre, Equipo, FalmService, JornadaFalm } from '../../core/falm.s
     .slot { display: flex; flex-direction: column; gap: 2px; min-width: 130px; }
     .slot .pr { font-size: .72rem; color: var(--muted); text-transform: uppercase; }
     .sel { font-weight: 600; display: flex; align-items: center; gap: 6px; }
-    .sel button { border: none; background: #fee2e2; color: #b91c1c; border-radius: 6px; cursor: pointer; padding: 0 6px; }
+    .sel button { border: none; background: rgba(251,113,133,.16); color: #fb7185; border-radius: 6px; cursor: pointer; padding: 0 6px; }
     .vacio { color: var(--faint); }
     .enviar { margin-left: auto; padding: 9px 18px; border: none; border-radius: 10px; background: var(--primary);
       color: #fff; font-weight: 700; cursor: pointer; }
     .enviar:disabled { opacity: .5; cursor: not-allowed; }
-    .aviso { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; padding: 10px 14px; border-radius: 10px; }
+    .aviso { background: rgba(0,230,118,.08); border: 1px solid rgba(0,230,118,.22); color: var(--primary); padding: 10px 14px; border-radius: 10px; }
     .buscar { width: 100%; padding: 11px 14px; border: 1px solid var(--border); border-radius: var(--radius-sm);
       font-size: 1rem; margin: 8px 0 14px; background: var(--surface); }
     .grid { display: flex; flex-direction: column; gap: 8px; }

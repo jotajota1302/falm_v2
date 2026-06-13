@@ -2,88 +2,95 @@ import { Component, OnInit, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ActivoLibre, FalmService } from '../../core/falm.service';
+import { PlayerCardComponent } from '../../shared/player-card.component';
 
-/** Mercado de jugadores libres (lectura). Pedir fichaje en /fichajes. */
+const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
+
+/** Mercado de fichables libres, en cromos, con buscador y filtro por posición. */
 @Component({
   selector: 'app-mercado',
   standalone: true,
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, PlayerCardComponent],
   template: `
     <div class="cab">
       <h1>🛒 Mercado</h1>
-      <a class="pedir" routerLink="/fichajes">🔁 Pedir fichaje</a>
+      <a class="btn" routerLink="/fichajes">Pedir fichaje</a>
     </div>
 
-    <input class="buscar" type="search" placeholder="Buscar jugador o club…" [(ngModel)]="filtro" />
+    <input class="buscar" type="search" placeholder="Buscar jugador o club…"
+           [ngModel]="texto()" (ngModelChange)="texto.set($event); limite.set(24)" />
+
+    <div class="filtros">
+      <button [class.on]="!posFiltro()" (click)="posFiltro.set('')">Todos</button>
+      @for (p of pos; track p) {
+        <button class="pos" [class]="abr(p)" [class.on]="posFiltro() === p" (click)="togglePos(p)">{{ abr(p) }}</button>
+      }
+    </div>
 
     @if (cargando()) {
       <p class="muted">Cargando…</p>
     } @else if (error()) {
       <p class="err">{{ error() }}</p>
     } @else if (visibles().length === 0) {
-      <p class="muted">No hay jugadores libres{{ filtro ? ' para “' + filtro + '”' : '' }}.</p>
+      <p class="muted">No hay jugadores para ese filtro.</p>
     } @else {
-      <p class="muted total">{{ visibles().length }} jugadores libres</p>
+      <p class="total faint num">{{ visibles().length }} jugadores libres</p>
       <div class="grid">
-        @for (a of visibles(); track a.activo_id) {
-          <div class="card jugador" [class.virtual]="a.tipo === 'DEFENSA'">
-            <div class="top">
-              <span class="pos">{{ posCorta(a.posicion) }}</span>
-              <span class="precio">{{ a.precio_mercado }}</span>
-            </div>
-            <div class="nom">{{ a.nombre }}</div>
-            <div class="club">{{ a.club }}</div>
-          </div>
+        @for (a of visibles().slice(0, limite()); track a.activo_id) {
+          <falm-player-card
+            [nombre]="a.nombre" [club]="a.club" [escudo]="a.escudo ?? null"
+            [foto]="a.foto ?? null" [posicion]="a.posicion" [precio]="a.precio_mercado" />
         }
       </div>
+      @if (visibles().length > limite()) {
+        <button class="mas" (click)="limite.set(limite() + 24)">Ver más ({{ visibles().length - limite() }})</button>
+      }
     }
   `,
   styles: [`
+    .cab { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
     h1 { margin: 0; }
-    .cab { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
-    .pedir { background: var(--primary); color: #fff; padding: 8px 14px; border-radius: 10px; font-weight: 600; font-size: .9rem; }
-    .buscar { width: 100%; padding: 11px 14px; border: 1px solid var(--border); border-radius: var(--radius-sm);
-      font-size: 1rem; margin-bottom: 14px; background: var(--surface); }
-    .total { margin: 0 0 12px; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
-    .jugador { padding: 14px; }
-    .jugador.virtual { border-style: dashed; background: var(--surface-2); }
-    .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-    .pos { font-size: .7rem; font-weight: 700; color: var(--muted); background: var(--surface-2);
-      border-radius: 6px; padding: 2px 7px; }
-    .precio { font-weight: 800; color: var(--primary); }
-    .nom { font-weight: 600; }
-    .club { color: var(--muted); font-size: .85rem; }
-    .muted { color: var(--muted); } .err { color: var(--bad); }
+    .buscar { width: 100%; margin-bottom: 12px; }
+    .filtros { display: flex; gap: 7px; margin-bottom: 16px; flex-wrap: wrap; }
+    .filtros button { background: var(--surface); border: 1px solid var(--border); color: var(--muted);
+      border-radius: 999px; padding: 6px 13px; cursor: pointer; font-weight: 700; font-size: .8rem; }
+    .filtros button.on { color: var(--ink); border-color: var(--border-strong); background: var(--surface-2); }
+    .filtros button.pos.on.POR { box-shadow: inset 0 0 0 1px var(--pos-POR); color: var(--pos-POR); }
+    .filtros button.pos.on.DEF { box-shadow: inset 0 0 0 1px var(--pos-DEF); color: var(--pos-DEF); }
+    .filtros button.pos.on.MED { box-shadow: inset 0 0 0 1px var(--pos-MED); color: var(--pos-MED); }
+    .filtros button.pos.on.DEL { box-shadow: inset 0 0 0 1px var(--pos-DEL); color: var(--pos-DEL); }
+    .total { margin: 0 0 12px; font-size: .8rem; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+    .mas { display: block; margin: 18px auto 0; background: var(--surface); border: 1px solid var(--border);
+      color: var(--ink); border-radius: 12px; padding: 11px 22px; cursor: pointer; font-weight: 700; }
+    .muted { color: var(--muted); } .err { color: #fb7185; }
   `],
 })
 export class MercadoComponent implements OnInit {
+  pos = POS;
   todos = signal<ActivoLibre[]>([]);
-  filtro = '';
+  texto = signal('');
+  posFiltro = signal('');
+  limite = signal(24);
   cargando = signal(true);
   error = signal('');
 
   visibles = computed(() => {
-    const f = this.filtro.trim().toLowerCase();
-    const lista = this.todos();
-    if (!f) return lista;
-    return lista.filter((a) => a.nombre.toLowerCase().includes(f) || a.club.toLowerCase().includes(f));
+    const f = this.texto().trim().toLowerCase();
+    const p = this.posFiltro();
+    return this.todos().filter((a) =>
+      (!p || a.posicion === p) &&
+      (!f || a.nombre.toLowerCase().includes(f) || a.club.toLowerCase().includes(f))
+    );
   });
 
   constructor(private falm: FalmService) {}
+  abr(p: string) { return ({ PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'MED', DELANTERO: 'DEL' } as Record<string, string>)[p] ?? p; }
+  togglePos(p: string) { this.posFiltro.set(this.posFiltro() === p ? '' : p); this.limite.set(24); }
 
   async ngOnInit() {
-    try {
-      this.todos.set(await this.falm.mercadoLibre());
-    } catch (e: any) {
-      this.error.set(e?.message ?? 'Error cargando el mercado');
-    } finally {
-      this.cargando.set(false);
-    }
-  }
-
-  posCorta(p: string): string {
-    const m: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'MED', DELANTERO: 'DEL' };
-    return m[p] ?? p;
+    try { this.todos.set(await this.falm.mercadoLibre()); }
+    catch (e: any) { this.error.set(e?.message ?? 'Error cargando el mercado'); }
+    finally { this.cargando.set(false); }
   }
 }

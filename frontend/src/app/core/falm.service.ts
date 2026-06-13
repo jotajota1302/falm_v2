@@ -40,6 +40,8 @@ export interface ItemPlantilla {
   nombre: string;       // jugador real o "Defensa <Club>" para porteros virtuales
   club: string;         // equipo LFP
   precio: number;
+  foto?: string | null;
+  escudo?: string | null;
 }
 
 export interface PremioItem {
@@ -73,6 +75,8 @@ export interface ActivoLibre {
   nombre: string;
   club: string;
   precio_mercado: number;
+  foto?: string | null;
+  escudo?: string | null;
 }
 
 export type RolAlineacion = 'TITULAR' | 'SUPLENTE_DEFENSA' | 'SUPLENTE_MEDIO' | 'SUPLENTE_DELANTERO' | null;
@@ -158,8 +162,8 @@ export class FalmService {
       .from('plantilla')
       .select(
         'precio, activo:activo_id (id, tipo, ' +
-          'jugador_lfp:jugador_lfp_id (nombre, apellido, posicion, equipo_lfp:equipo_lfp_id (nombre, tla)), ' +
-          'equipo_lfp:equipo_lfp_id (nombre, tla))'
+          'jugador_lfp:jugador_lfp_id (nombre, apellido, posicion, foto, equipo_lfp:equipo_lfp_id (nombre, tla, escudo)), ' +
+          'equipo_lfp:equipo_lfp_id (nombre, tla, escudo))'
       )
       .eq('equipo_falm_id', equipoId)
       .is('fecha_baja', null);
@@ -176,6 +180,8 @@ export class FalmService {
           : `${a.jugador_lfp?.nombre ?? ''} ${a.jugador_lfp?.apellido ?? ''}`.trim(),
         club: esDefensa ? a.equipo_lfp?.nombre ?? '' : a.jugador_lfp?.equipo_lfp?.nombre ?? '',
         precio: p.precio,
+        foto: esDefensa ? null : a.jugador_lfp?.foto,
+        escudo: esDefensa ? a.equipo_lfp?.escudo : a.jugador_lfp?.equipo_lfp?.escudo,
       } as ItemPlantilla;
     });
   }

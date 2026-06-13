@@ -1,65 +1,140 @@
-/* ===== FALM V2 — sistema de diseño ===== */
+/* ============================================================
+   FALM V2 — Sistema de diseño "MATCHDAY" (dark sport premium)
+   ============================================================ */
 :root {
-  --bg: #eef2f6;
-  --surface: #ffffff;
-  --surface-2: #f8fafc;
-  --ink: #0f172a;
-  --muted: #64748b;
-  --faint: #94a3b8;
-  --border: #e6ebf1;
-  --primary: #0f766e;       /* teal/verde fútbol */
-  --primary-ink: #ffffff;
-  --accent: #f59e0b;        /* dorado premios */
-  --ok: #16a34a;
-  --bad: #dc2626;
-  --radius: 16px;
-  --radius-sm: 10px;
-  --shadow: 0 1px 2px rgba(15, 23, 42, .04), 0 4px 16px rgba(15, 23, 42, .06);
-  --shadow-sm: 0 1px 2px rgba(15, 23, 42, .06);
+  /* superficies (estadio nocturno) */
+  --bg: #080d0b;
+  --bg-elev: #0d1411;
+  --surface: #121b17;
+  --surface-2: #1a2620;
+  --border: rgba(255, 255, 255, .08);
+  --border-strong: rgba(255, 255, 255, .15);
+
+  /* texto */
+  --ink: #eef3f0;
+  --muted: #93a39b;
+  --faint: #5e6e67;
+
+  /* marca */
+  --primary: #00e676;
+  --primary-deep: #00b85e;
+  --primary-ink: #042716;
+  --glow: rgba(0, 230, 118, .35);
+  --gold: #ffc24b;
+  --accent: #ffc24b;   /* alias dorado (compat) */
+  --bad: #fb7185;
+
+  /* colores por posición (convención fantasy) */
+  --pos-POR: #f59e0b;
+  --pos-DEF: #38bdf8;
+  --pos-MED: #a3e635;
+  --pos-DEL: #fb7185;
+
+  /* forma */
+  --r: 18px;
+  --r-sm: 12px;
+  --r-xs: 8px;
+  --shadow: 0 10px 34px rgba(0, 0, 0, .5);
+  --shadow-sm: 0 2px 10px rgba(0, 0, 0, .35);
+  --font: 'Archivo', system-ui, -apple-system, sans-serif;
 }
 
 * { box-sizing: border-box; }
-html, body { margin: 0; padding: 0; height: 100%; }
+html, body { margin: 0; padding: 0; min-height: 100%; }
 body {
-  font-family: 'Segoe UI', system-ui, -apple-system, Roboto, Helvetica, Arial, sans-serif;
-  background: var(--bg);
+  font-family: var(--font);
   color: var(--ink);
+  background: var(--bg);
+  background-image:
+    radial-gradient(1100px 520px at 50% -12%, rgba(0, 230, 118, .11), transparent 62%),
+    radial-gradient(760px 380px at 102% 2%, rgba(56, 189, 248, .06), transparent 55%);
+  background-attachment: fixed;
   -webkit-font-smoothing: antialiased;
+  letter-spacing: -.01em;
 }
 a { color: inherit; text-decoration: none; }
-h1 { font-size: 1.5rem; font-weight: 800; letter-spacing: -.02em; }
-h2 { font-size: 1.05rem; }
-h3 { font-size: .95rem; }
 
-/* utilidades reutilizables */
+h1 { font-size: 1.55rem; font-weight: 800; letter-spacing: -.03em; margin: 0; }
+h2 { font-size: 1.05rem; font-weight: 700; letter-spacing: -.02em; }
+h3 { font-size: .95rem; font-weight: 700; }
+
+/* ---- utilidades ---- */
 .card {
-  background: var(--surface);
+  background: linear-gradient(180deg, var(--surface), var(--bg-elev));
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: var(--r);
   box-shadow: var(--shadow-sm);
 }
 .muted { color: var(--muted); }
 .faint { color: var(--faint); }
-.err { color: var(--bad); }
+.err { color: #fb7185; }
+.num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
 
 .chip {
-  display: inline-block;
-  padding: 2px 10px;
-  border-radius: 999px;
-  font-size: .78rem;
-  font-weight: 600;
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px; border-radius: 999px;
+  font-size: .74rem; font-weight: 700; letter-spacing: .01em;
 }
-.chip-ok { background: #dcfce7; color: #166534; }
-.chip-warn { background: #fef3c7; color: #b45309; }
+.chip-gold { background: rgba(255, 194, 75, .14); color: var(--gold); }
+.chip-ok { background: rgba(0, 230, 118, .16); color: var(--primary); }
+.chip-warn { background: rgba(245, 158, 11, .16); color: #fbbf24; }
+
+/* badge de posición */
+.pos {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 34px; padding: 2px 7px; border-radius: 7px;
+  font-size: .68rem; font-weight: 800; letter-spacing: .03em;
+  color: #07120d;
+}
+.pos.POR { background: var(--pos-POR); }
+.pos.DEF { background: var(--pos-DEF); }
+.pos.MED { background: var(--pos-MED); }
+.pos.DEL { background: var(--pos-DEL); }
+
+/* precio en € */
+.euro { color: var(--gold); font-weight: 800; }
+.euro::after { content: ' M'; font-size: .7em; font-weight: 600; opacity: .7; }
 
 /* tabla base */
 table.falm { width: 100%; border-collapse: collapse; }
-table.falm th, table.falm td { padding: 11px 8px; text-align: center; font-size: .9rem; }
-table.falm thead th { background: var(--surface-2); color: var(--muted); font-weight: 600;
-  font-size: .76rem; text-transform: uppercase; letter-spacing: .03em; }
-table.falm tbody tr { border-top: 1px solid var(--border); }
-table.falm tbody tr:hover { background: var(--surface-2); }
+table.falm th, table.falm td { padding: 12px 8px; text-align: center; font-size: .9rem; }
+table.falm thead th {
+  color: var(--faint); font-weight: 700; font-size: .68rem;
+  text-transform: uppercase; letter-spacing: .06em;
+  border-bottom: 1px solid var(--border);
+}
+table.falm tbody tr { border-bottom: 1px solid var(--border); }
+table.falm tbody tr:last-child { border-bottom: none; }
 
-/* scrollbar fino */
-::-webkit-scrollbar { height: 8px; width: 8px; }
-::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 999px; }
+/* inputs */
+input, select {
+  font-family: var(--font);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  color: var(--ink);
+  padding: 11px 14px;
+  font-size: 1rem;
+}
+input::placeholder { color: var(--faint); }
+input:focus, select:focus { outline: none; border-color: var(--primary-deep); }
+
+/* botón primario */
+.btn {
+  border: none; cursor: pointer; font-family: var(--font);
+  font-weight: 700; border-radius: var(--r-sm);
+  padding: 11px 18px; font-size: .95rem;
+  background: var(--primary); color: var(--primary-ink);
+  box-shadow: 0 6px 20px var(--glow);
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+.btn:hover { transform: translateY(-1px); }
+.btn:disabled { opacity: .45; cursor: not-allowed; box-shadow: none; }
+
+/* scrollbars finos */
+::-webkit-scrollbar { height: 7px; width: 7px; }
+::-webkit-scrollbar-thumb { background: var(--surface-2); border-radius: 999px; }
+
+/* entrada con stagger */
+@keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.rise { animation: rise .4s cubic-bezier(.2, .7, .2, 1) both; }

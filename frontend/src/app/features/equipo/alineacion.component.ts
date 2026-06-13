@@ -71,7 +71,7 @@ const ETI: Record<string, string> = { PORTERO: 'Porteros', DEFENSA: 'Defensas', 
     .cont .t { font-weight: 700; color: var(--bad); } .cont .t.ok { color: var(--ok); }
     .cont .s { color: var(--muted); }
     .guardar { padding: 9px 18px; border: none; border-radius: 10px; background: var(--primary); color: #fff; font-weight: 700; cursor: pointer; }
-    .aviso { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; padding: 10px 14px; border-radius: 10px; }
+    .aviso { background: rgba(0,230,118,.08); border: 1px solid rgba(0,230,118,.22); color: var(--primary); padding: 10px 14px; border-radius: 10px; }
     .lista { display: flex; flex-direction: column; gap: 8px; }
     .fila { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; }
     .jug { display: flex; flex-direction: column; }

@@ -1,104 +1,93 @@
 import { Component, OnInit, signal } from '@angular/core';
-import { FalmService, FilaClasificacion, Competicion } from '../../core/falm.service';
+import { Competicion, FalmService, FilaClasificacion } from '../../core/falm.service';
 
-/** Clasificación por competición, leyendo la vista falm.v_clasificacion. */
+const COLORES = ['#00e676', '#38bdf8', '#fb7185', '#a3e635', '#ffc24b', '#c084fc', '#f97316', '#2dd4bf', '#f472b6', '#60a5fa'];
+
+/** Clasificación con avatares de equipo y top-3 destacado. */
 @Component({
   selector: 'app-clasificacion',
   standalone: true,
   template: `
     <h1>🏆 Clasificación</h1>
 
-    @if (competiciones().length > 1) {
-      <div class="tabs">
-        @for (c of competiciones(); track c.id) {
-          <button [class.active]="c.id === competicionId()" (click)="seleccionar(c.id)">{{ c.nombre }}</button>
-        }
-      </div>
-    }
-
     @if (cargando()) {
       <p class="muted">Cargando…</p>
     } @else if (error()) {
       <p class="err">{{ error() }}</p>
     } @else if (filas().length === 0) {
-      <p class="muted">Aún no hay clasificación (sin jornadas jugadas o sin datos de temporada).</p>
+      <p class="muted">Aún no hay clasificación.</p>
     } @else {
-      <div class="wrap card">
-        <table class="falm">
-          <thead>
-            <tr>
-              <th>#</th><th class="eqh">Equipo</th><th>PJ</th><th>Pts</th>
-              <th class="sec">V</th><th class="sec">Vm</th><th class="sec">E</th>
-              <th class="sec">Dm</th><th class="sec">D</th><th class="sec">PF</th><th class="sec">PC</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (f of filas(); track f.equipo_falm_id) {
-              <tr>
-                <td class="pos">{{ f.posicion }}</td>
-                <td class="eq">{{ f.equipo_nombre }}</td>
-                <td>{{ f.partidos_jugados }}</td>
-                <td class="pts">{{ f.puntos_clasificacion }}</td>
-                <td class="sec">{{ f.victorias }}</td><td class="sec">{{ f.victorias_minimas }}</td>
-                <td class="sec">{{ f.empates }}</td>
-                <td class="sec">{{ f.derrotas_minimas }}</td><td class="sec">{{ f.derrotas }}</td>
-                <td class="sec">{{ f.puntos_favor }}</td><td class="sec">{{ f.puntos_contra }}</td>
-              </tr>
-            }
-          </tbody>
-        </table>
+      <div class="tabla card rise">
+        <div class="row head">
+          <span class="c-pos">#</span><span class="c-eq">Equipo</span>
+          <span class="c-n">PJ</span><span class="c-sec">V</span><span class="c-sec">E</span>
+          <span class="c-sec">D</span><span class="c-pts">Pts</span>
+        </div>
+        @for (f of filas(); track f.equipo_falm_id; let i = $index) {
+          <div class="row" [class.top]="i < 3" [style.--accent]="color(f.equipo_nombre)">
+            <span class="c-pos num">
+              @if (i < 3) { <span class="medal" [attr.data-m]="i+1">{{ i+1 }}</span> }
+              @else { {{ f.posicion }} }
+            </span>
+            <span class="c-eq">
+              <span class="av" [style.background]="color(f.equipo_nombre)">{{ inicial(f.equipo_nombre) }}</span>
+              <span class="nm">{{ f.equipo_nombre }}</span>
+            </span>
+            <span class="c-n num">{{ f.partidos_jugados }}</span>
+            <span class="c-sec num">{{ f.victorias }}</span>
+            <span class="c-sec num">{{ f.empates }}</span>
+            <span class="c-sec num">{{ f.derrotas }}</span>
+            <span class="c-pts num">{{ f.puntos_clasificacion }}</span>
+          </div>
+        }
       </div>
-      <p class="leyenda faint">PJ jugados · Pts clasificación · V/Vm/E/Dm/D · PF/PC puntos a favor/contra</p>
     }
   `,
   styles: [`
     h1 { margin: 0 0 16px; }
-    .tabs { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
-    .tabs button { padding: 8px 14px; border: 1px solid var(--border); background: var(--surface); border-radius: 999px; cursor: pointer; }
-    .tabs button.active { background: var(--primary); color: #fff; border-color: var(--primary); }
-    .wrap { overflow: hidden; }
-    table.falm td.pos { font-weight: 700; color: var(--muted); }
-    table.falm th.eqh, table.falm td.eq { text-align: left; }
-    table.falm td.eq { font-weight: 600; }
-    table.falm td.pts { font-weight: 800; color: var(--primary); }
-    .leyenda { margin: 10px 2px 0; font-size: .76rem; }
-    .muted { color: var(--muted); } .err { color: var(--bad); }
+    .tabla { overflow: hidden; }
+    .row { display: grid; grid-template-columns: 42px 1fr 36px 30px 30px 30px 54px;
+      align-items: center; padding: 11px 12px; border-bottom: 1px solid var(--border); }
+    .row:last-child { border-bottom: none; }
+    .row.head { font-size: .66rem; text-transform: uppercase; letter-spacing: .06em; color: var(--faint); font-weight: 700; }
+    .row.head span { text-align: center; }
+    .row.top { background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 10%, transparent), transparent 40%); }
+    .c-pos { text-align: center; font-weight: 700; color: var(--muted); }
+    .medal { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px;
+      border-radius: 50%; font-weight: 800; font-size: .8rem; color: #07120d; }
+    .medal[data-m="1"] { background: #ffc24b; } .medal[data-m="2"] { background: #cbd5e1; } .medal[data-m="3"] { background: #d4915a; }
+    .c-eq { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .av { flex: 0 0 auto; width: 30px; height: 30px; border-radius: 9px; display: flex; align-items: center;
+      justify-content: center; font-weight: 800; font-size: .85rem; color: #07120d; }
+    .nm { font-weight: 700; font-size: .9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .c-n, .c-sec { text-align: center; color: var(--muted); font-size: .85rem; }
+    .c-pts { text-align: center; font-weight: 900; font-size: 1.05rem; color: var(--primary); }
+    .muted { color: var(--muted); } .err { color: #fb7185; }
 
-    /* En móvil ocultamos columnas secundarias para que la tabla quepa */
-    @media (max-width: 620px) {
-      .sec { display: none; }
-      table.falm th, table.falm td { padding: 12px 6px; }
-      .leyenda { display: none; }
+    @media (max-width: 560px) {
+      .row { grid-template-columns: 38px 1fr 30px 50px; }
+      .c-sec { display: none; }
     }
   `],
 })
 export class ClasificacionComponent implements OnInit {
-  competiciones = signal<Competicion[]>([]);
-  competicionId = signal<string>('');
   filas = signal<FilaClasificacion[]>([]);
   cargando = signal(true);
   error = signal('');
 
   constructor(private falm: FalmService) {}
 
-  async ngOnInit() {
-    try {
-      const comps = await this.falm.competiciones();
-      this.competiciones.set(comps);
-      if (comps.length > 0) await this.seleccionar(comps[0].id);
-      else this.cargando.set(false);
-    } catch (e: any) {
-      this.error.set(e?.message ?? 'Error cargando competiciones');
-      this.cargando.set(false);
-    }
+  inicial(n: string) { return (n || '?').trim().charAt(0).toUpperCase(); }
+  color(n: string) {
+    let h = 0; for (const ch of n || '') h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+    return COLORES[h % COLORES.length];
   }
 
-  async seleccionar(id: string) {
-    this.competicionId.set(id);
-    this.cargando.set(true);
-    this.error.set('');
+  async ngOnInit() {
     try {
-      this.filas.set(await this.falm.clasificacion(id));
+      const comps: Competicion[] = await this.falm.competiciones();
+      const liga = comps.find((c) => c.tipo === 'LIGA') ?? comps[0];
+      if (liga) this.filas.set(await this.falm.clasificacion(liga.id));
     } catch (e: any) {
       this.error.set(e?.message ?? 'Error cargando la clasificación');
     } finally {

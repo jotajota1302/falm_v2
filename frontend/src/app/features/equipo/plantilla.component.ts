@@ -1,27 +1,16 @@
 import { Component, OnInit, computed, signal } from '@angular/core';
-import { FalmService, Equipo, ItemPlantilla } from '../../core/falm.service';
+import { Equipo, FalmService, ItemPlantilla } from '../../core/falm.service';
+import { PlayerCardComponent } from '../../shared/player-card.component';
 
 const ORDEN: Record<string, number> = { PORTERO: 0, DEFENSA: 1, MEDIO: 2, DELANTERO: 3 };
-const ETIQUETA: Record<string, string> = {
-  PORTERO: 'Porteros', DEFENSA: 'Defensas', MEDIO: 'Medios', DELANTERO: 'Delanteros',
-};
+const ETI: Record<string, string> = { PORTERO: 'Porteros', DEFENSA: 'Defensas', MEDIO: 'Mediocampistas', DELANTERO: 'Delanteros' };
 
-/** Mi plantilla: activos en propiedad agrupados por posición. */
+/** Mi plantilla en cromos, agrupada por posición. */
 @Component({
   selector: 'app-plantilla',
   standalone: true,
+  imports: [PlayerCardComponent],
   template: `
-    <div class="head">
-      <h1>⚽ Mi plantilla</h1>
-      @if (equipo()) {
-        <div class="meta">
-          <strong>{{ equipo()!.nombre }}</strong>
-          <span class="presu">Presupuesto: {{ equipo()!.presupuesto }}</span>
-          <span class="n">{{ items().length }} jugadores</span>
-        </div>
-      }
-    </div>
-
     @if (cargando()) {
       <p class="muted">Cargando…</p>
     } @else if (error()) {
@@ -29,33 +18,44 @@ const ETIQUETA: Record<string, string> = {
     } @else if (!equipo()) {
       <p class="muted">No tienes equipo en la temporada activa.</p>
     } @else {
+      <header class="hero rise">
+        <div>
+          <h1>{{ equipo()!.nombre }}</h1>
+          <span class="sub">{{ items().length }} jugadores en plantilla</span>
+        </div>
+        <div class="presu">
+          <span class="lbl">Presupuesto</span>
+          <span class="val euro num">{{ equipo()!.presupuesto }}</span>
+        </div>
+      </header>
+
       @for (g of grupos(); track g.pos) {
-        <h3>{{ g.etiqueta }} <span class="muted">({{ g.items.length }})</span></h3>
+        <div class="linea">
+          <span class="pos" [class]="abr(g.pos)">{{ abr(g.pos) }}</span>
+          <h3>{{ g.eti }}</h3>
+          <span class="n faint">{{ g.items.length }}</span>
+        </div>
         <div class="grid">
           @for (j of g.items; track j.activo_id) {
-            <div class="card" [class.virtual]="j.tipo === 'DEFENSA'">
-              <div class="nom">{{ j.nombre }}</div>
-              <div class="club">{{ j.club }}</div>
-              <div class="precio">{{ j.precio }}</div>
-            </div>
+            <falm-player-card class="rise"
+              [nombre]="j.nombre" [club]="j.club" [escudo]="j.escudo ?? null"
+              [foto]="j.foto ?? null" [posicion]="j.posicion" [precio]="j.precio" />
           }
         </div>
       }
     }
   `,
   styles: [`
-    .head { display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:8px; }
-    h1 { margin:0 0 12px; }
-    .meta { display:flex; gap:16px; align-items:center; color:#475569; }
-    .presu { background:#dcfce7; color:#166534; padding:2px 10px; border-radius:999px; font-size:.85rem; }
-    h3 { margin:18px 0 8px; }
-    .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:12px; }
-    .card { background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:12px; }
-    .card.virtual { border-style:dashed; background:#f8fafc; }
-    .nom { font-weight:600; }
-    .club { color:#64748b; font-size:.85rem; }
-    .precio { margin-top:6px; font-weight:700; color:#0f172a; }
-    .muted { color:#94a3b8; } .err { color:#dc2626; }
+    .hero { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 22px; }
+    .hero .sub { color: var(--muted); font-size: .85rem; }
+    .presu { text-align: right; }
+    .presu .lbl { display: block; font-size: .7rem; color: var(--faint); text-transform: uppercase; letter-spacing: .05em; }
+    .presu .val { font-size: 1.5rem; }
+    .linea { display: flex; align-items: center; gap: 10px; margin: 20px 0 12px; }
+    .linea h3 { margin: 0; }
+    .linea .n { margin-left: auto; font-weight: 700; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+    .muted { color: var(--muted); } .err { color: var(--bad, #fb7185); }
   `],
 })
 export class PlantillaComponent implements OnInit {
@@ -67,12 +67,11 @@ export class PlantillaComponent implements OnInit {
   grupos = computed(() => {
     const by: Record<string, ItemPlantilla[]> = {};
     for (const it of this.items()) (by[it.posicion] ??= []).push(it);
-    return Object.keys(by)
-      .sort((a, b) => ORDEN[a] - ORDEN[b])
-      .map((pos) => ({ pos, etiqueta: ETIQUETA[pos] ?? pos, items: by[pos] }));
+    return Object.keys(by).sort((a, b) => ORDEN[a] - ORDEN[b]).map((pos) => ({ pos, eti: ETI[pos] ?? pos, items: by[pos] }));
   });
 
   constructor(private falm: FalmService) {}
+  abr(p: string) { return ({ PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'MED', DELANTERO: 'DEL' } as Record<string, string>)[p] ?? p; }
 
   async ngOnInit() {
     try {

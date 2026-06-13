@@ -1,10 +1,11 @@
 import { Component } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from './core/auth.service';
+import { environment } from '../environments/environment';
 
 interface NavItem { path: string; icon: string; label: string; }
 
-/** Shell de la app: topbar + navegación adaptable (sidebar en desktop, bottom-nav en móvil). */
+/** Shell "Matchday": topbar translúcido + nav (sidebar desktop / bottom-nav móvil). */
 @Component({
   selector: 'app-root',
   standalone: true,
@@ -12,9 +13,8 @@ interface NavItem { path: string; icon: string; label: string; }
   template: `
     @if (auth.isLoggedIn()) {
       <header class="topbar">
-        <span class="brand">⚽ FALM</span>
-        <span class="spacer"></span>
-        <span class="user">{{ auth.user()?.email ?? 'Invitado' }}</span>
+        <span class="brand"><span class="ball">⚽</span> FALM</span>
+        <span class="team">{{ team }}</span>
         <button class="logout" (click)="logout()" aria-label="Salir">⎋</button>
       </header>
 
@@ -34,41 +34,54 @@ interface NavItem { path: string; icon: string; label: string; }
     }
   `,
   styles: [`
-    .topbar { position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 12px;
-      height: 56px; padding: 0 16px; background: var(--primary); color: var(--primary-ink);
-      box-shadow: var(--shadow-sm); }
-    .brand { font-weight: 800; letter-spacing: -.01em; }
-    .spacer { flex: 1; }
-    .user { opacity: .9; font-size: .85rem; max-width: 45vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .logout { background: rgba(255,255,255,.15); border: none; color: #fff; width: 32px; height: 32px;
-      border-radius: 8px; cursor: pointer; font-size: 1rem; }
+    .topbar {
+      position: sticky; top: 0; z-index: 30;
+      display: flex; align-items: center; gap: 12px;
+      height: 58px; padding: 0 18px;
+      background: rgba(8, 13, 11, .72);
+      backdrop-filter: saturate(160%) blur(14px);
+      border-bottom: 1px solid var(--border);
+    }
+    .brand { font-weight: 900; font-size: 1.15rem; letter-spacing: -.04em; }
+    .brand .ball { filter: drop-shadow(0 0 6px var(--glow)); }
+    .team { margin-left: auto; font-weight: 700; font-size: .82rem; color: var(--primary);
+      text-transform: uppercase; letter-spacing: .04em; }
+    .logout { background: var(--surface-2); border: 1px solid var(--border); color: var(--muted);
+      width: 34px; height: 34px; border-radius: 9px; cursor: pointer; font-size: 1rem; }
 
-    .layout { display: flex; min-height: calc(100vh - 56px); }
-    .content { flex: 1; padding: 20px; max-width: 1100px; margin: 0 auto; width: 100%; }
+    .layout { display: flex; min-height: calc(100vh - 58px); }
+    .content { flex: 1; padding: 22px; max-width: 1080px; margin: 0 auto; width: 100%; }
 
-    /* ---- desktop: sidebar ---- */
-    .nav { width: 210px; background: var(--surface); border-right: 1px solid var(--border);
-      padding: 12px; display: flex; flex-direction: column; gap: 4px; }
-    .nav a { display: flex; align-items: center; gap: 12px; padding: 11px 12px; border-radius: var(--radius-sm);
-      color: var(--muted); font-weight: 600; font-size: .92rem; transition: background .12s, color .12s; }
+    /* sidebar (desktop) */
+    .nav { width: 212px; padding: 14px 12px; display: flex; flex-direction: column; gap: 4px;
+      border-right: 1px solid var(--border); }
+    .nav a { display: flex; align-items: center; gap: 12px; padding: 11px 13px; border-radius: 11px;
+      color: var(--muted); font-weight: 700; font-size: .9rem; transition: all .14s ease; }
     .nav a .ic { font-size: 1.15rem; width: 22px; text-align: center; }
-    .nav a:hover { background: var(--surface-2); color: var(--ink); }
-    .nav a.active { background: var(--primary); color: #fff; }
+    .nav a:hover { background: var(--surface); color: var(--ink); }
+    .nav a.active { color: var(--primary); background: rgba(0, 230, 118, .1);
+      box-shadow: inset 2px 0 0 var(--primary); }
 
-    /* ---- móvil: bottom nav ---- */
+    /* bottom-nav (móvil) */
     @media (max-width: 760px) {
       .layout { flex-direction: column; }
-      .content { padding: 16px 14px 84px; }   /* hueco para la barra inferior */
-      .nav { position: fixed; bottom: 0; left: 0; right: 0; width: auto; flex-direction: row;
-        border-right: none; border-top: 1px solid var(--border); padding: 6px 4px;
-        justify-content: space-around; box-shadow: 0 -2px 12px rgba(15,23,42,.08); z-index: 20; }
-      .nav a { flex-direction: column; gap: 2px; padding: 6px 4px; font-size: .62rem; flex: 1; text-align: center; }
-      .nav a .ic { font-size: 1.25rem; width: auto; }
-      .nav a.active { background: transparent; color: var(--primary); }
+      .content { padding: 16px 14px 90px; }
+      .nav {
+        position: fixed; bottom: 0; left: 0; right: 0; width: auto; z-index: 30;
+        flex-direction: row; justify-content: space-around; gap: 0;
+        padding: 8px 4px calc(8px + env(safe-area-inset-bottom));
+        border-right: none; border-top: 1px solid var(--border);
+        background: rgba(8, 13, 11, .82); backdrop-filter: saturate(160%) blur(16px);
+      }
+      .nav a { flex-direction: column; gap: 3px; padding: 4px 2px; font-size: .58rem; flex: 1;
+        text-align: center; border-radius: 10px; }
+      .nav a.active { background: transparent; box-shadow: none; }
+      .nav a.active .ic { transform: translateY(-1px); filter: drop-shadow(0 4px 8px var(--glow)); }
     }
   `],
 })
 export class AppComponent {
+  team = environment.devEquipoNombre || '';
   items: NavItem[] = [
     { path: '/dashboard', icon: '🏠', label: 'Inicio' },
     { path: '/plantilla', icon: '👕', label: 'Equipo' },
