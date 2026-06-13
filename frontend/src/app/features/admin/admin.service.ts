@@ -117,6 +117,37 @@ export class AdminService {
   }
 }
 
+  // ---- Simulación (temporada de pruebas) -----------------------------------
+  async temporadaPruebas(): Promise<string | null> {
+    const { data } = await this.sb.client.from('temporada').select('id').eq('nombre', 'Pruebas 26-27').maybeSingle();
+    return (data as any)?.id ?? null;
+  }
+
+  async clasificacionTemporada(tempId: string): Promise<{ nombre: string; pts: number; favor: number; v: number; vm: number; e: number; dm: number; d: number }[]> {
+    const { data, error } = await this.sb.client.from('equipo_falm')
+      .select('nombre, puntos_clasif, puntos_totales, victorias, victorias_min, empates, derrotas_min, derrotas')
+      .eq('temporada_id', tempId).order('puntos_clasif', { ascending: false }).order('puntos_totales', { ascending: false });
+    if (error) throw error;
+    return (data ?? []).map((e: any) => ({
+      nombre: e.nombre, pts: e.puntos_clasif, favor: e.puntos_totales,
+      v: e.victorias, vm: e.victorias_min, e: e.empates, dm: e.derrotas_min, d: e.derrotas,
+    }));
+  }
+
+  async partidosTemporada(tempId: string): Promise<{ jornada: number; local: string; visitante: string; pl: number; pv: number }[]> {
+    const { data, error } = await this.sb.client.from('enfrentamiento')
+      .select('puntos_local, puntos_visitante, local:equipo_local_id (nombre), visitante:equipo_visitante_id (nombre), jornada_falm:jornada_falm_id!inner (numero, competicion:competicion_id!inner (temporada_id, tipo))')
+      .eq('jornada_falm.competicion.temporada_id', tempId)
+      .eq('jornada_falm.competicion.tipo', 'LIGA');
+    if (error) throw error;
+    return (data ?? []).map((e: any) => ({
+      jornada: e.jornada_falm?.numero ?? 0,
+      local: e.local?.nombre ?? '?', visitante: e.visitante?.nombre ?? '?',
+      pl: Number(e.puntos_local ?? 0), pv: Number(e.puntos_visitante ?? 0),
+    })).sort((a, b) => a.jornada - b.jornada);
+  }
+}
+
 export interface AdminTemporada { id: string; nombre: string; anio: number; activa: boolean; }
 
 export interface AdminJugador {

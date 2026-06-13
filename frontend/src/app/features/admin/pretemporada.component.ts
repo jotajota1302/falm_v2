@@ -1,6 +1,5 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { environment } from '../../../environments/environment';
 import { AdminService, AdminTemporada } from './admin.service';
 
 const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'MED', DELANTERO: 'DEL' };
@@ -134,32 +133,58 @@ export class AdminPretemporadaComponent implements OnInit {
   lfpDesde = 5;
   lfpHasta = 36;
 
-  private demo = !!environment.devEquipoNombre;
-
   constructor(private admin: AdminService) {}
   abr(p: string) { return ABR[p] ?? p; }
   pct() { const d = this.draft(); return d && d.picks_totales ? Math.round(100 * d.picks_hechos / d.picks_totales) : 0; }
 
-  async ngOnInit() {
+  async ngOnInit() { await this.cargar(); }
+
+  private async cargar() {
     try {
       this.temporadas.set(await this.admin.temporadas());
       const d = await this.admin.draftActivo();
       this.draft.set(d);
-      if (d?.id) this.picks.set(await this.admin.draftPicks(d.id));
+      if (d?.id) this.picks.set(await this.admin.draftPicks(d.id)); else this.picks.set([]);
     } catch (e: any) { this.error.set(e?.message ?? 'Error'); }
     finally { this.cargando.set(false); }
   }
 
-  private gate(accion: string): boolean {
-    if (this.demo) { this.aviso.set(`Modo demo: «${accion}» requiere login admin. La operación está implementada en el backend (SQL validado).`); return true; }
-    return false;
+  private async accion(fn: () => Promise<any>, ok: string) {
+    this.aviso.set(''); this.error.set('');
+    try { await fn(); await this.cargar(); this.aviso.set(ok); }
+    catch (e: any) { this.error.set(e?.message ?? 'Error'); }
   }
 
-  crearTemporada() { this.aviso.set(''); if (this.gate('crear temporada')) return; }
-  activar(_t: AdminTemporada) { this.aviso.set(''); if (this.gate('activar temporada')) return; }
-  generarJornadas() { this.aviso.set(''); if (this.gate('generar jornadas + mapeo')) return; }
-  generarCalendario() { this.aviso.set(''); if (this.gate('generar calendario')) return; }
-  crearDraft() { this.aviso.set(''); if (this.gate('crear draft')) return; }
-  picar() { this.aviso.set(''); if (this.gate('realizar pick')) return; }
-  consolidar() { this.aviso.set(''); if (this.gate('consolidar draft')) return; }
+  async crearTemporada() {
+    if (!this.nombreTemp || !this.anioTemp) { this.error.set('Pon nombre y año.'); return; }
+    await this.accion(() => this.admin.ejecutar('crear_temporada', { p_nombre: this.nombreTemp, p_anio: this.anioTemp }),
+      '✅ Temporada creada con sus 3 competiciones.');
+    this.nombreTemp = ''; this.anioTemp = null;
+  }
+  async activar(t: AdminTemporada) {
+    await this.accion(() => this.admin.ejecutar('activar_temporada', { p_temporada: t.id }), `✅ ${t.nombre} activada.`);
+  }
+  async generarJornadas() {
+    const t = this.temporadas().find((x) => x.activa);
+    if (!t) { this.error.set('No hay temporada activa.'); return; }
+    await this.accion(() => this.admin.ejecutar('generar_jornadas_liga', { p_temporada: t.id, p_lfp_desde: this.lfpDesde, p_lfp_hasta: this.lfpHasta }),
+      '✅ Jornadas y mapeo generados.');
+  }
+  async generarCalendario() {
+    const t = this.temporadas().find((x) => x.activa);
+    if (!t) { this.error.set('No hay temporada activa.'); return; }
+    await this.accion(() => this.admin.ejecutar('generar_calendario_liga', { p_temporada: t.id }), '✅ Calendario generado.');
+  }
+  async crearDraft() {
+    const t = this.temporadas().find((x) => x.activa);
+    if (!t) { this.error.set('No hay temporada activa.'); return; }
+    await this.accion(() => this.admin.ejecutar('draft_crear', { p_temporada: t.id, p_nombre: 'Draft ' + t.nombre, p_rondas: 23 }),
+      '✅ Draft creado.');
+  }
+  consolidar() {
+    const d = this.draft();
+    if (!d?.id) return;
+    this.accion(() => this.admin.ejecutar('draft_consolidar', { p_draft: d.id }), '✅ Draft consolidado: plantillas creadas.');
+  }
+  picar() { this.aviso.set('El pick se realiza desde el tablero del equipo en su turno (próximo paso de la UI de draft).'); }
 }

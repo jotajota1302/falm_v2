@@ -20,6 +20,7 @@ import { environment } from '../../../environments/environment';
 
     <nav class="anav">
       <a routerLink="pretemporada" routerLinkActive="on">Pretemporada</a>
+      <a routerLink="simulacion" routerLinkActive="on">Simulación</a>
       <a routerLink="jugadores" routerLinkActive="on">Jugadores</a>
       <a routerLink="puntuaciones" routerLinkActive="on">Puntuaciones</a>
       <a routerLink="operaciones" routerLinkActive="on">Operaciones</a>

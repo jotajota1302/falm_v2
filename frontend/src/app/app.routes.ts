@@ -73,6 +73,7 @@ export const routes: Routes = [
         children: [
           { path: '', redirectTo: 'pretemporada', pathMatch: 'full' },
           { path: 'pretemporada', loadComponent: () => import('./features/admin/pretemporada.component').then((m) => m.AdminPretemporadaComponent) },
+          { path: 'simulacion', loadComponent: () => import('./features/admin/simulacion.component').then((m) => m.AdminSimulacionComponent) },
           { path: 'jugadores', loadComponent: () => import('./features/admin/jugadores.component').then((m) => m.AdminJugadoresComponent) },
           { path: 'puntuaciones', loadComponent: () => import('./features/admin/puntuaciones.component').then((m) => m.AdminPuntuacionesComponent) },
           { path: 'operaciones', loadComponent: () => import('./features/admin/operaciones.component').then((m) => m.AdminOperacionesComponent) },
