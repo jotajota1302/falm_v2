@@ -34,32 +34,24 @@ Cron / admin  ──POST /scrape?jornada=N──▶  Cloud Run (scraper)
 | `PartidoJornadaDto`, `PuntosJugadorJornadaDto`, `EventsEnum` | Quitar `EquipoLFP` entity → DTO plano |
 | Config ChromeDriver (`:1090-1146`) | Conservar (headless, ruta Chrome del contenedor) |
 
-## Piezas NUEVAS
+## La transformación cruda→desglose es SQL (no va en el scraper)
 
-### 1. `DesgloseMapper` — `PuntosJugadorJornadaDto` + marcador → `desglose` jsonb
-```
-resultado   = si su equipo marcó más → VICTORIA; igual → EMPATE; menos → DERROTA
-goles       = count(eventos == GOL)                       // normales (sin penalti)
-goles_penalti      = count(GOL_DE_PENALTI)
-penalti_fallado    = count(PENALTI_FALLADO)
-penalti_parado     = count(PENALTI_PARADO)
-goles_en_propia    = count(GOL_EN_PROPIA)
-tarjetas_rojas     = count(ROJA) + count(DOBLE_AMARILLA)
-estrellas          = parse(estrellas)                      // "7.0" → 7.0  (regla: cada estrella +1; "-" → -1; "SC" → 0)
-minutos            = minutos
-imbatido           = (goles encajados por su equipo == 0)  // del marcador
-goles_en_contra    = goles del equipo rival                // solo lo usa el scoring si es portero y >1
-```
-(Las reglas de puntos NO se aplican aquí — eso es `falm.calcular_puntos` en el backend.)
+`falm.construir_desglose(eventos[], minutos, estrellas, goles_equipo, goles_rival)` **ya
+implementada y validada** en el backend. Y `falm.ingestar_jornada_cruda(jornada_lfp,
+payload, sobreescribir)` recibe el payload **crudo** y hace todo (construir desglose →
+calcular puntos → upsert → sincronizar porterías). **El scraper NO transforma nada**: solo
+extrae y envía datos crudos. Por eso ya **no hace falta `DesgloseMapper`** en el contenedor.
 
-### 2. `MatchingService` — (nombre, equipo LFP) → `activo_id`
+## Piezas NUEVAS (reducidas)
+
+### 1. `MatchingService` — (nombre, equipo LFP) → `activo_id`
 Resuelve el nombre en bruto a `jugador_lfp` (consulta Supabase: por `equipo_lfp` + nombre normalizado, con el "player matching v3.0": exacto → parcial → casos especiales) y de ahí a su `activo` tipo JUGADOR. Cachea el catálogo de la temporada al arrancar.
 
-### 3. `SupabaseClient` — RPC
-`POST {SUPABASE_URL}/rest/v1/rpc/ingestar_puntuaciones` con headers `apikey`/`Authorization: Bearer {SERVICE_ROLE_KEY}` y body `{p_jornada_lfp, p_payload, p_sobreescribir}`. Una llamada por jornada.
+### 2. `SupabaseClient` — RPC
+`POST {SUPABASE_URL}/rest/v1/rpc/ingestar_jornada_cruda` con headers `apikey`/`Authorization: Bearer {SERVICE_ROLE_KEY}` y body `{p_jornada_lfp, p_payload, p_sobreescribir}`. Una llamada por jornada. El `p_payload` es un array de `{activo_id, eventos:[...], minutos, estrellas, goles_equipo, goles_rival}`.
 
-### 4. `ScraperController` — `POST /scrape`
-Params: `jornada` (LFP), `year`, `sobreescribir`. Orquesta: scrape → map → match → ingest. Devuelve resumen (nº jugadores, nº escritos, no-encontrados).
+### 3. `ScraperController` — `POST /scrape`
+Params: `jornada` (LFP), `year`, `sobreescribir`. Orquesta: scrape → match (nombre→activo_id) → enviar crudo a `ingestar_jornada_cruda`. Devuelve resumen (nº jugadores, nº escritos, no-encontrados).
 
 ## Dependencias (pom.xml mínimo)
 `spring-boot-starter-web`, `selenium-java 4.11`, `jsoup 1.18.3`. Sin JPA, sin base de datos local.
