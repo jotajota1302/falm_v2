@@ -18,8 +18,12 @@ import { AuthService } from './core/auth.service';
       <div class="layout">
         <nav class="sidenav">
           <a routerLink="/dashboard" routerLinkActive="active">🏠 Inicio</a>
+          <span class="group">Mi equipo</span>
+          <a routerLink="/plantilla" routerLinkActive="active">⚽ Plantilla</a>
+          <span class="group">Competición</span>
           <a routerLink="/clasificacion" routerLinkActive="active">🏆 Clasificación</a>
-          <!-- próximas secciones: Mi equipo, Fichajes, Premios, Análisis, Admin -->
+          <a routerLink="/premios" routerLinkActive="active">💰 Premios</a>
+          <!-- próximas: Alineación, Fichajes & Ofertas, Jornadas, Mercado, Admin -->
         </nav>
         <main class="content"><router-outlet /></main>
       </div>
@@ -39,6 +43,8 @@ import { AuthService } from './core/auth.service';
     .sidenav { width:220px; background:#f1f5f9; padding:12px; display:flex; flex-direction:column; gap:4px; }
     .sidenav a { padding:10px 12px; border-radius:8px; text-decoration:none; color:#0f172a; }
     .sidenav a.active { background:#0f172a; color:#fff; }
+    .sidenav .group { font-size:.72rem; text-transform:uppercase; letter-spacing:.04em;
+      color:#94a3b8; padding:10px 12px 2px; }
     .content { flex:1; padding:24px; }
   `],
 })

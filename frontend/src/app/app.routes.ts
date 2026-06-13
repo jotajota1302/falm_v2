@@ -21,11 +21,21 @@ export const routes: Routes = [
           import('./features/dashboard/dashboard.component').then((m) => m.DashboardComponent),
       },
       {
+        path: 'plantilla',
+        loadComponent: () =>
+          import('./features/equipo/plantilla.component').then((m) => m.PlantillaComponent),
+      },
+      {
         path: 'clasificacion',
         loadComponent: () =>
           import('./features/competicion/clasificacion.component').then(
             (m) => m.ClasificacionComponent
           ),
+      },
+      {
+        path: 'premios',
+        loadComponent: () =>
+          import('./features/competicion/premios.component').then((m) => m.PremiosComponent),
       },
     ],
   },
