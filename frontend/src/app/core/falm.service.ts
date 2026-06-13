@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { environment } from '../../environments/environment';
 import { SupabaseService } from './supabase.service';
 
 /** Fila de la vista falm.v_clasificacion. */
@@ -87,16 +88,26 @@ export class FalmService {
     return filas.map((f) => ({ ...f, equipo_nombre: nombres.get(f.equipo_falm_id) }));
   }
 
-  /** El equipo del usuario autenticado en la temporada activa (RLS: ve el suyo). */
+  /**
+   * El equipo del usuario en la temporada activa.
+   * En modo dev (environment.devEquipoNombre) se fija un equipo por nombre, para
+   * poder ver Mi plantilla / Mis premios sin asociar usuarios reales.
+   */
   async miEquipo(): Promise<Equipo | null> {
-    const { data: u } = await this.sb.client.auth.getUser();
-    if (!u.user) return null;
-    const { data, error } = await this.sb.client
+    let q = this.sb.client
       .from('equipo_falm')
       .select('id, nombre, presupuesto, temporada!inner(activa)')
-      .eq('usuario_id', u.user.id)
-      .eq('temporada.activa', true)
-      .maybeSingle();
+      .eq('temporada.activa', true);
+
+    if (environment.devEquipoNombre) {
+      q = q.eq('nombre', environment.devEquipoNombre);
+    } else {
+      const { data: u } = await this.sb.client.auth.getUser();
+      if (!u.user) return null;
+      q = q.eq('usuario_id', u.user.id);
+    }
+
+    const { data, error } = await q.maybeSingle();
     if (error) throw error;
     return data ? { id: data.id, nombre: data.nombre, presupuesto: data.presupuesto } : null;
   }

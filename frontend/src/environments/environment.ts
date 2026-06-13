@@ -6,4 +6,11 @@ export const environment = {
   supabaseKey: 'sb_publishable_1fUl7M0SF7dLDSMLhJwEuA_DMii7LVI',
   // El schema del proyecto FALM V2 (aislado del public de otras apps)
   dbSchema: 'falm',
+
+  // --- MODO DESARROLLO (para ver la app sin login) ---
+  // Inicia sesión anónima automáticamente (rol authenticated -> RLS deja leer).
+  devAnonLogin: true,
+  // "Mi equipo" se fija a este equipo por nombre (en vez de filtrar por usuario_id).
+  // Poner '' para volver al comportamiento normal (equipo del usuario autenticado).
+  devEquipoNombre: 'GOLDEN BOYS',
 };

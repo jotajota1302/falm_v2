@@ -12,7 +12,7 @@ import { AuthService } from './core/auth.service';
       <header class="topbar">
         <span class="brand">⚽ FALM</span>
         <span class="spacer"></span>
-        <span class="user">{{ auth.user()?.email }}</span>
+        <span class="user">{{ auth.user()?.email ?? 'Invitado (dev)' }}</span>
         <button class="link" (click)="logout()">Salir</button>
       </header>
       <div class="layout">

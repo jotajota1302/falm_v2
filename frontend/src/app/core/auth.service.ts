@@ -1,17 +1,32 @@
 import { Injectable, signal } from '@angular/core';
 import { Session, User } from '@supabase/supabase-js';
+import { environment } from '../../environments/environment';
 import { SupabaseService } from './supabase.service';
 
-/** Autenticación por email contra Supabase Auth. Expone la sesión como signal. */
+/** Autenticación contra Supabase Auth. Expone la sesión como signal. */
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   readonly session = signal<Session | null>(null);
   readonly user = signal<User | null>(null);
 
   constructor(private sb: SupabaseService) {
-    // estado inicial + escucha de cambios de sesión
-    this.sb.client.auth.getSession().then(({ data }) => this.apply(data.session));
     this.sb.client.auth.onAuthStateChange((_event, session) => this.apply(session));
+  }
+
+  /**
+   * Garantiza una sesión antes de arrancar la app. En modo dev, si no hay sesión,
+   * inicia una sesión ANÓNIMA (rol authenticated -> RLS permite leer). Llamado por APP_INITIALIZER.
+   */
+  async ensureSession(): Promise<void> {
+    const { data } = await this.sb.client.auth.getSession();
+    if (data.session) {
+      this.apply(data.session);
+      return;
+    }
+    if (environment.devAnonLogin) {
+      const { data: anon, error } = await this.sb.client.auth.signInAnonymously();
+      if (!error) this.apply(anon.session);
+    }
   }
 
   private apply(session: Session | null) {

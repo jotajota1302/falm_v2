@@ -12,7 +12,7 @@ import { AuthService } from '../../core/auth.service';
   standalone: true,
   imports: [RouterLink],
   template: `
-    <h1>Hola, {{ auth.user()?.email }}</h1>
+    <h1>Hola{{ auth.user()?.email ? ', ' + auth.user()?.email : '' }} 👋</h1>
 
     <section class="accion">
       <h2>⏰ Acción que toca ahora</h2>
