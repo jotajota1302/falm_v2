@@ -30,6 +30,7 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
         <button class="btn" (click)="guardar()" [disabled]="guardando()">{{ guardando() ? '…' : 'Guardar' }}</button>
       </div>
 
+      @if (heredada()) { <p class="hered">↩︎ Heredada de tu última jornada. Ajústala y guarda si quieres cambiarla.</p> }
       @if (aviso()) { <p class="aviso">{{ aviso() }}</p> }
 
       <!-- CAMPO -->
@@ -88,6 +89,7 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     .cont.ok { color: var(--primary); } .cont small { color: var(--muted); font-size: .9rem; }
     .barra .btn { margin-left: auto; }
     .aviso { background: rgba(0,230,118,.08); border: 1px solid rgba(0,230,118,.22); color: var(--primary); padding: 10px 14px; border-radius: 10px; margin-bottom: 12px; }
+    .hered { background: rgba(255,194,75,.08); border: 1px solid rgba(255,194,75,.22); color: var(--gold); padding: 9px 13px; border-radius: 10px; margin-bottom: 10px; font-size: .85rem; }
 
     /* campo */
     .pitch { position: relative; border-radius: 16px; padding: 16px 10px;
@@ -144,6 +146,7 @@ export class AlineacionComponent implements OnInit {
   cargando = signal(true);
   guardando = signal(false);
   aviso = signal('');
+  heredada = signal(false);
 
   titulares = computed(() => Object.values(this.roles()).filter((r) => r === 'TITULAR').length);
 
@@ -189,7 +192,21 @@ export class AlineacionComponent implements OnInit {
       this.plantilla.set(plant);
       if (jor) {
         const ali: AlineacionGuardada | null = await this.falm.getAlineacion(eq.id, jor.id);
-        if (ali) { this.formacion.set(ali.formacion); this.roles.set(ali.roles); }
+        if (ali) {
+          this.formacion.set(ali.formacion);
+          this.roles.set(ali.roles);
+        } else {
+          // No hay alineación para esta jornada: heredamos la última (alineación por defecto).
+          const prev = await this.falm.ultimaAlineacion(eq.id);
+          if (prev) {
+            const enPlantilla = new Set(plant.map((p) => p.activo_id));
+            const roles: Record<string, RolAlineacion> = {};
+            for (const [id, r] of Object.entries(prev.roles)) if (enPlantilla.has(id)) roles[id] = r;
+            this.formacion.set(prev.formacion);
+            this.roles.set(roles);
+            this.heredada.set(true);
+          }
+        }
       }
     } catch (e: any) {
       this.aviso.set(e?.message ?? 'Error');

@@ -347,6 +347,27 @@ export class FalmService {
     return { formacion: (data as any).formacion, roles };
   }
 
+  /**
+   * Última alineación guardada por el equipo (la más reciente por número de jornada).
+   * Sirve de "alineación por defecto": si no hay alineación para la jornada actual,
+   * se hereda esta — igual que hace el sistema al cerrar la jornada.
+   */
+  async ultimaAlineacion(equipoId: string): Promise<AlineacionGuardada | null> {
+    const { data, error } = await this.sb.client
+      .from('alineacion')
+      .select('formacion, jornada_falm:jornada_falm_id (numero), alineacion_activo(activo_id, rol)')
+      .eq('equipo_falm_id', equipoId);
+    if (error) throw error;
+    const filas: any[] = data ?? [];
+    if (filas.length === 0) return null;
+    // la más reciente por número de jornada (orden en cliente para no depender de la relación)
+    filas.sort((a, b) => (b.jornada_falm?.numero ?? 0) - (a.jornada_falm?.numero ?? 0));
+    const top = filas[0];
+    const roles: Record<string, RolAlineacion> = {};
+    for (const aa of top.alineacion_activo ?? []) roles[aa.activo_id] = aa.rol;
+    return { formacion: top.formacion, roles };
+  }
+
   /** Guarda la alineación (escritura; requiere ser dueño del equipo por RLS). */
   async guardarAlineacion(
     equipoId: string,
