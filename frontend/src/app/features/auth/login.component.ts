@@ -15,17 +15,14 @@ import { AuthService } from '../../core/auth.service';
         <p class="sub">Inicia sesión con tu equipo</p>
 
         <label>Equipo
-          <input type="text" [(ngModel)]="equipo" name="equipo" autocomplete="username"
+          <input type="text" [(ngModel)]="equipo" name="equipo" autocomplete="off"
                  placeholder="GOLDEN BOYS" required />
-        </label>
-        <label>Contraseña
-          <input type="password" [(ngModel)]="password" name="password" autocomplete="current-password" required />
         </label>
 
         @if (error()) { <p class="err">{{ error() }}</p> }
 
         <button type="submit" [disabled]="cargando()">{{ cargando() ? '…' : 'Entrar' }}</button>
-        <p class="hint">Pruebas: usuario = nombre del equipo, contraseña = el mismo nombre.</p>
+        <p class="hint">Provisional: entra con el nombre de tu equipo (sin contraseña).</p>
       </form>
     </div>
   `,
@@ -57,13 +54,13 @@ export class LoginComponent {
 
   async submit() {
     this.error.set('');
-    if (!this.equipo.trim() || !this.password) { this.error.set('Pon tu equipo y contraseña.'); return; }
+    if (!this.equipo.trim()) { this.error.set('Pon el nombre de tu equipo.'); return; }
     this.cargando.set(true);
     try {
-      await this.auth.loginEquipo(this.equipo, this.password);
+      await this.auth.loginNombre(this.equipo);
       this.router.navigateByUrl('/dashboard');
     } catch (e: any) {
-      this.error.set(e?.message?.includes('Invalid login') ? 'Equipo o contraseña incorrectos.' : (e?.message ?? 'Error'));
+      this.error.set(e?.message ?? 'Error al entrar');
     } finally {
       this.cargando.set(false);
     }

@@ -101,7 +101,8 @@ interface NavItem { path: string; icon: string; label: string; }
 })
 export class AppComponent {
   get team() {
-    return environment.devEquipoNombre || (this.auth.user()?.user_metadata?.['equipo'] as string) || '';
+    return environment.devEquipoNombre || localStorage.getItem('falm_equipo') ||
+      (this.auth.user()?.user_metadata?.['equipo'] as string) || '';
   }
   items: NavItem[] = [
     { path: '/dashboard', icon: '🏠', label: 'Inicio' },

@@ -264,8 +264,9 @@ export class FalmService {
       .select('id, nombre, presupuesto, beneficio')
       .eq('temporada_id', tid);
 
-    if (environment.devEquipoNombre) {
-      q = q.eq('nombre', environment.devEquipoNombre);
+    const sel = environment.devEquipoNombre || (typeof localStorage !== 'undefined' ? localStorage.getItem('falm_equipo') : null);
+    if (sel) {
+      q = q.eq('nombre', sel);
     } else {
       const { data: u } = await this.sb.client.auth.getUser();
       if (!u.user) return null;
