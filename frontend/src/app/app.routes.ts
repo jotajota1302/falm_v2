@@ -53,6 +53,11 @@ export const routes: Routes = [
           import('./features/competicion/jornadas.component').then((m) => m.JornadasComponent),
       },
       {
+        path: 'puntuaciones',
+        loadComponent: () =>
+          import('./features/estadisticas/puntuaciones.component').then((m) => m.PuntuacionesComponent),
+      },
+      {
         path: 'premios',
         loadComponent: () =>
           import('./features/competicion/premios.component').then((m) => m.PremiosComponent),

@@ -88,7 +88,8 @@ export class AppComponent {
     { path: '/alineacion', icon: '📋', label: 'Once' },
     { path: '/mercado', icon: '🛒', label: 'Mercado' },
     { path: '/clasificacion', icon: '🏆', label: 'Liga' },
-    { path: '/jornadas', icon: '📅', label: 'Jornadas' },
+    { path: '/jornadas', icon: '📅', label: 'Partidos' },
+    { path: '/puntuaciones', icon: '📊', label: 'Stats' },
     { path: '/premios', icon: '💰', label: 'Premios' },
   ];
 

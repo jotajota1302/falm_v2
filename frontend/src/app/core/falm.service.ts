@@ -88,6 +88,16 @@ export interface AlineacionGuardada {
 
 export const FORMACIONES = ['5-4-1', '5-3-2', '4-5-1', '4-4-2', '4-3-3', '3-4-3', '3-5-2'];
 
+export interface JornadaLfp { numero: number; descripcion: string; }
+
+export interface PuntosJugador {
+  jugador: { id: number; nombre: string; equipo: string; escudo: string; foto: string; posicion: string };
+  puntosTotales: number;
+  goles: number; golesPenalti: number; asistencias: number; estrellas: number;
+  minutosJugados: number; imbatido: boolean;
+  tarjetasAmarillas: number; tarjetasRojas: number;
+}
+
 /** Acceso de lectura al schema falm. Las mutaciones críticas van por RPC/Edge (no aquí). */
 @Injectable({ providedIn: 'root' })
 export class FalmService {
@@ -289,6 +299,20 @@ export class FalmService {
       const { error: e2 } = await this.sb.client.from('alineacion_activo').insert(filas);
       if (e2) throw e2;
     }
+  }
+
+  /** Jornadas LFP válidas (para el selector de estadísticas). */
+  async jornadasLfp(): Promise<JornadaLfp[]> {
+    const { data, error } = await this.sb.client.rpc('jornadas_lfp_validas');
+    if (error) throw error;
+    return ((data ?? []) as JornadaLfp[]).sort((a, b) => b.numero - a.numero);
+  }
+
+  /** Puntos + estadísticas de cada jugador en una jornada LFP (en vivo). */
+  async puntuacionesJornada(lfp: number): Promise<PuntosJugador[]> {
+    const { data, error } = await this.sb.client.rpc('puntuaciones_jornada', { p_lfp: lfp });
+    if (error) throw error;
+    return (data ?? []) as PuntosJugador[];
   }
 
   /** Mercado: activos libres en la temporada activa. */

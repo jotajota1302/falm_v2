@@ -1,0 +1,128 @@
+import { Component, OnInit, computed, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { FalmService, JornadaLfp, PuntosJugador } from '../../core/falm.service';
+
+const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: 'DEF', DEFENSA: 'DEF',
+  Mediocampista: 'MED', MEDIO: 'MED', Delantero: 'DEL', DELANTERO: 'DEL' };
+
+/** Estadísticas: puntos de cada jugador por jornada LFP (en vivo del backend). */
+@Component({
+  selector: 'app-puntuaciones',
+  standalone: true,
+  imports: [FormsModule],
+  template: `
+    <h1>📊 Estadísticas</h1>
+
+    @if (jornadas().length) {
+      <div class="jchips">
+        @for (j of jornadas(); track j.numero) {
+          <button class="jchip" [class.on]="j.numero === sel()" (click)="elegir(j.numero)">J{{ j.numero }}</button>
+        }
+      </div>
+    }
+
+    <input class="buscar" type="search" placeholder="Buscar jugador o equipo…"
+           [ngModel]="texto()" (ngModelChange)="texto.set($event); limite.set(30)" />
+
+    @if (cargando()) {
+      <p class="muted">Cargando jornada {{ sel() }}…</p>
+    } @else if (error()) {
+      <p class="err">{{ error() }}</p>
+    } @else {
+      <div class="lista">
+        @for (p of visibles().slice(0, limite()); track p.jugador.id; let i = $index) {
+          <div class="fila card">
+            <span class="rk num">{{ i + 1 }}</span>
+            <span class="av" [class]="abr(p.jugador.posicion)">
+              @if (p.jugador.foto) { <img [src]="p.jugador.foto" alt="" loading="lazy" (error)="p.jugador.foto = ''" /> }
+              @else { {{ p.jugador.nombre.charAt(0) }} }
+            </span>
+            <div class="who">
+              <span class="nm">{{ p.jugador.nombre }}</span>
+              <span class="eq">
+                @if (p.jugador.escudo) { <img class="esc" [src]="p.jugador.escudo" alt="" /> }
+                {{ p.jugador.equipo }}
+              </span>
+              <span class="stats">
+                @if (p.goles) { <b>⚽ {{ p.goles }}</b> }
+                @if (p.golesPenalti) { <b>🎯 {{ p.golesPenalti }}</b> }
+                @if (p.asistencias) { <b>🅰️ {{ p.asistencias }}</b> }
+                @if (p.estrellas) { <b>⭐ {{ p.estrellas }}</b> }
+                @if (p.imbatido) { <b>🧤</b> }
+                @if (p.tarjetasRojas) { <b>🟥</b> } @else if (p.tarjetasAmarillas) { <b>🟨</b> }
+                <span class="min">{{ p.minutosJugados }}'</span>
+              </span>
+            </div>
+            <span class="pts num" [class.neg]="p.puntosTotales < 0">{{ p.puntosTotales }}</span>
+          </div>
+        }
+      </div>
+      @if (visibles().length > limite()) {
+        <button class="mas" (click)="limite.set(limite() + 30)">Ver más</button>
+      }
+    }
+  `,
+  styles: [`
+    h1 { margin: 0 0 14px; }
+    .jchips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 12px; }
+    .jchip { flex: 0 0 auto; min-width: 44px; height: 38px; border: 1px solid var(--border); background: var(--surface);
+      color: var(--muted); border-radius: 10px; cursor: pointer; font-weight: 800; }
+    .jchip.on { background: var(--primary); color: var(--primary-ink); border-color: var(--primary); }
+    .buscar { width: 100%; margin-bottom: 14px; }
+    .lista { display: flex; flex-direction: column; gap: 8px; }
+    .fila { display: grid; grid-template-columns: 26px 46px 1fr auto; align-items: center; gap: 11px; padding: 10px 13px; }
+    .rk { text-align: center; color: var(--faint); font-weight: 800; font-size: .9rem; }
+    .av { width: 46px; height: 46px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
+      font-weight: 800; color: #07120d; overflow: hidden; }
+    .av img { width: 100%; height: 100%; object-fit: cover; }
+    .av.POR { background: var(--pos-POR); } .av.DEF { background: var(--pos-DEF); }
+    .av.MED { background: var(--pos-MED); } .av.DEL { background: var(--pos-DEL); }
+    .who { min-width: 0; }
+    .nm { display: block; font-weight: 700; font-size: .92rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .eq { display: flex; align-items: center; gap: 5px; color: var(--muted); font-size: .76rem; }
+    .esc { width: 14px; height: 14px; object-fit: contain; }
+    .stats { display: flex; align-items: center; gap: 8px; margin-top: 3px; font-size: .76rem; }
+    .stats b { font-weight: 700; } .stats .min { color: var(--faint); margin-left: auto; }
+    .pts { font-weight: 900; font-size: 1.5rem; color: var(--primary); min-width: 42px; text-align: right; }
+    .pts.neg { color: var(--bad); }
+    .mas { display: block; margin: 16px auto 0; background: var(--surface); border: 1px solid var(--border);
+      color: var(--ink); border-radius: 12px; padding: 11px 22px; cursor: pointer; font-weight: 700; }
+    .muted { color: var(--muted); } .err { color: var(--bad); }
+  `],
+})
+export class PuntuacionesComponent implements OnInit {
+  jornadas = signal<JornadaLfp[]>([]);
+  sel = signal<number>(0);
+  jugadores = signal<PuntosJugador[]>([]);
+  texto = signal('');
+  limite = signal(30);
+  cargando = signal(true);
+  error = signal('');
+
+  visibles = computed(() => {
+    const f = this.texto().trim().toLowerCase();
+    const arr = [...this.jugadores()].sort((a, b) => b.puntosTotales - a.puntosTotales);
+    return f ? arr.filter((p) => p.jugador.nombre.toLowerCase().includes(f) || (p.jugador.equipo || '').toLowerCase().includes(f)) : arr;
+  });
+
+  constructor(private falm: FalmService) {}
+  abr(p: string) { return ABR[p] ?? 'MED'; }
+
+  async ngOnInit() {
+    try {
+      const js = await this.falm.jornadasLfp();
+      this.jornadas.set(js);
+      if (js.length) await this.elegir(js[0].numero);
+      else this.cargando.set(false);
+    } catch (e: any) {
+      this.error.set(e?.message ?? 'Error'); this.cargando.set(false);
+    }
+  }
+
+  async elegir(n: number) {
+    this.sel.set(n); this.cargando.set(true); this.error.set(''); this.limite.set(30);
+    try { this.jugadores.set(await this.falm.puntuacionesJornada(n)); }
+    catch (e: any) { this.error.set(e?.message ?? 'Error cargando la jornada'); }
+    finally { this.cargando.set(false); }
+  }
+}
