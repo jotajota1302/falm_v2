@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js';
 import { environment } from '../../environments/environment';
 
 /**
@@ -9,7 +9,8 @@ import { environment } from '../../environments/environment';
  */
 @Injectable({ providedIn: 'root' })
 export class SupabaseService {
-  readonly client: SupabaseClient = createClient(
+  // Tipo inferido (con schema 'falm' no encaja el genérico SupabaseClient por defecto)
+  readonly client = createClient(
     environment.supabaseUrl,
     environment.supabaseKey,
     {
