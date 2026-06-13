@@ -10,15 +10,9 @@
 
 ## Pendiente
 
-### Cron de procesamiento de fichajes (martes 23:59)
-Falta una función `falm.jornada_objetivo_actual()` que determine la jornada FALM destino
-según fechas (la próxima jornada cuyo `fecha_cierre` acaba de pasar / siguiente fin de
-semana). Una vez exista:
-```sql
-select cron.schedule('falm-procesar-fichajes', '59 23 * * 2',
-  $$select falm.procesar_fichajes(falm.jornada_objetivo_actual());$$);
-```
-(`* * * * 2` = martes; ajustar zona horaria del proyecto a Europe/Madrid.)
+### Cron de procesamiento de fichajes (martes) — HECHO
+- `falm.jornada_objetivo_actual()`: próxima jornada de LIGA (temporada activa) con `fecha_cierre > now()`; `NULL` al final de temporada. `procesar_fichajes(NULL)` devuelve 0 sin error (verificado).
+- Job `falm-procesar-fichajes` programado a **`59 22 * * 2`** (martes 22:59 UTC ≈ 23:59 Madrid en invierno). **Nota DST:** en verano (UTC+2) caería a las 00:59 del miércoles Madrid; irrelevante para un deadline "martes noche", ajustable si se desea exactitud.
 
 ### Exposición del schema en la API (al montar el frontend)
 Para que `supabase-js` acceda al schema `falm` (hoy PostgREST solo expone `public`):
