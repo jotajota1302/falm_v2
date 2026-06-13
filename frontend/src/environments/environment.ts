@@ -7,10 +7,9 @@ export const environment = {
   // El schema del proyecto FALM V2 (aislado del public de otras apps)
   dbSchema: 'falm',
 
-  // --- MODO DESARROLLO (para ver la app sin login) ---
-  // Inicia sesión anónima automáticamente (rol authenticated -> RLS deja leer).
-  devAnonLogin: true,
-  // "Mi equipo" se fija a este equipo por nombre (en vez de filtrar por usuario_id).
-  // Poner '' para volver al comportamiento normal (equipo del usuario autenticado).
-  devEquipoNombre: 'GOLDEN BOYS',
+  // --- LOGIN REAL ACTIVO ---
+  // Sin sesión anónima: cada usuario entra con su equipo + contraseña.
+  devAnonLogin: false,
+  // Vacío -> "Mi equipo" se resuelve por el usuario autenticado (usuario_id).
+  devEquipoNombre: '',
 };

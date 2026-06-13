@@ -39,6 +39,14 @@ export class AuthService {
     if (error) throw error;
   }
 
+  /** Login por NOMBRE DE EQUIPO: resuelve el email del usuario y entra con la contraseña. */
+  async loginEquipo(nombre: string, password: string) {
+    const { data, error } = await this.sb.client.rpc('email_de_equipo', { p_nombre: nombre.trim() });
+    if (error) throw error;
+    if (!data) throw new Error('No existe ningún equipo con ese nombre.');
+    await this.signIn(data as string, password);
+  }
+
   async signUp(email: string, password: string) {
     const { error } = await this.sb.client.auth.signUp({ email, password });
     if (error) throw error;

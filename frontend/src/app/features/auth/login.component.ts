@@ -3,72 +3,67 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/auth.service';
 
-/** Login / registro por email contra Supabase Auth. */
+/** Login por NOMBRE DE EQUIPO + contraseña (Supabase Auth bajo el capó). */
 @Component({
   selector: 'app-login',
   standalone: true,
   imports: [FormsModule],
   template: `
     <div class="wrap">
-      <form class="card" (ngSubmit)="submit()">
-        <h1>⚽ FALM</h1>
-        <p class="sub">{{ modoRegistro() ? 'Crear cuenta' : 'Iniciar sesión' }}</p>
+      <form class="card rise" (ngSubmit)="submit()">
+        <div class="brand"><span class="ball">⚽</span> FALM</div>
+        <p class="sub">Inicia sesión con tu equipo</p>
 
-        <label>Email <input type="email" [(ngModel)]="email" name="email" required /></label>
-        <label>Contraseña <input type="password" [(ngModel)]="password" name="password" required /></label>
+        <label>Equipo
+          <input type="text" [(ngModel)]="equipo" name="equipo" autocomplete="username"
+                 placeholder="GOLDEN BOYS" required />
+        </label>
+        <label>Contraseña
+          <input type="password" [(ngModel)]="password" name="password" autocomplete="current-password" required />
+        </label>
 
         @if (error()) { <p class="err">{{ error() }}</p> }
-        @if (info()) { <p class="info">{{ info() }}</p> }
 
-        <button type="submit" [disabled]="cargando()">
-          {{ cargando() ? '…' : (modoRegistro() ? 'Registrarme' : 'Entrar') }}
-        </button>
-        <button type="button" class="toggle" (click)="modoRegistro.set(!modoRegistro())">
-          {{ modoRegistro() ? 'Ya tengo cuenta' : 'Crear una cuenta' }}
-        </button>
+        <button type="submit" [disabled]="cargando()">{{ cargando() ? '…' : 'Entrar' }}</button>
+        <p class="hint">Pruebas: usuario = nombre del equipo, contraseña = el mismo nombre.</p>
       </form>
     </div>
   `,
   styles: [`
-    .wrap { min-height:100vh; display:grid; place-items:center; background:#0f172a; }
-    .card { background:#fff; padding:28px; border-radius:14px; width:320px; display:flex;
-      flex-direction:column; gap:12px; box-shadow:0 10px 30px #0006; }
-    h1 { margin:0; text-align:center; }
-    .sub { margin:0 0 8px; text-align:center; color:#64748b; }
-    label { display:flex; flex-direction:column; gap:4px; font-size:.85rem; color:#334155; }
-    input { padding:10px; border:1px solid #cbd5e1; border-radius:8px; font-size:1rem; }
-    button { padding:10px; border:none; border-radius:8px; background:#0f172a; color:#fff;
-      font-weight:600; cursor:pointer; }
-    .toggle { background:none; color:#0f172a; font-weight:500; }
-    .err { color:#dc2626; font-size:.85rem; margin:0; }
-    .info { color:#16a34a; font-size:.85rem; margin:0; }
+    .wrap { min-height: 100vh; display: grid; place-items: center; padding: 20px; }
+    .card { width: 340px; max-width: 100%; padding: 30px 26px; display: flex; flex-direction: column; gap: 14px; }
+    .brand { font-weight: 900; font-size: 1.7rem; text-align: center; letter-spacing: -.04em; }
+    .brand .ball { filter: drop-shadow(0 0 8px var(--glow)); }
+    .sub { margin: 0 0 6px; text-align: center; color: var(--muted); font-size: .88rem; }
+    label { display: flex; flex-direction: column; gap: 5px; font-size: .76rem; text-transform: uppercase;
+      letter-spacing: .04em; color: var(--faint); font-weight: 700; }
+    input { padding: 12px 14px; border: 1px solid var(--border); border-radius: 11px; font-size: 1rem;
+      background: var(--surface-2); color: var(--ink); text-transform: none; }
+    input:focus { outline: none; border-color: var(--primary); }
+    button[type=submit] { padding: 13px; border: none; border-radius: 12px; background: var(--primary);
+      color: var(--primary-ink); font-weight: 800; cursor: pointer; font-size: 1rem; margin-top: 4px; }
+    button:disabled { opacity: .6; }
+    .err { color: var(--bad); font-size: .85rem; margin: 0; }
+    .hint { margin: 4px 0 0; text-align: center; color: var(--faint); font-size: .74rem; }
   `],
 })
 export class LoginComponent {
-  email = '';
+  equipo = '';
   password = '';
-  modoRegistro = signal(false);
   cargando = signal(false);
   error = signal('');
-  info = signal('');
 
   constructor(private auth: AuthService, private router: Router) {}
 
   async submit() {
     this.error.set('');
-    this.info.set('');
+    if (!this.equipo.trim() || !this.password) { this.error.set('Pon tu equipo y contraseña.'); return; }
     this.cargando.set(true);
     try {
-      if (this.modoRegistro()) {
-        await this.auth.signUp(this.email, this.password);
-        this.info.set('Cuenta creada. Revisa tu email si se pide verificación, y entra.');
-        this.modoRegistro.set(false);
-      } else {
-        await this.auth.signIn(this.email, this.password);
-        this.router.navigateByUrl('/dashboard');
-      }
+      await this.auth.loginEquipo(this.equipo, this.password);
+      this.router.navigateByUrl('/dashboard');
     } catch (e: any) {
-      this.error.set(e?.message ?? 'Error de autenticación');
+      this.error.set(e?.message?.includes('Invalid login') ? 'Equipo o contraseña incorrectos.' : (e?.message ?? 'Error'));
     } finally {
       this.cargando.set(false);
     }
