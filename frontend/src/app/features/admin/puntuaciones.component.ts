@@ -1,6 +1,5 @@
 import { Component, OnInit, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { environment } from '../../../environments/environment';
 import { AdminPuntuacion, AdminService } from './admin.service';
 
 const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: 'DEF', DEFENSA: 'DEF',
@@ -109,14 +108,15 @@ export class AdminPuntuacionesComponent implements OnInit {
 
   editar(p: AdminPuntuacion) { this.editId.set(p.id); this.edPts.set(p.puntos); this.aviso.set(''); }
 
-  guardar(p: AdminPuntuacion) {
-    if (environment.devEquipoNombre) {
-      this.aviso.set(`Modo demo: se fijarían ${this.edPts()} pts a ${p.nombre} en J${this.lfp()} (motor SQL upsert_puntuacion, requiere rol admin).`);
+  async guardar(p: AdminPuntuacion) {
+    this.aviso.set(''); this.error.set('');
+    const lfp = this.lfp();
+    if (lfp == null) return;
+    try {
+      await this.admin.ejecutar('editar_puntos', { p_ext: p.id, p_lfp: lfp, p_puntos: this.edPts() });
+      this.lista.update((arr) => arr.map((x) => x.id === p.id ? { ...x, puntos: this.edPts() } : x));
       this.editId.set(-1);
-      return;
-    }
-    // Real: llamaría a una RPC de corrección (upsert_puntuacion) con permiso admin.
-    this.aviso.set('La corrección real se conecta al motor SQL cuando haya login admin.');
-    this.editId.set(-1);
+      this.aviso.set(`✅ ${p.nombre}: ${this.edPts()} pts (manual). Para que afecte a clasificación/premios de una temporada en juego, recalcula en Simulación.`);
+    } catch (e: any) { this.error.set(e?.message ?? 'Error al guardar'); }
   }
 }
