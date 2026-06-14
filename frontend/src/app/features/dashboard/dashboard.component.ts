@@ -1,8 +1,8 @@
-import { Component, OnDestroy, OnInit, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, computed, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { FalmService } from '../../core/falm.service';
+import { Agenda, AgendaItem, FalmService } from '../../core/falm.service';
 
-/** Dashboard "Matchday": resumen del equipo con datos reales. */
+/** Inicio "Matchday": qué viene ahora — resumen, partido actual, próximo, alineación, fichajes. */
 @Component({
   selector: 'app-dashboard',
   standalone: true,
@@ -11,187 +11,187 @@ import { FalmService } from '../../core/falm.service';
     @if (cargando()) {
       <p class="muted">Cargando…</p>
     } @else {
-      <section class="hero card rise">
-        <div class="ribbon"></div>
-        <div class="who">
-          <span class="hola">Tu equipo</span>
-          <h1>{{ nombre() || 'Mi equipo' }}</h1>
-        </div>
-        <div class="rank">
-          <span class="pos num">{{ posicion() ? posicion() : '—' }}<small>º</small></span>
-          <span class="rl">en la liga</span>
-        </div>
+      <section class="hero rise">
+        <h1>{{ nombre() || 'Mi equipo' }}</h1>
       </section>
 
-      @if (posiciones().length) {
-        <div class="comps">
-          @for (c of posiciones(); track c.tipo) {
-            <a class="comp card rise" routerLink="/clasificacion">
-              <span class="ci">{{ c.icono }}</span>
-              <span class="cn">{{ c.nombre }}</span>
-              <span class="cp num">{{ c.principal }}</span>
-              @if (c.secundario) { <span class="cs">{{ c.secundario }}</span> }
-            </a>
-          }
-        </div>
+      @if (resumen(); as r) {
+        <a class="resumen rise" routerLink="/clasificacion">
+          <div class="rinfo">
+            <span class="rl">Tu liga</span>
+            <strong>{{ r.pos }}º<small> de {{ r.total }}</small> · {{ r.pts }} pts</strong>
+          </div>
+          <span class="go">Clasificación ›</span>
+        </a>
+      }
+
+      @if (ag()?.en_juego; as ej) {
+        <section class="live rise">
+          <span class="dot"></span>
+          <div class="lt">
+            <strong>Jornada {{ ej.numero }} en juego</strong>
+            <p>{{ nombre() }} {{ ej.es_local ? 'vs' : '@' }} {{ ej.rival }} · alineación cerrada</p>
+          </div>
+          <a class="btn ghost" routerLink="/jornadas">Ver</a>
+        </section>
+      }
+
+      @if (ag()?.proximo; as pr) {
+        <section class="next card rise">
+          <div class="nh">
+            <span class="jlbl">Jornada {{ pr.numero }} · {{ etiqueta(pr.comp) }}</span>
+            <span class="fecha">{{ fechaLarga(pr.fecha) }}</span>
+          </div>
+          <div class="match">
+            <span class="tn">{{ nombre() }}</span>
+            <span class="vs">{{ pr.es_local ? 'VS' : '@' }}</span>
+            <span class="tn">{{ pr.rival }}</span>
+          </div>
+          <p class="cd">⏳ {{ cuentaPartido() }}</p>
+          <a class="btn" routerLink="/alineacion">📋 Enviar alineación</a>
+        </section>
+      } @else {
+        <section class="next card rise"><p class="muted" style="text-align:center;padding:8px">Sin próximos partidos programados.</p></section>
+      }
+
+      @if (actual(); as ac) {
+        <a class="actual card rise" routerLink="/jornadas">
+          <div class="ah">
+            <span class="al">{{ ag()?.en_juego ? 'Partido actual' : 'Último partido' }} · J{{ ac.numero }}</span>
+            <span class="go">Ver detalle ›</span>
+          </div>
+          <div class="amatch">
+            <span class="t" [class.win]="gane(ac)">{{ nombre() }}</span>
+            <span class="sc">{{ fmt(ac.mis_puntos) }}<i>-</i>{{ fmt(ac.rival_puntos) }}</span>
+            <span class="t" [class.win]="perdi(ac)">{{ ac.rival }}</span>
+          </div>
+        </a>
       }
 
       <section class="accion rise">
         <span class="ic">⏰</span>
-        <div class="cd">
+        <div class="cd2">
           <strong>Cierre de fichajes</strong>
           <p class="muted">{{ cuenta() }}</p>
         </div>
         <a class="btn-cd" routerLink="/fichajes">Pedir fichaje</a>
       </section>
-
-      <div class="grid">
-        <a class="stat card rise" routerLink="/clasificacion">
-          <span class="lbl">Puntos</span><span class="big num">{{ puntos() }}</span><span class="sub">clasificación</span>
-        </a>
-        <a class="stat card rise gold" routerLink="/premios">
-          <span class="lbl">Premios</span><span class="big num">{{ premios() }}<small>€</small></span><span class="sub">ganado</span>
-        </a>
-        <a class="stat card rise" routerLink="/plantilla">
-          <span class="lbl">Plantilla</span><span class="big num">{{ jugadores() }}</span><span class="sub">jugadores</span>
-        </a>
-        <a class="stat card rise" routerLink="/mercado">
-          <span class="lbl">Presupuesto</span><span class="big num euro">{{ presupuesto() }}</span><span class="sub">disponible</span>
-        </a>
-      </div>
     }
   `,
   styles: [`
-    .hero { position: relative; overflow: hidden; display: flex; align-items: center;
-      justify-content: space-between; padding: 26px 22px; margin-bottom: 16px; }
-    .hero .ribbon { position: absolute; inset: 0 auto 0 0; width: 5px; background: var(--primary); box-shadow: 0 0 20px var(--glow); }
-    .who .hola { font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; color: var(--faint); }
-    .who h1 { font-size: 1.8rem; margin-top: 2px; }
-    .rank { text-align: right; }
-    .rank .pos { font-size: 3rem; font-weight: 900; line-height: 1; color: var(--primary); letter-spacing: -.04em; }
-    .rank .pos small { font-size: 1.2rem; color: var(--muted); }
-    .rank .rl { display: block; font-size: .72rem; color: var(--faint); text-transform: uppercase; letter-spacing: .06em; }
+    .hero { margin-bottom: 12px; }
+    .hero h1 { font-size: 1.6rem; }
 
-    .comps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
-    .comp { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 14px 8px; text-align: center; }
-    .comp .ci { font-size: 1.3rem; }
-    .comp .cn { font-size: .68rem; text-transform: uppercase; letter-spacing: .04em; color: var(--faint); font-weight: 700;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
-    .comp .cp { font-size: 1.5rem; font-weight: 900; color: var(--primary); line-height: 1.05; letter-spacing: -.03em; }
-    .comp .cs { font-size: .68rem; color: var(--faint); font-weight: 700; }
-    @media (max-width: 420px) { .comp { padding: 11px 6px; } .comp .cp { font-size: 1.1rem; } }
-    .accion { display: flex; align-items: center; gap: 14px; padding: 14px 16px; margin-bottom: 18px;
+    .resumen { display: flex; align-items: center; gap: 12px; padding: 13px 16px; margin-bottom: 14px;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 14px; }
+    .resumen .rinfo { flex: 1; } .resumen .rl { font-size: .68rem; text-transform: uppercase; letter-spacing: .06em; color: var(--faint); font-weight: 800; }
+    .resumen strong { display: block; font-size: 1.15rem; margin-top: 2px; } .resumen strong small { color: var(--muted); font-weight: 600; font-size: .8rem; }
+    .resumen .go { color: var(--primary); font-size: .8rem; font-weight: 800; flex: 0 0 auto; }
+
+    .live { display: flex; align-items: center; gap: 12px; padding: 13px 16px; margin-bottom: 14px;
+      background: rgba(0,230,118,.08); border: 1px solid rgba(0,230,118,.28); border-radius: 14px; }
+    .live .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--primary); animation: pulse 1.6s infinite; flex: 0 0 auto; }
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(0,230,118,.5); } 70% { box-shadow: 0 0 0 9px rgba(0,230,118,0); } 100% { box-shadow: 0 0 0 0 rgba(0,230,118,0); } }
+    .live .lt { flex: 1; } .live strong { display: block; color: var(--primary); }
+    .live p { margin: 2px 0 0; font-size: .82rem; color: var(--muted); }
+
+    .next { padding: 18px; margin-bottom: 14px; }
+    .nh { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; gap: 8px; }
+    .jlbl { font-size: .72rem; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--primary); }
+    .fecha { font-size: .76rem; color: var(--muted); text-transform: capitalize; }
+    .match { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 4px 0 2px; }
+    .match .tn { font-weight: 800; font-size: 1.05rem; text-align: center; flex: 1; min-width: 0;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .match .vs { font-weight: 900; color: var(--faint); font-size: .85rem; flex: 0 0 auto; padding: 3px 9px;
+      border: 1px solid var(--border); border-radius: 8px; }
+    .cd { text-align: center; color: var(--muted); font-size: .82rem; margin: 16px 0 14px; }
+    .btn { display: block; text-align: center; background: var(--primary); color: var(--primary-ink); font-weight: 800;
+      padding: 13px; border-radius: 12px; box-shadow: 0 6px 16px rgba(0,230,118,.22); }
+    .btn.ghost { background: transparent; border: 1px solid var(--primary); color: var(--primary); padding: 8px 16px; box-shadow: none; flex: 0 0 auto; }
+
+    .actual { display: block; padding: 14px 16px; margin-bottom: 14px; }
+    .actual .ah { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .actual .al { font-size: .68rem; text-transform: uppercase; letter-spacing: .05em; color: var(--faint); font-weight: 800; }
+    .actual .go { color: var(--primary); font-size: .78rem; font-weight: 800; }
+    .actual .amatch { display: flex; align-items: center; justify-content: center; gap: 12px; }
+    .actual .t { flex: 1; text-align: center; font-weight: 700; font-size: .9rem; color: var(--muted);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .actual .t.win { color: var(--ink); font-weight: 800; }
+    .actual .sc { flex: 0 0 auto; font-weight: 900; font-size: 1.3rem; letter-spacing: .02em; color: var(--primary); }
+    .actual .sc i { color: var(--faint); font-style: normal; margin: 0 5px; font-size: 1rem; }
+
+    .accion { display: flex; align-items: center; gap: 14px; padding: 14px 16px;
       background: rgba(255,194,75,.07); border: 1px solid rgba(255,194,75,.2); border-radius: 14px; }
     .accion .ic { font-size: 1.5rem; }
-    .accion .cd { flex: 1; } .accion strong { display: block; } .accion p { margin: 2px 0 0; font-size: .85rem; }
+    .accion .cd2 { flex: 1; } .accion strong { display: block; } .accion p { margin: 2px 0 0; font-size: .85rem; }
     .btn-cd { flex: 0 0 auto; background: var(--gold); color: #1a1206; font-weight: 800; font-size: .8rem;
       padding: 8px 14px; border-radius: 10px; white-space: nowrap; }
-
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
-    .stat { display: flex; flex-direction: column; gap: 2px; padding: 18px;
-      transition: transform .14s ease, border-color .14s ease; }
-    .stat:hover { transform: translateY(-3px); border-color: var(--border-strong); }
-    .stat .lbl { font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; color: var(--faint); }
-    .stat .big { font-size: 2.2rem; font-weight: 900; letter-spacing: -.03em; line-height: 1.05; }
-    .stat .big small { font-size: 1rem; opacity: .7; }
-    .stat.gold .big { color: var(--gold); }
-    .stat .sub { font-size: .75rem; color: var(--muted); }
     .muted { color: var(--muted); }
   `],
 })
 export class DashboardComponent implements OnInit, OnDestroy {
-  cuenta = signal('');
-  private timer: any = null;
-  nombre = signal('');
-  posicion = signal<number | null>(null);
-  puntos = signal<number>(0);
-  premios = signal<number>(0);
-  jugadores = signal<number>(0);
-  presupuesto = signal<number>(0);
-  posiciones = signal<{ tipo: string; nombre: string; icono: string; principal: string; secundario: string }[]>([]);
   cargando = signal(true);
+  nombre = signal('');
+  ag = signal<Agenda | null>(null);
+  resumen = signal<{ pos: number; total: number; pts: number } | null>(null);
+  cuenta = signal('');
+  cuentaPartido = signal('');
+  private timer: any = null;
+
+  actual = computed<AgendaItem | null>(() => this.ag()?.en_juego ?? this.ag()?.ultimo ?? null);
 
   constructor(private falm: FalmService) {}
-
   ngOnDestroy() { if (this.timer) clearInterval(this.timer); }
 
-  /** Próximo martes 23:59 (hora local): deadline semanal de fichajes. */
+  etiqueta(t: string) { return t === 'CHAMPIONS' ? 'Champions' : t === 'CLAUSURA' ? 'Clausura' : 'Liga'; }
+  fmt(n: number | null) { return n == null ? '–' : (Math.round(n * 10) / 10).toString(); }
+  gane(ac: AgendaItem) { return ac.mis_puntos != null && ac.rival_puntos != null && ac.mis_puntos > ac.rival_puntos; }
+  perdi(ac: AgendaItem) { return ac.mis_puntos != null && ac.rival_puntos != null && ac.rival_puntos > ac.mis_puntos; }
+  fechaLarga(iso: string) {
+    const d = new Date(iso);
+    return d.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' }) +
+      ' · ' + d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+  }
+
+  /** Próximo martes 23:59 (deadline semanal de fichajes). */
   private proximoCierre(): Date {
-    const ahora = new Date();
-    const d = new Date(ahora);
-    d.setHours(23, 59, 0, 0);
-    // días hasta el próximo martes (2). Si hoy es martes pero ya pasaron las 23:59, va al siguiente.
+    const ahora = new Date(); const d = new Date(ahora); d.setHours(23, 59, 0, 0);
     let dias = (2 - d.getDay() + 7) % 7;
     if (dias === 0 && ahora.getTime() > d.getTime()) dias = 7;
-    d.setDate(d.getDate() + dias);
-    return d;
+    d.setDate(d.getDate() + dias); return d;
   }
-
+  private restante(ms: number): string {
+    if (ms <= 0) return '¡En proceso!';
+    const dd = Math.floor(ms / 86400000), hh = Math.floor((ms % 86400000) / 3600000), mm = Math.floor((ms % 3600000) / 60000);
+    return dd > 0 ? `Faltan ${dd}d ${hh}h` : `Faltan ${hh}h ${mm}m`;
+  }
   private tick() {
-    const ms = this.proximoCierre().getTime() - Date.now();
-    if (ms <= 0) { this.cuenta.set('¡Procesando fichajes!'); return; }
-    const dd = Math.floor(ms / 86400000);
-    const hh = Math.floor((ms % 86400000) / 3600000);
-    const mm = Math.floor((ms % 3600000) / 60000);
-    this.cuenta.set(dd > 0 ? `Faltan ${dd}d ${hh}h para el martes 23:59` : `Faltan ${hh}h ${mm}m — ¡hoy cierra a las 23:59!`);
-  }
-
-  private icono(t: string) { return t === 'CHAMPIONS' ? '🌟' : t === 'CLAUSURA' ? '🔚' : '🏆'; }
-  private etiqueta(t: string) { return t === 'CHAMPIONS' ? 'Champions' : t === 'CLAUSURA' ? 'Clausura' : 'Liga'; }
-
-  /** Fase alcanzada por el equipo en la eliminatoria de Champions. */
-  private async faseChampions(compId: string, equipo: string): Promise<string | null> {
-    const rondas = await this.falm.eliminatorias(compId);
-    let ultima: { ronda: string; llave: any } | null = null;
-    for (const r of rondas) {
-      const llave = r.llaves.find((k) => k.a === equipo || k.b === equipo);
-      if (llave) ultima = { ronda: r.ronda, llave };
+    this.cuenta.set(this.restante(this.proximoCierre().getTime() - Date.now()));
+    const pr = this.ag()?.proximo;
+    if (pr) {
+      const ms = new Date(pr.fecha).getTime() - Date.now();
+      this.cuentaPartido.set(ms > 0 ? this.restante(ms) + ' para cerrar tu alineación' : 'Alineación cerrada');
     }
-    if (!ultima) return null;
-    const { ronda, llave } = ultima;
-    if (ronda === 'Final') {
-      if (llave.subtitulo === 'Final' || !llave.subtitulo) return llave.ganador === equipo ? '🏆 Campeón' : 'Finalista';
-      return llave.ganador === equipo ? '🥉 3º puesto' : '4º puesto';
-    }
-    return ronda; // eliminado en esa ronda
   }
 
   async ngOnInit() {
-    this.tick();
-    this.timer = setInterval(() => this.tick(), 60000);
     try {
       const eq = await this.falm.miEquipo();
-      if (!eq) return;
-      this.nombre.set(eq.nombre);
-      this.presupuesto.set(eq.presupuesto);
-      this.premios.set(Number(eq.beneficio ?? 0));
-      const comps = await this.falm.competiciones();
-      const liga = comps.find((c) => c.tipo === 'LIGA') ?? comps[0];
-      const [clas, plantilla] = await Promise.all([
-        liga ? this.falm.clasificacion(liga.id) : Promise.resolve([]),
-        this.falm.miPlantilla(eq.id),
-      ]);
-      const mia = clas.find((f) => f.equipo_falm_id === eq.id);
-      if (mia) { this.posicion.set(mia.posicion); this.puntos.set(mia.puntos_clasificacion); }
-      this.jugadores.set(plantilla.length);
-
-      // Liga/Clausura: posición. Champions: fase alcanzada (es eliminatoria).
-      const orden = { LIGA: 0, CHAMPIONS: 1, CLAUSURA: 2 } as Record<string, number>;
-      const ordenadas = [...comps].sort((a, b) => (orden[a.tipo] ?? 9) - (orden[b.tipo] ?? 9));
-      const filas = await Promise.all(ordenadas.map(async (c) => {
-        try {
-          if (c.tipo === 'CHAMPIONS') {
-            const fase = await this.faseChampions(c.id, eq.nombre);
-            return fase ? { tipo: c.tipo, nombre: this.etiqueta(c.tipo), icono: this.icono(c.tipo), principal: fase, secundario: '' } : null;
-          }
-          const t = c.tipo === 'LIGA' ? clas : await this.falm.clasificacionCalculada(c.id);
-          const f = t.find((x) => x.equipo_falm_id === eq.id);
-          return f && t.length
-            ? { tipo: c.tipo, nombre: this.etiqueta(c.tipo), icono: this.icono(c.tipo), principal: f.posicion + 'º', secundario: 'de ' + t.length }
-            : null;
-        } catch { return null; }
-      }));
-      this.posiciones.set(filas.filter((x): x is NonNullable<typeof x> => !!x));
-    } catch { /* defaults */ } finally { this.cargando.set(false); }
+      if (eq) {
+        this.nombre.set(eq.nombre);
+        this.ag.set(await this.falm.agenda(eq.id));
+        const comps = await this.falm.competiciones();
+        const liga = comps.find((c) => c.tipo === 'LIGA') ?? comps[0];
+        if (liga) {
+          const clas = await this.falm.clasificacion(liga.id);
+          const mia = clas.find((f) => f.equipo_falm_id === eq.id);
+          if (mia) this.resumen.set({ pos: mia.posicion, total: clas.length, pts: mia.puntos_clasificacion });
+        }
+      }
+    } catch { /* defaults */ } finally {
+      this.cargando.set(false);
+      this.tick();
+      this.timer = setInterval(() => this.tick(), 60000);
+    }
   }
 }

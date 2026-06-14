@@ -11,10 +11,10 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
       <div class="glow"></div>
       <div class="head">
         <span class="pos" [class]="abr">{{ abr }}</span>
-        @if (escudo) { <img class="escudo" [src]="escudo" alt="" loading="lazy" (error)="escudo = null" /> }
+        @if (escudo && foto) { <img class="escudo" [src]="escudo" alt="" loading="lazy" (error)="escudo = null" /> }
       </div>
       <div class="foto">
-        @if (foto) { <img [src]="foto" alt="" loading="lazy" (error)="foto = null" /> }
+        @if (foto) { <img class="ply" [src]="foto" alt="" loading="lazy" (error)="foto = null" /> }
         @else if (escudo) { <img class="ph" [src]="escudo" alt="" /> }
         @else { <span class="ph2">{{ abr === 'POR' ? '🧤' : '⚽' }}</span> }
       </div>
@@ -50,11 +50,14 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     .escudo { width: 22px; height: 22px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,.5)); }
 
     .foto {
-      position: relative; z-index: 1; height: 92px; margin: 4px 0 8px;
+      position: relative; z-index: 1; height: 96px; margin: 4px 0 8px;
       display: flex; align-items: flex-end; justify-content: center;
     }
+    .foto::before { content: ''; position: absolute; inset: auto 0 0; height: 78%;
+      background: radial-gradient(58% 70% at 50% 100%, var(--c), transparent 72%); opacity: .22; border-radius: 12px; }
     .foto img { height: 100%; object-fit: contain; filter: drop-shadow(0 6px 10px rgba(0,0,0,.5)); }
-    .foto img.ph { height: 72px; opacity: .92; filter: drop-shadow(0 4px 8px rgba(0,0,0,.5)); }
+    .foto img.ply { position: relative; z-index: 1; }
+    .foto img.ph { height: 76px; opacity: .95; filter: drop-shadow(0 4px 8px rgba(0,0,0,.5)); }
     .foto .ph2 { font-size: 2.6rem; opacity: .5; }
 
     .info { position: relative; z-index: 1; }

@@ -1,57 +1,93 @@
 import { Component, Input } from '@angular/core';
+import { clubGrad, clubInk } from './club-colors';
 
 const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'MED', DELANTERO: 'DEL' };
 
-/** Carta tipo FUT/FIFA: media (puntos), posición, foto, escudo y nombre. */
+/** Carta de jugador unificada (Once, Equipo, Mercado, Fichajes): color del club + escudo fundido.
+ *  Layout ficha: nº (puntos/precio) + posición a la izquierda, cabeza arriba-derecha, nombre + stats abajo.
+ *  Tamaños en cqw → se ve proporcional a cualquier tamaño (campo pequeño o cromos grandes). */
 @Component({
   selector: 'falm-fut-card',
   standalone: true,
   template: `
-    <div class="fut" [attr.data-pos]="abr">
+    <div class="fut" [class.campo]="campo" [attr.data-pos]="abr" [style.background]="fondo" [style.color]="tinta">
       <div class="sheen"></div>
+      @if (escudo) { <img class="wm" [src]="escudo" alt="" loading="lazy" /> }
       <div class="top">
-        <span class="media">{{ media }}</span>
-        <span class="pos">{{ abr }}</span>
-        @if (escudo) { <img class="esc" [src]="escudo" alt="" loading="lazy" (error)="escudo = null" /> }
-      </div>
-      <div class="foto">
-        @if (foto) { <img [src]="foto" alt="" loading="lazy" (error)="foto = null" /> }
-        @else if (escudo) { <img class="solo-esc" [src]="escudo" alt="" loading="lazy" /> }
+        <div class="info">
+          @if (num !== null) { <span class="val">{{ num }}@if (unidad) {<small>{{ unidad }}</small>}</span> }
+          @if (!campo) { <span class="pos">{{ abr }}</span> }
+        </div>
+        @if (foto) { <img class="face" [src]="foto" alt="" loading="lazy" (error)="foto = null" /> }
+        @else if (escudo) { <img class="face esc" [src]="escudo" alt="" loading="lazy" /> }
         @else { <span class="ph">{{ abr === 'POR' ? '🧤' : '⚽' }}</span> }
       </div>
-      <div class="nm">{{ corto }}</div>
+      <div class="foot">
+        <span class="n1">{{ nombre }}</span>
+        @if (stats?.length) {
+          <div class="sline">@for (s of stats; track s.ico) { <span>{{ s.ico }}{{ s.n }}</span> }</div>
+        }
+      </div>
+      <ng-content></ng-content>
     </div>
   `,
   styles: [`
-    .fut { position: relative; width: 100%; aspect-ratio: 7 / 10; border-radius: 12px; overflow: hidden;
-      background: linear-gradient(155deg, #f2d27a 0%, #e8c25e 35%, #caa23f 100%);
-      box-shadow: 0 6px 14px rgba(0,0,0,.45); display: flex; flex-direction: column;
-      border: 1px solid rgba(255,255,255,.35); }
-    .fut[data-pos=POR] { background: linear-gradient(155deg,#9be7c4,#49c08a 60%,#2f9c6e); }
-    .fut[data-pos=DEF] { background: linear-gradient(155deg,#9ec9f5,#4f9be8 60%,#2f74c0); }
-    .fut[data-pos=MED] { background: linear-gradient(155deg,#f2d27a,#e0b24e 60%,#bf9233); }
-    .fut[data-pos=DEL] { background: linear-gradient(155deg,#f6b39c,#ec6f4d 60%,#c8482b); }
-    .sheen { position: absolute; inset: 0; background: linear-gradient(120deg, rgba(255,255,255,.35), transparent 40%);
-      pointer-events: none; }
-    .top { position: relative; z-index: 1; display: flex; align-items: center; gap: 3px; padding: 5px 6px 0; }
-    .media { font-weight: 900; font-size: .92rem; color: #1a1206; line-height: 1; }
-    .pos { font-weight: 800; font-size: .5rem; color: #1a1206; opacity: .8; }
-    .esc { width: 14px; height: 14px; object-fit: contain; margin-left: auto; filter: drop-shadow(0 1px 2px rgba(0,0,0,.4)); }
-    .foto { position: relative; z-index: 1; flex: 1; min-height: 0; display: flex; align-items: flex-end; justify-content: center; }
-    .foto img { height: 100%; object-fit: contain; filter: drop-shadow(0 4px 5px rgba(0,0,0,.4)); }
-    .foto .solo-esc { height: 62%; align-self: center; margin-bottom: 6px; }
-    .foto .ph { font-size: 1.6rem; opacity: .6; padding-bottom: 6px; }
-    .nm { position: relative; z-index: 1; text-align: center; font-weight: 800; font-size: .56rem; color: #1a1206;
-      padding: 1px 3px 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-      border-top: 1px solid rgba(0,0,0,.18); }
+    :host { container-type: inline-size; display: block; }
+    .fut { position: relative; width: 100%; aspect-ratio: 1 / 1.08; border-radius: 9cqw; overflow: hidden;
+      display: flex; flex-direction: column; padding: 6cqw 7cqw; color: #1a1206;
+      box-shadow: 0 6px 16px rgba(0,0,0,.45); border: 1px solid rgba(255,255,255,.26); cursor: pointer; }
+    .sheen { position: absolute; inset: 0; pointer-events: none; z-index: 2;
+      background: linear-gradient(120deg, rgba(255,255,255,.22), transparent 46%); }
+    .wm { position: absolute; right: -14%; top: 2%; width: 86%; opacity: .13; filter: saturate(.85);
+      object-fit: contain; z-index: 0; pointer-events: none; }
+
+    .top { position: relative; z-index: 1; flex: 1; min-height: 0; display: flex; align-items: flex-start; justify-content: space-between; gap: 4cqw; }
+    .info { display: flex; flex-direction: column; align-items: flex-start; gap: 4cqw; }
+    .val { font-weight: 900; font-size: 21cqw; line-height: 1; color: inherit; text-shadow: 0 1px 2px rgba(0,0,0,.22); }
+    .val small { font-size: 8cqw; font-weight: 800; opacity: .8; margin-left: 1px; }
+    .pos { font-weight: 900; font-size: 8cqw; letter-spacing: .03em; color: #07120d; padding: 1.5cqw 5cqw; border-radius: 4cqw; background: #fff; }
+    .fut[data-pos=POR] .pos { background: var(--pos-POR); } .fut[data-pos=DEF] .pos { background: var(--pos-DEF); }
+    .fut[data-pos=MED] .pos { background: var(--pos-MED); } .fut[data-pos=DEL] .pos { background: var(--pos-DEL); }
+    .face { height: 100%; max-width: 60%; object-fit: contain; object-position: top right; align-self: stretch;
+      filter: drop-shadow(0 4px 6px rgba(0,0,0,.45)); z-index: 1; }
+    .face.esc { max-width: 52%; object-position: top; opacity: .96; }
+    .ph { font-size: 24cqw; opacity: .6; margin-left: auto; line-height: 1; }
+
+    .foot { position: relative; z-index: 1; margin-top: 4cqw; }
+    .n1 { display: block; font-weight: 900; font-size: 12cqw; color: inherit; text-shadow: 0 1px 2px rgba(0,0,0,.22);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sline { display: flex; gap: 6cqw; margin-top: 2cqw; font-size: 9cqw; font-weight: 800; color: inherit; opacity: .92; }
+    .sline span { white-space: nowrap; }
+
+    /* modo campo (Once): sin posición (la da la banda), cara centrada, puntos en pastilla flotante */
+    .fut.campo .info { position: absolute; top: 5cqw; left: 6cqw; z-index: 3; }
+    .fut.campo .val { background: rgba(0,0,0,.36); color: #fff; padding: 1.5cqw 4cqw; border-radius: 5cqw; font-size: 18cqw; text-shadow: none; }
+    .fut.campo .top { justify-content: center; align-items: stretch; }
+    .fut.campo .face { max-width: 90%; object-position: center bottom; }
+    .fut.campo .n1 { text-align: center; }
   `],
 })
 export class FutCardComponent {
   @Input() nombre = '';
   @Input() foto: string | null = null;
   @Input() escudo: string | null = null;
-  @Input() media: number | string = 0;
   @Input() set posicion(v: string) { this.abr = ABR[v] ?? v; }
+  @Input() media: number | string | null = null;   // puntos (Once/Equipo)
+  @Input() precio: number | null = null;            // precio (Mercado/Fichajes)
+  @Input() sub: string | null = null;               // (reservado)
+  @Input() stats: { ico: string; n: number | string }[] | null = null;
+  @Input() campo = false;                           // Once: sin chip de posición, cara centrada
   abr = 'MED';
+
   get corto() { const p = (this.nombre || '').split(' '); return p.length > 1 ? p[p.length - 1] : this.nombre; }
+  get fondo() { return clubGrad(this.escudo, this.abr); }
+  get tinta() { return clubInk(this.escudo); }
+  get num(): number | string | null {
+    if (this.media !== null && this.media !== undefined && this.media !== '') return this.media;
+    if (this.precio != null) return this.precio;
+    return null;
+  }
+  get unidad(): string {
+    return (this.media === null || this.media === undefined || this.media === '') && this.precio != null ? 'M' : '';
+  }
 }

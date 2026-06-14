@@ -1,8 +1,8 @@
 import { Component, OnInit, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { environment } from '../../../environments/environment';
-import { ActivoLibre, Equipo, FalmService, ItemPlantilla, JornadaFalm } from '../../core/falm.service';
-import { PlayerCardComponent } from '../../shared/player-card.component';
+import { ActivoLibre, Equipo, FalmService, ItemPlantilla, JornadaFalm, PuntosJugador } from '../../core/falm.service';
+import { FutCardComponent } from '../../shared/fut-card.component';
 import { FichaService } from '../../shared/ficha.service';
 
 const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
@@ -11,7 +11,7 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
 @Component({
   selector: 'app-fichajes',
   standalone: true,
-  imports: [FormsModule, PlayerCardComponent],
+  imports: [FormsModule, FutCardComponent],
   template: `
     <h1>🔁 Fichajes</h1>
 
@@ -89,12 +89,12 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
         <p class="total faint num">{{ visibles().length }} jugadores libres</p>
         <div class="grid">
           @for (a of visibles().slice(0, limite()); track a.activo_id) {
-            <falm-player-card class="pick" [class.sel]="prioridadDe(a)" (click)="toggle(a)"
-              [nombre]="a.nombre" [club]="a.club" [escudo]="a.escudo ?? null"
-              [foto]="a.foto ?? null" [posicion]="a.posicion" [precio]="a.precio_mercado">
+            <falm-fut-card class="pick" [class.sel]="prioridadDe(a)" (click)="toggle(a)"
+              [nombre]="a.nombre" [escudo]="a.escudo ?? null"
+              [foto]="a.foto ?? null" [posicion]="a.posicion" [media]="mediaDe(a)" [stats]="statsDe(a)">
               @if (prioridadDe(a); as pr) { <span class="badge">{{ pr }}ª</span> }
               @if (a.ext_id) { <button class="info-b" (click)="verFicha(a, $event)">ⓘ</button> }
-            </falm-player-card>
+            </falm-fut-card>
           }
         </div>
         @if (visibles().length > limite()) {
@@ -146,7 +146,7 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
     .filtros button.pos.on.MED { box-shadow: inset 0 0 0 1px var(--pos-MED); color: var(--pos-MED); }
     .filtros button.pos.on.DEL { box-shadow: inset 0 0 0 1px var(--pos-DEL); color: var(--pos-DEL); }
     .total { margin: 0 0 12px; font-size: .8rem; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(106px, 1fr)); gap: 10px; }
     .pick { position: relative; }
     .pick.sel { outline: 2px solid var(--primary); outline-offset: 1px; border-radius: 16px; }
     .badge { position: absolute; top: 8px; left: 8px; z-index: 2; background: var(--primary); color: var(--primary-ink);
@@ -163,6 +163,7 @@ export class FichajesComponent implements OnInit {
   equipo = signal<Equipo | null>(null);
   jornada = signal<JornadaFalm | null>(null);
   mercado = signal<ActivoLibre[]>([]);
+  acum = signal<Record<number, PuntosJugador>>({});
   p1 = signal<ActivoLibre | null>(null);
   p2 = signal<ActivoLibre | null>(null);
   texto = signal('');
@@ -193,6 +194,13 @@ export class FichajesComponent implements OnInit {
 
   abr(p: string) { return ({ PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'MED', DELANTERO: 'DEL' } as Record<string, string>)[p] ?? p; }
   sel(s: number) { return s === 1 ? this.p1() : this.p2(); }
+  mediaDe(a: ActivoLibre) { return a.ext_id != null ? Number(this.acum()[a.ext_id]?.puntosTotales ?? 0) : 0; }
+  statsDe(a: ActivoLibre): { ico: string; n: number | string }[] {
+    const s = a.ext_id != null ? this.acum()[a.ext_id] : null;
+    const out: { ico: string; n: number | string }[] = [{ ico: '💰', n: a.precio_mercado + 'M' }];
+    if (s) { if (s.goles) out.push({ ico: '⚽', n: s.goles }); else if (s.asistencias) out.push({ ico: '🅰', n: s.asistencias }); }
+    return out.slice(0, 2);
+  }
   prioridadDe(a: ActivoLibre): number | null {
     if (this.p1()?.activo_id === a.activo_id) return 1;
     if (this.p2()?.activo_id === a.activo_id) return 2;
@@ -218,10 +226,13 @@ export class FichajesComponent implements OnInit {
 
   async ngOnInit() {
     try {
-      const [eq, jor, merc] = await Promise.all([
-        this.falm.miEquipo(), this.falm.jornadaActualLiga(), this.falm.mercadoLibre(),
+      const [eq, jor, merc, acum] = await Promise.all([
+        this.falm.miEquipo(), this.falm.jornadaActualLiga(), this.falm.mercadoLibre(), this.falm.puntuacionesAcumuladas(),
       ]);
       this.equipo.set(eq); this.jornada.set(jor); this.mercado.set(merc);
+      const m: Record<number, PuntosJugador> = {};
+      for (const p of acum) m[p.jugador.id] = p;
+      this.acum.set(m);
       if (eq) {
         const [mp, ex] = await Promise.all([this.falm.miPlantilla(eq.id), this.falm.fichajesExtra(eq.id)]);
         this.miPlantilla.set(mp); this.extras.set(ex);

@@ -34,11 +34,14 @@ export interface Equipo {
   beneficio?: number;
 }
 
+export interface AgendaItem { numero: number; fecha: string; comp: 'LIGA' | 'CHAMPIONS' | 'CLAUSURA'; rival: string; es_local: boolean; mis_puntos: number | null; rival_puntos: number | null; }
+export interface Agenda { proximo: AgendaItem | null; en_juego: AgendaItem | null; ultimo: AgendaItem | null; }
+
 export interface ItemPlantilla {
   activo_id: string;
   tipo: 'JUGADOR' | 'DEFENSA';
   posicion: 'PORTERO' | 'DEFENSA' | 'MEDIO' | 'DELANTERO';
-  nombre: string;       // jugador real o "Defensa <Club>" para porteros virtuales
+  nombre: string;       // jugador real o "Portería <Club>" para porteros virtuales
   club: string;         // equipo LFP
   precio: number;
   foto?: string | null;
@@ -129,7 +132,7 @@ export interface PuntosJugador {
   jugador: { id: number; nombre: string; equipo: string; escudo: string; foto: string; posicion: string };
   puntosTotales: number;
   goles: number; golesPenalti: number; asistencias: number; estrellas: number;
-  minutosJugados: number; imbatido: boolean;
+  minutosJugados: number; imbatido: number;
   tarjetasAmarillas: number; tarjetasRojas: number;
 }
 
@@ -308,7 +311,7 @@ export class FalmService {
         tipo: a.tipo,
         posicion: esDefensa ? 'PORTERO' : a.jugador_lfp?.posicion,
         nombre: esDefensa
-          ? `Defensa ${a.equipo_lfp?.nombre ?? ''}`.trim()
+          ? `Portería ${a.equipo_lfp?.nombre ?? ''}`.trim()
           : `${a.jugador_lfp?.nombre ?? ''} ${a.jugador_lfp?.apellido ?? ''}`.trim(),
         club: esDefensa ? a.equipo_lfp?.nombre ?? '' : a.jugador_lfp?.equipo_lfp?.nombre ?? '',
         precio: p.precio,
@@ -595,6 +598,20 @@ export class FalmService {
     return (data ?? {}) as Record<string, number>;
   }
 
+  /** Stats por activo de un equipo (incl. porteros virtuales): activo_id -> {puntos,goles,asis,estrellas,imbatidos,goles_contra,jugadas}. */
+  async statsEquipo(equipoId: string): Promise<Record<string, any>> {
+    const { data, error } = await this.sb.client.rpc('stats_equipo', { p_equipo: equipoId });
+    if (error) throw error;
+    return (data ?? {}) as Record<string, any>;
+  }
+
+  /** Agenda del equipo: próximo partido, jornada en juego y último jugado. */
+  async agenda(equipoId: string): Promise<Agenda> {
+    const { data, error } = await this.sb.client.rpc('agenda_equipo', { p_equipo: equipoId });
+    if (error) throw error;
+    return (data ?? { proximo: null, en_juego: null, ultimo: null }) as Agenda;
+  }
+
   /** Despierta el backend (dyno) al abrir la app, para que las RPC en vivo vayan rápidas. */
   warmup(): void { this.sb.client.rpc('warmup').then(() => {}, () => {}); }
 
@@ -602,7 +619,16 @@ export class FalmService {
   async jugadorJornadas(id: number): Promise<any[]> {
     const { data, error } = await this.sb.client.rpc('jugador_jornadas', { p_id: id });
     if (error) throw error;
-    return (data ?? []) as any[];
+    const d = typeof data === 'string' ? JSON.parse(data) : data;
+    return (Array.isArray(d) ? d : []) as any[];
+  }
+
+  /** Historial por jornada de un activo (incl. porteros virtuales, por activo_id). */
+  async activoJornadas(activoId: string): Promise<any[]> {
+    const { data, error } = await this.sb.client.rpc('activo_jornadas', { p_activo: activoId });
+    if (error) throw error;
+    const d = typeof data === 'string' ? JSON.parse(data) : data;
+    return (Array.isArray(d) ? d : []) as any[];
   }
 
   /** Mercado: activos libres en la temporada activa. */
@@ -680,7 +706,7 @@ export class FalmService {
     const mapAct = (a: any) => {
       const def = a.tipo === 'DEFENSA';
       return {
-        nombre: def ? `Defensa ${a.equipo_lfp?.nombre ?? ''}`.trim()
+        nombre: def ? `Portería ${a.equipo_lfp?.nombre ?? ''}`.trim()
           : `${a.jugador_lfp?.nombre ?? ''} ${a.jugador_lfp?.apellido ?? ''}`.trim(),
         posicion: def ? 'PORTERO' : a.jugador_lfp?.posicion,
         foto: def ? null : a.jugador_lfp?.foto,
@@ -723,7 +749,7 @@ export class FalmService {
       const def = a?.tipo === 'DEFENSA';
       return {
         id: f.id,
-        lesionado: def ? `Defensa ${a?.equipo_lfp?.nombre ?? ''}`.trim()
+        lesionado: def ? `Portería ${a?.equipo_lfp?.nombre ?? ''}`.trim()
           : `${a?.jugador_lfp?.nombre ?? ''} ${a?.jugador_lfp?.apellido ?? ''}`.trim(),
         url: f.url_noticia,
         usado: f.usado,

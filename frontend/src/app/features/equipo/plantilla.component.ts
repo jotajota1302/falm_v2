@@ -1,6 +1,6 @@
 import { Component, OnInit, computed, signal } from '@angular/core';
 import { Equipo, FalmService, ItemPlantilla } from '../../core/falm.service';
-import { PlayerCardComponent } from '../../shared/player-card.component';
+import { FutCardComponent } from '../../shared/fut-card.component';
 import { FichaService } from '../../shared/ficha.service';
 
 const ORDEN: Record<string, number> = { PORTERO: 0, DEFENSA: 1, MEDIO: 2, DELANTERO: 3 };
@@ -10,7 +10,7 @@ const ETI: Record<string, string> = { PORTERO: 'Porteros', DEFENSA: 'Defensas', 
 @Component({
   selector: 'app-plantilla',
   standalone: true,
-  imports: [PlayerCardComponent],
+  imports: [FutCardComponent],
   template: `
     @if (cargando()) {
       <p class="muted">Cargando…</p>
@@ -38,12 +38,10 @@ const ETI: Record<string, string> = { PORTERO: 'Porteros', DEFENSA: 'Defensas', 
         </div>
         <div class="grid">
           @for (j of g.items; track j.activo_id) {
-            <falm-player-card class="rise"
+            <falm-fut-card class="rise"
               (click)="abrir(j)"
-              [nombre]="j.nombre" [club]="j.club" [escudo]="j.escudo ?? null"
-              [foto]="j.foto ?? null" [posicion]="j.posicion" [precio]="j.precio">
-              <span class="ptsbadge">{{ puntosDe(j) }}<small>pts</small></span>
-            </falm-player-card>
+              [nombre]="j.nombre" [escudo]="j.escudo ?? null"
+              [foto]="j.foto ?? null" [posicion]="j.posicion" [media]="puntosDe(j)" [stats]="statsDe(j)" />
           }
         </div>
       }
@@ -61,18 +59,18 @@ const ETI: Record<string, string> = { PORTERO: 'Porteros', DEFENSA: 'Defensas', 
     .linea { display: flex; align-items: center; gap: 10px; margin: 20px 0 12px; }
     .linea h3 { margin: 0; }
     .linea .n { margin-left: auto; font-weight: 700; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(108px, 1fr)); gap: 10px; }
     .muted { color: var(--muted); } .err { color: var(--bad, #fb7185); }
   `],
 })
 export class PlantillaComponent implements OnInit {
   equipo = signal<Equipo | null>(null);
   items = signal<ItemPlantilla[]>([]);
-  puntos = signal<Record<string, number>>({});
+  statsEq = signal<Record<string, any>>({});
   cargando = signal(true);
   error = signal('');
 
-  totalPuntos = computed(() => +Object.values(this.puntos()).reduce((s, n) => s + Number(n || 0), 0).toFixed(1));
+  totalPuntos = computed(() => +Object.values(this.statsEq()).reduce((s, x: any) => s + Number(x?.puntos || 0), 0).toFixed(1));
 
   grupos = computed(() => {
     const by: Record<string, ItemPlantilla[]> = {};
@@ -82,9 +80,27 @@ export class PlantillaComponent implements OnInit {
 
   constructor(private falm: FalmService, public ficha: FichaService) {}
   abr(p: string) { return ({ PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'MED', DELANTERO: 'DEL' } as Record<string, string>)[p] ?? p; }
-  puntosDe(j: ItemPlantilla) { return this.puntos()[j.activo_id] ?? 0; }
+  puntosDe(j: ItemPlantilla) { return Number(this.statsEq()[j.activo_id]?.puntos ?? 0); }
+  statsDe(j: ItemPlantilla): { ico: string; n: number | string }[] | null {
+    const s = this.statsEq()[j.activo_id];
+    if (!s) return null;
+    const out: { ico: string; n: number | string }[] = [];
+    const esPor = j.posicion === 'PORTERO';
+    const defPor = esPor || j.posicion === 'DEFENSA';
+    if (s.goles) out.push({ ico: '⚽', n: s.goles });
+    if (s.asis) out.push({ ico: '🅰', n: s.asis });
+    if (defPor && s.imbatidos) out.push({ ico: '🧤', n: s.imbatidos });
+    if (esPor && s.goles_contra) out.push({ ico: '🥅', n: s.goles_contra });
+    if (s.estrellas) out.push({ ico: '⭐', n: s.estrellas });
+    return out.length ? out.slice(0, 3) : null;
+  }
   abrir(j: ItemPlantilla) {
-    if (j.ext_id) this.ficha.open({ id: j.ext_id, nombre: j.nombre, equipo: j.club, escudo: j.escudo ?? '', foto: j.foto ?? '', posicion: j.posicion });
+    const s = this.statsEq()[j.activo_id];
+    const tot = s ? {
+      puntos: Number(s.puntos ?? 0), goles: Number(s.goles ?? 0), asis: Number(s.asis ?? 0),
+      estrellas: Number(s.estrellas ?? 0), imbatidos: Number(s.imbatidos ?? 0), jugadas: Number(s.jugadas ?? 0),
+    } : undefined;
+    this.ficha.open({ id: j.ext_id ?? 0, activoId: j.activo_id, nombre: j.nombre, equipo: j.club, escudo: j.escudo ?? '', foto: j.foto ?? '', posicion: j.posicion, tot });
   }
 
   async ngOnInit() {
@@ -92,9 +108,11 @@ export class PlantillaComponent implements OnInit {
       const eq = await this.falm.miEquipo();
       this.equipo.set(eq);
       if (eq) {
-        const [items, puntos] = await Promise.all([this.falm.miPlantilla(eq.id), this.falm.puntosEquipo(eq.id)]);
+        const [items, stats] = await Promise.all([
+          this.falm.miPlantilla(eq.id), this.falm.statsEquipo(eq.id),
+        ]);
         this.items.set(items);
-        this.puntos.set(puntos);
+        this.statsEq.set(stats);
       }
     } catch (e: any) {
       this.error.set(e?.message ?? 'Error cargando la plantilla');

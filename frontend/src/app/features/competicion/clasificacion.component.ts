@@ -81,9 +81,25 @@ const COLORES = ['#00e676', '#38bdf8', '#fb7185', '#a3e635', '#ffc24b', '#c084fc
         }
       </div>
     }
+
+    @if (!cargando() && !error() && ranking().length) {
+      <h3 class="th prem-th">💰 Clasificación por premios</h3>
+      <div class="tabla card rise">
+        @for (e of ranking(); track e.nombre; let i = $index) {
+          <div class="row prem" [class.top]="i < 3" [style.--accent]="color(e.nombre)">
+            <span class="c-pos num">@if (i < 3) { <span class="medal" [attr.data-m]="i+1">{{ i+1 }}</span> } @else { {{ i+1 }} }</span>
+            <span class="c-eq"><span class="av" [style.background]="color(e.nombre)">{{ inicial(e.nombre) }}</span><span class="nm">{{ e.nombre }}</span></span>
+            <span class="c-ben num">{{ e.beneficio }}<small>€</small></span>
+          </div>
+        }
+      </div>
+    }
   `,
   styles: [`
     h1 { margin: 0 0 16px; }
+    .prem-th { margin: 24px 0 10px; }
+    .row.prem { grid-template-columns: 42px 1fr auto; }
+    .c-ben { font-weight: 900; color: var(--gold); font-size: 1.05rem; } .c-ben small { font-size: .7rem; opacity: .8; margin-left: 1px; }
     .comps { display: flex; gap: 8px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 4px; }
     .comp { flex: 0 0 auto; display: flex; align-items: center; gap: 6px; padding: 9px 15px; border-radius: 11px;
       border: 1px solid var(--border); background: var(--surface); color: var(--muted); cursor: pointer;
@@ -135,6 +151,7 @@ export class ClasificacionComponent implements OnInit {
   competicionId = signal('');
   filas = signal<FilaClasificacion[]>([]);
   rondas = signal<RondaEliminatoria[]>([]);
+  ranking = signal<{ nombre: string; beneficio: number }[]>([]);
   modo = signal<'tabla' | 'bracket'>('tabla');
   cargando = signal(true);
   error = signal('');
@@ -158,6 +175,7 @@ export class ClasificacionComponent implements OnInit {
       const liga = comps.find((c) => c.tipo === 'LIGA') ?? comps[0];
       if (liga) { this.competicionId.set(liga.id); await this.cargar(liga); }
       else this.cargando.set(false);
+      this.falm.rankingBeneficios().then((r) => this.ranking.set(r)).catch(() => {});
     } catch (e: any) {
       this.error.set(e?.message ?? 'Error cargando la clasificación');
       this.cargando.set(false);

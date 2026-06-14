@@ -1,8 +1,8 @@
 import { Component, OnInit, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { ActivoLibre, FalmService } from '../../core/falm.service';
-import { PlayerCardComponent } from '../../shared/player-card.component';
+import { ActivoLibre, FalmService, PuntosJugador } from '../../core/falm.service';
+import { FutCardComponent } from '../../shared/fut-card.component';
 import { FichaService } from '../../shared/ficha.service';
 
 const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
@@ -11,7 +11,7 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
 @Component({
   selector: 'app-mercado',
   standalone: true,
-  imports: [FormsModule, RouterLink, PlayerCardComponent],
+  imports: [FormsModule, RouterLink, FutCardComponent],
   template: `
     <div class="cab">
       <h1>🛒 Mercado</h1>
@@ -41,10 +41,10 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
       <p class="total faint num">{{ visibles().length }} jugadores libres</p>
       <div class="grid">
         @for (a of visibles().slice(0, limite()); track a.activo_id) {
-          <falm-player-card
+          <falm-fut-card
             (click)="abrir(a)"
-            [nombre]="a.nombre" [club]="a.club" [escudo]="a.escudo ?? null"
-            [foto]="a.foto ?? null" [posicion]="a.posicion" [precio]="a.precio_mercado" />
+            [nombre]="a.nombre" [escudo]="a.escudo ?? null"
+            [foto]="a.foto ?? null" [posicion]="a.posicion" [media]="mediaDe(a)" [stats]="statsDe(a)" />
         }
       </div>
       @if (visibles().length > limite()) {
@@ -67,7 +67,7 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
     .filtros button.pos.on.MED { box-shadow: inset 0 0 0 1px var(--pos-MED); color: var(--pos-MED); }
     .filtros button.pos.on.DEL { box-shadow: inset 0 0 0 1px var(--pos-DEL); color: var(--pos-DEL); }
     .total { margin: 0 0 12px; font-size: .8rem; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(106px, 1fr)); gap: 10px; }
     .mas { display: block; margin: 18px auto 0; background: var(--surface); border: 1px solid var(--border);
       color: var(--ink); border-radius: 12px; padding: 11px 22px; cursor: pointer; font-weight: 700; }
     .muted { color: var(--muted); } .err { color: #fb7185; }
@@ -76,6 +76,7 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
 export class MercadoComponent implements OnInit {
   pos = POS;
   todos = signal<ActivoLibre[]>([]);
+  acum = signal<Record<number, PuntosJugador>>({});
   texto = signal('');
   posFiltro = signal('');
   limite = signal(24);
@@ -98,9 +99,25 @@ export class MercadoComponent implements OnInit {
   }
   togglePos(p: string) { this.posFiltro.set(this.posFiltro() === p ? '' : p); this.limite.set(24); }
 
+  mediaDe(a: ActivoLibre) { return a.ext_id != null ? Number(this.acum()[a.ext_id]?.puntosTotales ?? 0) : 0; }
+  statsDe(a: ActivoLibre): { ico: string; n: number | string }[] {
+    const s = a.ext_id != null ? this.acum()[a.ext_id] : null;
+    const out: { ico: string; n: number | string }[] = [{ ico: '💰', n: a.precio_mercado + 'M' }];
+    if (s) {
+      if (s.goles) out.push({ ico: '⚽', n: s.goles });
+      else if (s.asistencias) out.push({ ico: '🅰', n: s.asistencias });
+    }
+    return out.slice(0, 2);
+  }
+
   async ngOnInit() {
-    try { this.todos.set(await this.falm.mercadoLibre()); }
-    catch (e: any) { this.error.set(e?.message ?? 'Error cargando el mercado'); }
+    try {
+      const [libres, acum] = await Promise.all([this.falm.mercadoLibre(), this.falm.puntuacionesAcumuladas()]);
+      this.todos.set(libres);
+      const m: Record<number, PuntosJugador> = {};
+      for (const p of acum) m[p.jugador.id] = p;
+      this.acum.set(m);
+    } catch (e: any) { this.error.set(e?.message ?? 'Error cargando el mercado'); }
     finally { this.cargando.set(false); }
   }
 }

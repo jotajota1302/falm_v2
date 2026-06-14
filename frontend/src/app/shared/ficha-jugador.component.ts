@@ -1,6 +1,7 @@
 import { Component, computed, effect, signal } from '@angular/core';
 import { FalmService } from '../core/falm.service';
-import { FichaService } from './ficha.service';
+import { FichaService, JugadorRef } from './ficha.service';
+import { clubGrad, clubInk } from './club-colors';
 
 const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: 'DEF', DEFENSA: 'DEF',
   Mediocampista: 'MED', MEDIO: 'MED', Delantero: 'DEL', DELANTERO: 'DEL' };
@@ -15,9 +16,10 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
         <div class="panel rise" (click)="$event.stopPropagation()" [attr.data-pos]="abr(j.posicion)">
           <button class="x" (click)="ficha.close()">✕</button>
           <div class="head">
-            <span class="av">
-              @if (j.foto) { <img [src]="j.foto" alt="" (error)="sinFoto.set(true)" [style.display]="sinFoto() ? 'none':'block'" /> }
-              @if (!j.foto || sinFoto()) { <span class="ini">{{ (j.nombre || '?').charAt(0) }}</span> }
+            <span class="av" [style.background]="fondoAv(j)">
+              @if (j.escudo) { <img class="wm" [src]="j.escudo" alt="" /> }
+              @if (j.foto) { <img class="pl" [src]="j.foto" alt="" (error)="sinFoto.set(true)" [style.display]="sinFoto() ? 'none':'block'" /> }
+              @if (!j.foto || sinFoto()) { <span class="ini" [style.color]="inkAv(j)">{{ (j.nombre || '?').charAt(0) }}</span> }
             </span>
             <div class="meta">
               <span class="pos" [class]="abr(j.posicion)">{{ abr(j.posicion) }}</span>
@@ -43,14 +45,18 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
             </div>
 
             <h3 class="th">Puntos por jornada</h3>
-            <div class="chart">
-              @for (d of barras(); track d.j) {
-                <div class="bar" [title]="'J' + d.j + ': ' + d.p + ' pts'">
-                  <span class="fill" [style.height.%]="d.h" [class.neg]="d.p < 0"></span>
-                  <span class="jl">{{ d.j }}</span>
-                </div>
-              }
-            </div>
+            @if (barras().length) {
+              <div class="chart">
+                @for (d of barras(); track d.j) {
+                  <div class="bar" [title]="'J' + d.j + ': ' + d.p + ' pts'">
+                    <span class="fill" [style.height.%]="d.h" [class.neg]="d.p < 0"></span>
+                    <span class="jl">{{ d.j }}</span>
+                  </div>
+                }
+              </div>
+            } @else {
+              <p class="muted">Aún sin puntos esta temporada.</p>
+            }
           }
         </div>
       </div>
@@ -69,10 +75,11 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
     .x { position: absolute; top: 14px; right: 14px; background: var(--surface-2); border: 1px solid var(--border);
       color: var(--muted); width: 32px; height: 32px; border-radius: 9px; cursor: pointer; }
     .head { display: flex; gap: 16px; align-items: center; margin-bottom: 18px; }
-    .av { width: 84px; height: 84px; border-radius: 18px; overflow: hidden; flex: 0 0 auto;
-      background: var(--c, var(--surface-2)); display: flex; align-items: center; justify-content: center; }
-    .av img { width: 100%; height: 100%; object-fit: cover; }
-    .av .ini { font-size: 2.4rem; font-weight: 900; color: #07120d; }
+    .av { position: relative; width: 84px; height: 84px; border-radius: 18px; overflow: hidden; flex: 0 0 auto;
+      display: flex; align-items: flex-end; justify-content: center; }
+    .av .wm { position: absolute; width: 124%; left: 50%; top: 50%; transform: translate(-50%,-50%); opacity: .18; object-fit: contain; }
+    .av .pl { position: relative; z-index: 1; width: 100%; height: 100%; object-fit: contain; object-position: bottom; filter: drop-shadow(0 3px 4px rgba(0,0,0,.4)); }
+    .av .ini { position: relative; z-index: 1; font-size: 2.4rem; font-weight: 900; padding-bottom: 6px; }
     .meta h2 { margin: 4px 0; font-size: 1.4rem; }
     .eq { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: .85rem; }
     .esc { width: 18px; height: 18px; object-fit: contain; }
@@ -98,15 +105,19 @@ export class FichaJugadorComponent {
 
   acum = computed(() => {
     const h = this.jornadas();
-    const sum = (k: string) => h.reduce((s, x) => s + Number(x[k] ?? 0), 0);
-    return {
-      puntos: +sum('puntosJornada').toFixed(1),
-      goles: sum('goles') + sum('golesPenalti'),
-      asis: sum('asistencias'),
-      estrellas: sum('estrellas'),
-      imbatidos: h.filter((x) => x.imbatido).length,
-      jugadas: h.filter((x) => Number(x.minutosJugados ?? 0) > 0).length,
-    };
+    if (h.length) {
+      const sum = (k: string) => h.reduce((s, x) => s + Number(x[k] ?? 0), 0);
+      return {
+        puntos: +sum('puntosJornada').toFixed(1),
+        goles: sum('goles') + sum('golesPenalti'),
+        asis: sum('asistencias'),
+        estrellas: sum('estrellas'),
+        imbatidos: h.filter((x) => x.imbatido).length,
+        jugadas: h.filter((x) => Number(x.minutosJugados ?? 0) > 0).length,
+      };
+    }
+    // respaldo: totales ya conocidos (Estadísticas/Equipo)
+    return this.ficha.abierto()?.tot ?? { puntos: 0, goles: 0, asis: 0, estrellas: 0, imbatidos: 0, jugadas: 0 };
   });
 
   barras = computed(() => {
@@ -120,23 +131,28 @@ export class FichaJugadorComponent {
     effect(() => {
       const j = this.ficha.abierto();
       this.sinFoto.set(false);
-      if (j) this.cargar(j.id);
+      if (j) this.cargar(j);
       else this.jornadas.set([]);
-    });
+    }, { allowSignalWrites: true });
   }
 
   abr(p?: string) { return ABR[p ?? ''] ?? 'MED'; }
+  fondoAv(j: any) { return clubGrad(j?.escudo, this.abr(j?.posicion)); }
+  inkAv(j: any) { return clubInk(j?.escudo); }
 
-  private async cargar(id: number) {
+  private async cargar(j: JugadorRef) {
     this.cargando.set(true);
     this.fallo.set(false);
     let data: any[] = [];
+    let err = false;
     for (let i = 0; i < 2; i++) {
-      try { data = await this.falm.jugadorJornadas(id); if (data.length) break; }
-      catch { /* dyno despertando: reintenta */ }
+      try {
+        data = j.activoId ? await this.falm.activoJornadas(j.activoId) : await this.falm.jugadorJornadas(j.id);
+        err = false; break;
+      } catch { err = true; /* fallo real: reintenta */ }
     }
     this.jornadas.set(data);
-    this.fallo.set(data.length === 0);
+    this.fallo.set(err); // solo error real; sin datos = 0 puntos (no error)
     this.cargando.set(false);
   }
 }

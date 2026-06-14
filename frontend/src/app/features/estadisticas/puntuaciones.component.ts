@@ -2,6 +2,7 @@ import { Component, OnInit, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { FalmService, JornadaLfp, PuntosJugador } from '../../core/falm.service';
 import { FichaService } from '../../shared/ficha.service';
+import { clubGrad, clubInk } from '../../shared/club-colors';
 
 const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: 'DEF', DEFENSA: 'DEF',
   Mediocampista: 'MED', MEDIO: 'MED', Delantero: 'DEL', DELANTERO: 'DEL' };
@@ -37,11 +38,12 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
     } @else {
       <div class="lista">
         @for (p of visibles().slice(0, limite()); track p.jugador.id; let i = $index) {
-          <div class="fila card" (click)="ficha.open(p.jugador)">
+          <div class="fila card" (click)="abrirFicha(p)">
             <span class="rk num">{{ i + 1 }}</span>
-            <span class="av" [class]="abr(p.jugador.posicion)">
-              @if (p.jugador.foto) { <img [src]="p.jugador.foto" alt="" loading="lazy" (error)="p.jugador.foto = ''" /> }
-              @else { {{ p.jugador.nombre.charAt(0) }} }
+            <span class="av" [style.background]="grad(p.jugador)" [style.color]="ink(p.jugador)">
+              @if (p.jugador.escudo) { <img class="wm" [src]="p.jugador.escudo" alt="" /> }
+              @if (p.jugador.foto) { <img class="pl" [src]="p.jugador.foto" alt="" loading="lazy" (error)="p.jugador.foto = ''" /> }
+              @else { <span class="ini">{{ p.jugador.nombre.charAt(0) }}</span> }
             </span>
             <div class="who">
               <span class="nm">{{ p.jugador.nombre }}</span>
@@ -54,7 +56,7 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
                 @if (p.golesPenalti) { <b>🎯 {{ p.golesPenalti }}</b> }
                 @if (p.asistencias) { <b>🅰️ {{ p.asistencias }}</b> }
                 @if (p.estrellas) { <b>⭐ {{ p.estrellas }}</b> }
-                @if (p.imbatido) { <b>🧤</b> }
+                @if (p.imbatido && esCero(p.jugador.posicion)) { <b>🧤 {{ p.imbatido }}</b> }
                 @if (p.tarjetasRojas) { <b>🟥</b> } @else if (p.tarjetasAmarillas) { <b>🟨</b> }
                 @if (modo() === 'jornada') { <span class="min">{{ p.minutosJugados }}'</span> }
                 @else { <span class="min">{{ jorn(p) }} jorn.</span> }
@@ -85,11 +87,11 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
       cursor: pointer; transition: border-color .12s ease; }
     .fila:hover { border-color: var(--border-strong); }
     .rk { text-align: center; color: var(--faint); font-weight: 800; font-size: .9rem; }
-    .av { width: 46px; height: 46px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
-      font-weight: 800; color: #07120d; overflow: hidden; }
-    .av img { width: 100%; height: 100%; object-fit: cover; }
-    .av.POR { background: var(--pos-POR); } .av.DEF { background: var(--pos-DEF); }
-    .av.MED { background: var(--pos-MED); } .av.DEL { background: var(--pos-DEL); }
+    .av { position: relative; width: 46px; height: 46px; border-radius: 12px; overflow: hidden;
+      display: flex; align-items: flex-end; justify-content: center; font-weight: 800; }
+    .av .wm { position: absolute; width: 122%; left: 50%; top: 50%; transform: translate(-50%,-50%); opacity: .2; object-fit: contain; }
+    .av .pl { position: relative; z-index: 1; height: 100%; width: 100%; object-fit: contain; filter: drop-shadow(0 2px 3px rgba(0,0,0,.45)); }
+    .av .ini { position: relative; z-index: 1; font-size: 1.1rem; padding-bottom: 8px; }
     .who { min-width: 0; }
     .nm { display: block; font-weight: 700; font-size: .92rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .eq { display: flex; align-items: center; gap: 5px; color: var(--muted); font-size: .76rem; }
@@ -121,6 +123,19 @@ export class PuntuacionesComponent implements OnInit {
 
   constructor(private falm: FalmService, public ficha: FichaService) {}
   abr(p: string) { return ABR[p] ?? 'MED'; }
+  grad(j: any) { return clubGrad(j.escudo, this.abr(j.posicion)); }
+  ink(j: any) { return clubInk(j.escudo); }
+  esCero(pos: string) { const a = this.abr(pos); return a === 'POR' || a === 'DEF'; }
+  abrirFicha(p: PuntosJugador) {
+    this.ficha.open({ ...p.jugador, tot: {
+      puntos: Number(p.puntosTotales ?? 0),
+      goles: Number(p.goles ?? 0) + Number(p.golesPenalti ?? 0),
+      asis: Number(p.asistencias ?? 0),
+      estrellas: Number(p.estrellas ?? 0),
+      imbatidos: this.esCero(p.jugador.posicion) ? Number(p.imbatido ?? 0) : 0,
+      jugadas: Number((p as any).jornadas ?? 0),
+    } });
+  }
   jorn(p: any) { return p.jornadas ?? 0; }
 
   async ngOnInit() {

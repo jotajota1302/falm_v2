@@ -109,10 +109,9 @@ export class AppComponent {
     { path: '/plantilla', icon: '👕', label: 'Equipo' },
     { path: '/alineacion', icon: '📋', label: 'Once' },
     { path: '/mercado', icon: '🛒', label: 'Mercado' },
-    { path: '/clasificacion', icon: '🏆', label: 'Liga' },
+    { path: '/clasificacion', icon: '🏆', label: 'Clasif.' },
     { path: '/jornadas', icon: '📅', label: 'Partidos' },
     { path: '/puntuaciones', icon: '📊', label: 'Stats' },
-    { path: '/premios', icon: '💰', label: 'Premios' },
   ];
 
   constructor(public auth: AuthService, public season: SeasonService, falm: FalmService) {
