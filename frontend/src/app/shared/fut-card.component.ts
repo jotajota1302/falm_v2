@@ -16,6 +16,7 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
       </div>
       <div class="foto">
         @if (foto) { <img [src]="foto" alt="" loading="lazy" (error)="foto = null" /> }
+        @else if (escudo) { <img class="solo-esc" [src]="escudo" alt="" loading="lazy" /> }
         @else { <span class="ph">{{ abr === 'POR' ? '🧤' : '⚽' }}</span> }
       </div>
       <div class="nm">{{ corto }}</div>
@@ -38,6 +39,7 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     .esc { width: 14px; height: 14px; object-fit: contain; margin-left: auto; filter: drop-shadow(0 1px 2px rgba(0,0,0,.4)); }
     .foto { position: relative; z-index: 1; flex: 1; min-height: 0; display: flex; align-items: flex-end; justify-content: center; }
     .foto img { height: 100%; object-fit: contain; filter: drop-shadow(0 4px 5px rgba(0,0,0,.4)); }
+    .foto .solo-esc { height: 62%; align-self: center; margin-bottom: 6px; }
     .foto .ph { font-size: 1.6rem; opacity: .6; padding-bottom: 6px; }
     .nm { position: relative; z-index: 1; text-align: center; font-weight: 800; font-size: .56rem; color: #1a1206;
       padding: 1px 3px 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;

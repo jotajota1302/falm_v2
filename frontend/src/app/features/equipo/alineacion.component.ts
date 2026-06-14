@@ -58,10 +58,11 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
         @for (linea of lineasCampo(); track linea.pos) {
           <div class="fila">
             @for (j of linea.jug; track j.activo_id) {
-              <button class="slot" (click)="fuera(j)" title="Quitar del once">
+              <div class="slot">
+                <button class="quitar" (click)="fuera(j)" title="Quitar del once">✕</button>
                 <falm-fut-card [nombre]="j.nombre" [posicion]="j.posicion" [foto]="j.foto ?? null"
                   [escudo]="j.escudo ?? null" [media]="media(j)" />
-              </button>
+              </div>
             }
           </div>
         }
@@ -133,7 +134,10 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
     .pitch::before { content:''; position:absolute; left:50%; top:50%; width:80px; height:80px;
       border:2px solid rgba(255,255,255,.16); border-radius:50%; transform:translate(-50%,-50%); }
     .fila { position: relative; z-index: 1; display: flex; justify-content: space-evenly; gap: 6px; flex-wrap: wrap; }
-    .slot { background: none; border: none; cursor: pointer; width: 58px; padding: 0; }
+    .slot { position: relative; width: 58px; }
+    .quitar { position: absolute; top: -6px; right: -6px; z-index: 3; width: 20px; height: 20px; border-radius: 50%;
+      border: 1px solid var(--border); background: var(--bad); color: #fff; font-size: .68rem; font-weight: 900;
+      cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,.4); }
     .vacio { position: relative; z-index: 1; text-align: center; color: rgba(255,255,255,.6); font-size: .85rem; margin: auto; }
 
     .banco { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 14px; margin-bottom: 18px; }

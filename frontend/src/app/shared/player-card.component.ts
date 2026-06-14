@@ -54,7 +54,7 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
       display: flex; align-items: flex-end; justify-content: center;
     }
     .foto img { height: 100%; object-fit: contain; filter: drop-shadow(0 6px 10px rgba(0,0,0,.5)); }
-    .foto img.ph { height: 64px; opacity: .35; }
+    .foto img.ph { height: 72px; opacity: .92; filter: drop-shadow(0 4px 8px rgba(0,0,0,.5)); }
     .foto .ph2 { font-size: 2.6rem; opacity: .5; }
 
     .info { position: relative; z-index: 1; }
