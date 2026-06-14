@@ -5,12 +5,11 @@ import {
 } from '../../core/falm.service';
 import { FutCardComponent } from '../../shared/fut-card.component';
 
-const ORDEN: Record<string, number> = { PORTERO: 0, DEFENSA: 1, MEDIO: 2, DELANTERO: 3 };
-const ETI: Record<string, string> = { PORTERO: 'Porteros', DEFENSA: 'Defensas', MEDIO: 'Medios', DELANTERO: 'Delanteros' };
+const ETI: Record<string, string> = { PORTERO: 'Portero', DEFENSA: 'Defensa', MEDIO: 'Medio', DELANTERO: 'Delantero' };
 const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'MED', DELANTERO: 'DEL' };
 const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
 
-/** Once: campo con cartas FIFA + banquillo de suplentes multi-línea. */
+/** Once: campo por huecos de formación (toca el hueco → elige) + banquillo multi-línea. */
 @Component({
   selector: 'app-alineacion',
   standalone: true,
@@ -50,29 +49,35 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
         <button class="atajo" (click)="repetirUltima()">↩︎ Repetir última</button>
         @if (!esLiga()) { <button class="atajo" (click)="copiarDeLiga()">📋 Copiar de Liga</button> }
       </div>
-
       @if (aviso()) { <p class="aviso">{{ aviso() }}</p> }
 
-      <!-- CAMPO -->
+      <!-- CAMPO: huecos por formación -->
       <div class="pitch">
-        @for (linea of lineasCampo(); track linea.pos) {
+        @for (pos of ['DELANTERO','MEDIO','DEFENSA','PORTERO']; track pos) {
           <div class="fila">
-            @for (j of linea.jug; track j.activo_id) {
-              <div class="slot">
-                <button class="quitar" (click)="fuera(j)" title="Quitar del once">✕</button>
+            @for (j of enLinea(pos); track j.activo_id) {
+              <button class="slot" (click)="abrirLinea(pos)">
                 <falm-fut-card [nombre]="j.nombre" [posicion]="j.posicion" [foto]="j.foto ?? null"
                   [escudo]="j.escudo ?? null" [media]="media(j)" />
-              </div>
+              </button>
+            }
+            @for (h of huecos(pos); track h) {
+              <button class="slot vacio" (click)="abrirLinea(pos)" [attr.data-pos]="abr(pos)">
+                <span class="mas">+</span><span class="lb">{{ abr(pos) }}</span>
+              </button>
             }
           </div>
         }
-        @if (titulares().length === 0) { <p class="vacio">Toca jugadores de tu plantilla para poner el once.</p> }
       </div>
+      <p class="hint">Toca un hueco para elegir. {{ titulares().length }}/11 titulares.</p>
 
       <!-- BANQUILLO -->
       <div class="banco">
-        <h3>Banquillo <small class="faint">prioridad ↓ · marca qué líneas cubre cada uno</small></h3>
-        @if (banca().length === 0) { <p class="muted sm">Sin suplentes. Añade desde tu plantilla con «Banca».</p> }
+        <div class="bh">
+          <h3>Banquillo</h3>
+          <button class="add" (click)="abrirBanca()">+ Añadir</button>
+        </div>
+        <p class="faint sm">Prioridad ↓ · marca qué líneas cubre cada suplente.</p>
         @for (b of banca(); track b.id; let i = $index) {
           <div class="bfila">
             <span class="prio">{{ i + 1 }}</span>
@@ -88,25 +93,34 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
           </div>
         }
       </div>
+    }
 
-      <!-- PLANTILLA -->
-      <h3 class="ph">Plantilla</h3>
-      @for (g of grupos(); track g.pos) {
-        <div class="lh"><span class="pos" [class]="abr(g.pos)">{{ abr(g.pos) }}</span> {{ g.eti }}</div>
-        <div class="lista">
-          @for (j of g.items; track j.activo_id) {
-            <div class="pj" [class.tit]="esTitular(j.activo_id)" [class.ban]="enBanca(j.activo_id)">
-              <span class="pm num">{{ media(j) }}</span>
-              <span class="pn">{{ j.nombre }}</span>
-              <span class="acc">
-                <button [class.on]="esTitular(j.activo_id)" (click)="aTitular(j)">XI</button>
-                @if (j.posicion !== 'PORTERO') { <button [class.on]="enBanca(j.activo_id)" (click)="aBanca(j)">Banca</button> }
-                <button [class.on]="!esTitular(j.activo_id) && !enBanca(j.activo_id)" (click)="fuera(j)">—</button>
-              </span>
-            </div>
-          }
+    <!-- SELECTOR (bottom sheet) -->
+    @if (picker(); as p) {
+      <div class="back" (click)="picker.set(null)">
+        <div class="sheet rise" (click)="$event.stopPropagation()">
+          <div class="sh">
+            <span class="st">{{ p.banca ? 'Añadir suplente' : 'Elegir ' + etiquetaPos(p.pos!) + ' · ' + enLinea(p.pos!).length + '/' + cupo(p.pos!) }}</span>
+            <button class="x" (click)="picker.set(null)">✕</button>
+          </div>
+          <div class="cands">
+            @for (j of candidatos(); track j.activo_id) {
+              <button class="cand" [class.sel]="seleccionado(j)" (click)="elegir(j)">
+                <span class="cm num">{{ media(j) }}</span>
+                <span class="cav" [class]="abr(j.posicion)">
+                  @if (j.foto) { <img [src]="j.foto" alt="" loading="lazy" (error)="j.foto=null" /> }
+                  @else if (j.escudo) { <img class="esc" [src]="j.escudo" alt="" /> }
+                  @else { {{ j.nombre.charAt(0) }} }
+                </span>
+                <span class="cn">{{ j.nombre }}</span>
+                <span class="ck">{{ seleccionado(j) ? '✓' : '' }}</span>
+              </button>
+            }
+            @if (candidatos().length === 0) { <p class="muted sm" style="padding:14px">No hay jugadores disponibles para esta línea.</p> }
+          </div>
+          <button class="listo" (click)="picker.set(null)">Listo</button>
         </div>
-      }
+      </div>
     }
   `,
   styles: [`
@@ -126,55 +140,67 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
     .atajo { background: var(--surface-2); border: 1px solid var(--border); color: var(--ink); border-radius: 10px;
       padding: 8px 13px; cursor: pointer; font-weight: 700; font-size: .8rem; }
     .aviso { background: rgba(0,230,118,.08); border: 1px solid rgba(0,230,118,.22); color: var(--primary); padding: 10px 14px; border-radius: 10px; margin-bottom: 12px; }
+    .hint { text-align: center; color: var(--muted); font-size: .76rem; margin: 6px 0 16px; }
 
-    .pitch { position: relative; border-radius: 16px; padding: 14px 8px;
+    .pitch { position: relative; border-radius: 16px; padding: 16px 8px;
       background: repeating-linear-gradient(0deg, #0f3d24 0 38px, #114327 38px 76px);
-      border: 1px solid rgba(255,255,255,.12); display: flex; flex-direction: column-reverse; gap: 10px;
-      min-height: 360px; box-shadow: inset 0 0 60px rgba(0,0,0,.4); overflow: hidden; margin-bottom: 18px; }
-    .pitch::before { content:''; position:absolute; left:50%; top:50%; width:80px; height:80px;
+      border: 1px solid rgba(255,255,255,.12); display: flex; flex-direction: column; gap: 12px;
+      min-height: 380px; box-shadow: inset 0 0 60px rgba(0,0,0,.4); overflow: hidden; }
+    .pitch::before { content:''; position:absolute; left:50%; top:50%; width:84px; height:84px;
       border:2px solid rgba(255,255,255,.16); border-radius:50%; transform:translate(-50%,-50%); }
     .fila { position: relative; z-index: 1; display: flex; justify-content: space-evenly; gap: 6px; flex-wrap: wrap; }
-    .slot { position: relative; width: 58px; }
-    .quitar { position: absolute; top: -6px; right: -6px; z-index: 3; width: 20px; height: 20px; border-radius: 50%;
-      border: 1px solid var(--border); background: var(--bad); color: #fff; font-size: .68rem; font-weight: 900;
-      cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,.4); }
-    .vacio { position: relative; z-index: 1; text-align: center; color: rgba(255,255,255,.6); font-size: .85rem; margin: auto; }
+    .slot { background: none; border: none; cursor: pointer; width: 60px; padding: 0; }
+    .slot.vacio { height: 86px; border: 2px dashed rgba(255,255,255,.28); border-radius: 12px; display: flex;
+      flex-direction: column; align-items: center; justify-content: center; gap: 2px; background: rgba(255,255,255,.05); }
+    .slot.vacio .mas { font-size: 1.4rem; color: rgba(255,255,255,.6); line-height: 1; }
+    .slot.vacio .lb { font-size: .56rem; font-weight: 800; color: rgba(255,255,255,.5); }
 
     .banco { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 14px; margin-bottom: 18px; }
-    .banco h3 { margin: 0 0 10px; font-size: 1rem; } .banco h3 small { font-weight: 600; font-size: .68rem; margin-left: 6px; }
-    .sm { font-size: .82rem; }
-    .bfila { display: flex; align-items: center; gap: 8px; padding: 8px 6px; border-bottom: 1px solid var(--border); }
+    .bh { display: flex; align-items: center; justify-content: space-between; }
+    .banco h3 { margin: 0; font-size: 1rem; }
+    .add { background: rgba(0,230,118,.1); border: 1px solid var(--primary); color: var(--primary); border-radius: 9px;
+      padding: 6px 12px; cursor: pointer; font-weight: 800; font-size: .78rem; }
+    .sm { font-size: .8rem; } .faint { color: var(--faint); }
+    .bfila { display: flex; align-items: center; gap: 8px; padding: 9px 4px; border-bottom: 1px solid var(--border); }
     .bfila:last-child { border-bottom: none; }
     .prio { width: 22px; height: 22px; border-radius: 50%; background: var(--surface-2); border: 1px solid var(--border);
       display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: .72rem; flex: 0 0 auto; }
     .bnm { flex: 1; font-weight: 700; font-size: .85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .chips { display: flex; gap: 4px; }
-    .ch { width: 34px; padding: 4px 0; border-radius: 7px; border: 1px solid var(--border); background: var(--surface-2);
-      color: var(--muted); font-weight: 800; font-size: .64rem; cursor: pointer; }
+    .ch { width: 32px; padding: 5px 0; border-radius: 7px; border: 1px solid var(--border); background: var(--surface-2);
+      color: var(--muted); font-weight: 800; font-size: .62rem; cursor: pointer; }
     .ch.on.DEF { background: var(--pos-DEF); color: #07120d; border-color: var(--pos-DEF); }
     .ch.on.MED { background: var(--pos-MED); color: #07120d; border-color: var(--pos-MED); }
     .ch.on.DEL { background: var(--pos-DEL); color: #07120d; border-color: var(--pos-DEL); }
-    .mv { width: 26px; padding: 4px 0; border: 1px solid var(--border); background: var(--surface-2); color: var(--muted);
-      border-radius: 7px; cursor: pointer; font-size: .7rem; }
+    .mv { width: 26px; padding: 5px 0; border: 1px solid var(--border); background: var(--surface-2); color: var(--muted); border-radius: 7px; cursor: pointer; font-size: .7rem; }
     .mv:disabled { opacity: .3; }
-    .rm { width: 26px; padding: 4px 0; border: 1px solid var(--border); background: var(--surface-2); color: var(--bad); border-radius: 7px; cursor: pointer; }
+    .rm { width: 26px; padding: 5px 0; border: 1px solid var(--border); background: var(--surface-2); color: var(--bad); border-radius: 7px; cursor: pointer; }
 
-    .ph { margin: 16px 0 10px; }
-    .lh { display: flex; align-items: center; gap: 8px; margin: 14px 0 6px; font-weight: 700; color: var(--muted); font-size: .85rem; }
-    .pos { padding: 2px 7px; border-radius: 6px; font-size: .62rem; font-weight: 800; color: #07120d; }
-    .pos.POR { background: var(--pos-POR); } .pos.DEF { background: var(--pos-DEF); }
-    .pos.MED { background: var(--pos-MED); } .pos.DEL { background: var(--pos-DEL); }
-    .lista { display: flex; flex-direction: column; gap: 6px; }
-    .pj { display: flex; align-items: center; gap: 11px; padding: 8px 12px; background: var(--surface);
-      border: 1px solid var(--border); border-radius: 11px; }
-    .pj.tit { border-color: rgba(0,230,118,.4); } .pj.ban { border-color: rgba(255,194,75,.4); }
-    .pm { width: 30px; text-align: center; font-weight: 900; color: var(--primary); }
-    .pn { flex: 1; font-weight: 600; font-size: .88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .acc { display: flex; gap: 5px; }
-    .acc button { padding: 6px 9px; border: 1px solid var(--border); background: var(--surface-2); color: var(--muted);
-      border-radius: 8px; cursor: pointer; font-size: .74rem; font-weight: 800; }
-    .acc button.on { background: var(--primary); color: var(--primary-ink); border-color: var(--primary); }
-    .muted { color: var(--muted); } .faint { color: var(--faint); }
+    /* bottom sheet selector */
+    .back { position: fixed; inset: 0; z-index: 60; background: rgba(0,0,0,.66); backdrop-filter: blur(4px);
+      display: flex; align-items: flex-end; justify-content: center; }
+    .sheet { width: 100%; max-width: 520px; max-height: 82vh; display: flex; flex-direction: column;
+      background: linear-gradient(180deg, var(--surface), var(--bg-elev)); border: 1px solid var(--border);
+      border-top: 3px solid var(--primary); border-radius: 22px 22px 0 0; padding: 16px; }
+    @media (min-width: 560px) { .back { align-items: center; } .sheet { border-radius: 22px; } }
+    .sh { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .st { font-weight: 800; font-size: .95rem; }
+    .x { background: var(--surface-2); border: 1px solid var(--border); color: var(--muted); width: 30px; height: 30px; border-radius: 8px; cursor: pointer; }
+    .cands { overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
+    .cand { display: grid; grid-template-columns: 32px 40px 1fr 22px; align-items: center; gap: 10px; padding: 8px 10px;
+      background: var(--surface-2); border: 1px solid var(--border); border-radius: 11px; cursor: pointer; text-align: left; }
+    .cand.sel { border-color: var(--primary); background: rgba(0,230,118,.08); }
+    .cm { font-weight: 900; color: var(--primary); text-align: center; }
+    .cav { width: 40px; height: 40px; border-radius: 11px; display: flex; align-items: center; justify-content: center;
+      font-weight: 800; color: #07120d; overflow: hidden; }
+    .cav img { width: 100%; height: 100%; object-fit: cover; } .cav img.esc { object-fit: contain; padding: 5px; }
+    .cav.POR { background: var(--pos-POR); } .cav.DEF { background: var(--pos-DEF); }
+    .cav.MED { background: var(--pos-MED); } .cav.DEL { background: var(--pos-DEL); }
+    .cn { font-weight: 700; font-size: .88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ck { color: var(--primary); font-weight: 900; text-align: center; }
+    .listo { margin-top: 12px; background: var(--primary); color: var(--primary-ink); border: none; border-radius: 12px;
+      padding: 12px; cursor: pointer; font-weight: 800; }
+    .muted { color: var(--muted); }
   `],
 })
 export class AlineacionComponent implements OnInit {
@@ -190,6 +216,7 @@ export class AlineacionComponent implements OnInit {
   puntos = signal<Record<string, number>>({});
   titulares = signal<string[]>([]);
   banca = signal<{ id: string; lineas: string[] }[]>([]);
+  picker = signal<{ pos?: string; banca?: boolean } | null>(null);
   cargando = signal(true);
   guardando = signal(false);
   aviso = signal('');
@@ -197,55 +224,79 @@ export class AlineacionComponent implements OnInit {
   compTipo = computed(() => this.competiciones().find((c) => c.id === this.competicionId())?.tipo ?? 'LIGA');
   esLiga = computed(() => this.compTipo() === 'LIGA');
 
-  grupos = computed(() => {
-    const by: Record<string, ItemPlantilla[]> = {};
-    for (const it of this.plantilla()) (by[it.posicion] ??= []).push(it);
-    return Object.keys(by).sort((a, b) => ORDEN[a] - ORDEN[b]).map((pos) => ({ pos, eti: ETI[pos] ?? pos, items: by[pos] }));
+  /** Cupos por línea según la formación (POR siempre 1). */
+  cupos = computed(() => {
+    const p = this.formacion().split('-').map(Number);
+    return { PORTERO: 1, DEFENSA: p[0] || 0, MEDIO: p[1] || 0, DELANTERO: p[2] || 0 } as Record<string, number>;
   });
 
-  lineasCampo = computed(() => {
-    const set = new Set(this.titulares());
-    const tit = this.plantilla().filter((j) => set.has(j.activo_id));
-    return ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'].map((pos) => ({ pos, jug: tit.filter((j) => j.posicion === pos) }));
+  candidatos = computed(() => {
+    const p = this.picker();
+    if (!p) return [] as ItemPlantilla[];
+    if (p.banca) {
+      const enBanca = new Set(this.banca().map((b) => b.id));
+      return this.plantilla().filter((j) => j.posicion !== 'PORTERO' && !this.esTitular(j.activo_id) && !enBanca.has(j.activo_id));
+    }
+    return this.plantilla().filter((j) => j.posicion === p.pos);
   });
 
   constructor(private falm: FalmService) {}
 
   icono(t: string) { return t === 'CHAMPIONS' ? '🌟' : t === 'CLAUSURA' ? '🔚' : '🏆'; }
   etiqueta(t: string) { return t === 'CHAMPIONS' ? 'Champions' : t === 'CLAUSURA' ? 'Clausura' : 'Liga'; }
+  etiquetaPos(p: string) { return ETI[p] ?? p; }
   abr(p: string) { return ABR[p] ?? p; }
   media(j: ItemPlantilla) { return this.puntos()[j.activo_id] ?? 0; }
   nombreDe(id: string) { return this.plantilla().find((p) => p.activo_id === id)?.nombre ?? '?'; }
   esTitular(id: string) { return this.titulares().includes(id); }
-  enBanca(id: string) { return this.banca().some((b) => b.id === id); }
+  cupo(pos: string) { return this.cupos()[pos] ?? 0; }
 
-  aTitular(j: ItemPlantilla) {
-    this.banca.update((b) => b.filter((x) => x.id !== j.activo_id));
-    this.titulares.update((t) => t.includes(j.activo_id) ? t : [...t, j.activo_id]);
+  enLinea(pos: string): ItemPlantilla[] {
+    const set = new Set(this.titulares());
+    return this.plantilla().filter((j) => set.has(j.activo_id) && j.posicion === pos);
   }
-  aBanca(j: ItemPlantilla) {
-    this.titulares.update((t) => t.filter((x) => x !== j.activo_id));
-    if (!this.enBanca(j.activo_id)) {
+  huecos(pos: string): number[] {
+    const n = Math.max(0, this.cupo(pos) - this.enLinea(pos).length);
+    return Array.from({ length: n }, (_, i) => i);
+  }
+
+  abrirLinea(pos: string) { this.picker.set({ pos }); }
+  abrirBanca() { this.picker.set({ banca: true }); }
+
+  seleccionado(j: ItemPlantilla) {
+    const p = this.picker();
+    return p?.banca ? false : this.esTitular(j.activo_id);
+  }
+  elegir(j: ItemPlantilla) {
+    const p = this.picker();
+    if (!p) return;
+    if (p.banca) {
       const natural = LINEAS.includes(j.posicion) ? [j.posicion] : ['MEDIO'];
       this.banca.update((b) => [...b, { id: j.activo_id, lineas: natural }]);
+      this.picker.set(null);
+      return;
+    }
+    // titular: toggle
+    if (this.esTitular(j.activo_id)) {
+      this.titulares.update((t) => t.filter((x) => x !== j.activo_id));
+    } else {
+      this.banca.update((b) => b.filter((x) => x.id !== j.activo_id));
+      this.titulares.update((t) => [...t, j.activo_id]);
     }
   }
-  fuera(j: ItemPlantilla) { this.fueraId(j.activo_id); }
+
   fueraId(id: string) {
     this.titulares.update((t) => t.filter((x) => x !== id));
     this.banca.update((b) => b.filter((x) => x.id !== id));
   }
   toggleLinea(b: { id: string; lineas: string[] }, l: string) {
-    const has = b.lineas.includes(l);
-    const next = has ? b.lineas.filter((x) => x !== l) : [...b.lineas, l];
-    if (next.length === 0) return; // al menos una línea
+    const next = b.lineas.includes(l) ? b.lineas.filter((x) => x !== l) : [...b.lineas, l];
+    if (next.length === 0) return;
     this.banca.update((arr) => arr.map((x) => x.id === b.id ? { ...x, lineas: next } : x));
   }
   subir(i: number) { if (i > 0) this.swap(i, i - 1); }
   bajar(i: number) { if (i < this.banca().length - 1) this.swap(i, i + 1); }
-  private swap(a: number, c: number) {
-    this.banca.update((arr) => { const n = [...arr]; [n[a], n[c]] = [n[c], n[a]]; return n; });
-  }
+  private swap(a: number, c: number) { this.banca.update((arr) => { const n = [...arr]; [n[a], n[c]] = [n[c], n[a]]; return n; }); }
 
   async ngOnInit() {
     try {
@@ -272,7 +323,6 @@ export class AlineacionComponent implements OnInit {
     if (js.length) await this.seleccionarJornada(js[js.length - 1]);
     else { this.jornada.set(null); this.limpiar(); }
   }
-
   async seleccionarJornada(j: JornadaFalm) {
     this.jornada.set(j); this.aviso.set('');
     const eq = this.equipo(); if (!eq) return;
@@ -282,16 +332,13 @@ export class AlineacionComponent implements OnInit {
     if (prev) { this.aplicar(prev); this.aviso.set('↩︎ Heredada de tu última jornada de ' + this.etiqueta(this.compTipo()) + '.'); }
     else this.limpiar();
   }
-
   private limpiar() { this.titulares.set([]); this.banca.set([]); this.formacion.set('4-4-2'); }
-
   private aplicar(ali: AlineacionGuardada) {
-    const enPlantilla = new Set(this.plantilla().map((p) => p.activo_id));
+    const enP = new Set(this.plantilla().map((p) => p.activo_id));
     this.formacion.set(ali.formacion || '4-4-2');
-    this.titulares.set(ali.jugadores.filter((j) => j.rol === 'TITULAR' && enPlantilla.has(j.activo_id)).map((j) => j.activo_id));
-    this.banca.set(ali.jugadores.filter((j) => j.rol === 'SUPLENTE' && enPlantilla.has(j.activo_id))
-      .sort((a, b) => a.orden - b.orden)
-      .map((j) => ({ id: j.activo_id, lineas: j.lineas?.length ? j.lineas : ['MEDIO'] })));
+    this.titulares.set(ali.jugadores.filter((j) => j.rol === 'TITULAR' && enP.has(j.activo_id)).map((j) => j.activo_id));
+    this.banca.set(ali.jugadores.filter((j) => j.rol === 'SUPLENTE' && enP.has(j.activo_id))
+      .sort((a, b) => a.orden - b.orden).map((j) => ({ id: j.activo_id, lineas: j.lineas?.length ? j.lineas : ['MEDIO'] })));
   }
 
   async repetirUltima() {
