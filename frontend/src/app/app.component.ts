@@ -17,7 +17,7 @@ interface NavItem { path: string; icon: string; label: string; }
   template: `
     @if (auth.isLoggedIn()) {
       <header class="topbar">
-        <span class="brand"><span class="ball">⚽</span> FALM</span>
+        <span class="brand">FALM</span>
         @if (season.temporadas().length > 1) {
           <select class="temp" [ngModel]="season.actualId()" (ngModelChange)="cambiarTemporada($event)" title="Temporada">
             @for (t of season.temporadas(); track t.id) {
