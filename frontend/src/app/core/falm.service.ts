@@ -449,6 +449,13 @@ export class FalmService {
     });
   }
 
+  /** Detalle de un enfrentamiento: once de cada equipo con los puntos por jugador. */
+  async detalleEnfrentamiento(enfId: string): Promise<any | null> {
+    const { data, error } = await this.sb.client.rpc('detalle_enfrentamiento', { p_enf: enfId });
+    if (error) throw error;
+    return data;
+  }
+
   /** Jornada de liga a editar (demo: la primera de la temporada). */
   async jornadaActualLiga(): Promise<JornadaFalm | null> {
     const comps = await this.competiciones();
