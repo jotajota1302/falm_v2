@@ -31,9 +31,19 @@
 - Da el **desglose por jugador y partido**: goles, asistencias, tarjetas, minutos, sustituciones e incluso rating. Timeline de eventos.
 - Free tier ~100 req/día (una jornada ≈ 10 partidos → cabe justo). Alternativas: SportMonks, Highlightly.
 
-### 4. futbolfantasy (scraping actual) — ⛔ exige navegador
-- Probado `GET .../laliga/puntos/2025/15/futmondo-prensa` → **timeout, 0 bytes** (protegido). Confirma por qué el viejo usa Selenium.
-- Es la **única fuente fácil de las estrellas Marca/AS** (página `futmondo-prensa`).
+### 4. futbolfantasy — ✅ ACCESIBLE SIN NAVEGADOR (con User-Agent)
+- Sin cabeceras: timeout (bloquea peticiones sin User-Agent).
+- **Con header `User-Agent` de navegador**: `GET .../laliga/puntos/2025/15/futmondo-prensa` → **200, HTML server-rendered (4.5 MB)** con los datos DENTRO del HTML.
+- Estructura confirmada: `<table class="tablestats">` con columnas `<th class="picas" data-tooltip="Picas As">` y `<th class="marca" data-tooltip="Estrellas Marca">` + las stats por jugador.
+- **=> Las estrellas Marca/AS SE PUEDEN OBTENER con un simple HTTP GET + User-Agent + parseo de HTML. NO hace falta Selenium/Chrome.** El viejo usaba Selenium por precaución; hoy la página es server-rendered.
+- Caveats: parseo de HTML (frágil a cambios de maquetación, pero ligerísimo); las notas de prensa pueden cambiar tras el partido (re-fetch programado); respetar el sitio (1 fetch/jornada).
+
+## ⭐ HALLAZGO PRINCIPAL (revisado)
+**El scraping NO necesita navegador.** La única razón por la que fallaba en cloud era Selenium/Chrome (RAM). Pero:
+- Estrellas Marca/AS + stats por jugador → **futbolfantasy HTML vía HTTP+User-Agent** (4.5 MB, parseable; sin browser).
+- Estructura/resultados/fotos/posiciones/puntos oficiales → **llt-services API** (JSON, sin token).
+- Calendario/horarios → **football-data API**.
+→ Todo cabe en **pg_cron (extensión http) + un parser ligero** (Edge Function o GitHub Action). Cero Selenium, cero Cloud Run, cero problema de recursos.
 
 ## Conclusión
 
