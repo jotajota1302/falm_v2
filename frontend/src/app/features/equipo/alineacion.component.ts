@@ -38,7 +38,7 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
       }
 
       <div class="barra">
-        <select [ngModel]="formacion()" (ngModelChange)="formacion.set($event)">
+        <select [ngModel]="formacion()" (ngModelChange)="cambiarFormacion($event)">
           @for (f of formaciones; track f) { <option [value]="f">{{ f }}</option> }
         </select>
         <span class="cont" [class.ok]="titulares().length === 11">{{ titulares().length }}<small>/11</small></span>
@@ -263,6 +263,23 @@ export class AlineacionComponent implements OnInit {
   abrirLinea(pos: string) { this.picker.set({ pos }); }
   abrirBanca() { this.picker.set({ banca: true }); }
 
+  /** Cambia formación y recorta cada línea a su nuevo cupo (quedan los de mayor media). */
+  cambiarFormacion(f: string) {
+    this.formacion.set(f);
+    const p = f.split('-').map(Number);
+    const cupos: Record<string, number> = { PORTERO: 1, DEFENSA: p[0] || 0, MEDIO: p[1] || 0, DELANTERO: p[2] || 0 };
+    const set = new Set(this.titulares());
+    const keep: string[] = [];
+    for (const pos of ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO']) {
+      this.plantilla()
+        .filter((j) => set.has(j.activo_id) && j.posicion === pos)
+        .sort((a, b) => this.media(b) - this.media(a))
+        .slice(0, cupos[pos])
+        .forEach((j) => keep.push(j.activo_id));
+    }
+    this.titulares.set(keep);
+  }
+
   seleccionado(j: ItemPlantilla) {
     const p = this.picker();
     return p?.banca ? false : this.esTitular(j.activo_id);
@@ -276,12 +293,16 @@ export class AlineacionComponent implements OnInit {
       this.picker.set(null);
       return;
     }
-    // titular: toggle
+    // titular: toggle (sin pasar del cupo de la línea)
     if (this.esTitular(j.activo_id)) {
       this.titulares.update((t) => t.filter((x) => x !== j.activo_id));
+      this.aviso.set('');
+    } else if (this.enLinea(j.posicion).length >= this.cupo(j.posicion)) {
+      this.aviso.set(`Línea ${this.abr(j.posicion)} completa (${this.cupo(j.posicion)}). Quita uno o cambia la formación.`);
     } else {
       this.banca.update((b) => b.filter((x) => x.id !== j.activo_id));
       this.titulares.update((t) => [...t, j.activo_id]);
+      this.aviso.set('');
     }
   }
 
