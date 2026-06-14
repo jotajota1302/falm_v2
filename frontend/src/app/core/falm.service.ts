@@ -106,11 +106,19 @@ export interface OfertaIntercambio {
   solicitados: ActivoMini[];
 }
 
-export type RolAlineacion = 'TITULAR' | 'SUPLENTE_DEFENSA' | 'SUPLENTE_MEDIO' | 'SUPLENTE_DELANTERO' | null;
+export type RolAlineacion = 'TITULAR' | 'SUPLENTE';
+
+/** Un activo en la alineación: titular, o suplente que cubre un conjunto de líneas. */
+export interface Alineado {
+  activo_id: string;
+  rol: RolAlineacion;
+  lineas: string[];   // para SUPLENTE: DEFENSA/MEDIO/DELANTERO que cubre; vacío en titular
+  orden: number;      // prioridad (en el banquillo)
+}
 
 export interface AlineacionGuardada {
   formacion: string;
-  roles: Record<string, RolAlineacion>; // activo_id -> rol
+  jugadores: Alineado[];
 }
 
 export const FORMACIONES = ['5-4-1', '5-3-2', '4-5-1', '4-4-2', '4-3-3', '3-4-3', '3-5-2'];
@@ -469,15 +477,20 @@ export class FalmService {
   async getAlineacion(equipoId: string, jornadaFalmId: string): Promise<AlineacionGuardada | null> {
     const { data, error } = await this.sb.client
       .from('alineacion')
-      .select('formacion, alineacion_activo(activo_id, rol)')
+      .select('formacion, alineacion_activo(activo_id, rol, lineas, orden)')
       .eq('equipo_falm_id', equipoId)
       .eq('jornada_falm_id', jornadaFalmId)
       .maybeSingle();
     if (error) throw error;
     if (!data) return null;
-    const roles: Record<string, RolAlineacion> = {};
-    for (const aa of (data as any).alineacion_activo ?? []) roles[aa.activo_id] = aa.rol;
-    return { formacion: (data as any).formacion, roles };
+    return { formacion: (data as any).formacion, jugadores: this.aMapa((data as any).alineacion_activo) };
+  }
+
+  /** Convierte filas alineacion_activo en la lista Alineado ordenada. */
+  private aMapa(filas: any[]): Alineado[] {
+    return (filas ?? [])
+      .map((aa) => ({ activo_id: aa.activo_id, rol: aa.rol as RolAlineacion, lineas: aa.lineas ?? [], orden: aa.orden ?? 0 }))
+      .sort((a, b) => a.orden - b.orden);
   }
 
   /**
@@ -489,7 +502,7 @@ export class FalmService {
   async ultimaAlineacion(equipoId: string, competicionId?: string, antesDe?: number): Promise<AlineacionGuardada | null> {
     const { data, error } = await this.sb.client
       .from('alineacion')
-      .select('formacion, jornada_falm:jornada_falm_id!inner (numero, competicion_id), alineacion_activo(activo_id, rol)')
+      .select('formacion, jornada_falm:jornada_falm_id!inner (numero, competicion_id), alineacion_activo(activo_id, rol, lineas, orden)')
       .eq('equipo_falm_id', equipoId);
     if (error) throw error;
     let filas: any[] = data ?? [];
@@ -498,9 +511,7 @@ export class FalmService {
     if (filas.length === 0) return null;
     filas.sort((a, b) => (b.jornada_falm?.numero ?? 0) - (a.jornada_falm?.numero ?? 0));
     const top = filas[0];
-    const roles: Record<string, RolAlineacion> = {};
-    for (const aa of top.alineacion_activo ?? []) roles[aa.activo_id] = aa.rol;
-    return { formacion: top.formacion, roles };
+    return { formacion: top.formacion, jugadores: this.aMapa(top.alineacion_activo) };
   }
 
   /**
@@ -530,13 +541,16 @@ export class FalmService {
     equipoId: string,
     jornadaFalmId: string,
     formacion: string,
-    roles: Record<string, RolAlineacion>
+    jugadores: Alineado[]
   ): Promise<void> {
     // Vía RPC SECURITY DEFINER: la escritura directa la bloquea RLS sin dueño/login.
-    const limpios: Record<string, string> = {};
-    for (const [activo_id, rol] of Object.entries(roles)) if (rol) limpios[activo_id] = rol;
+    const payload = jugadores.map((j, i) => ({
+      activo: j.activo_id, rol: j.rol,
+      lineas: j.rol === 'SUPLENTE' ? (j.lineas ?? []) : null,
+      orden: j.orden ?? i + 1,
+    }));
     const { error } = await this.sb.client.rpc('guardar_alineacion', {
-      p_equipo: equipoId, p_jornada: jornadaFalmId, p_formacion: formacion, p_roles: limpios,
+      p_equipo: equipoId, p_jornada: jornadaFalmId, p_formacion: formacion, p_jugadores: payload,
     });
     if (error) throw error;
   }
