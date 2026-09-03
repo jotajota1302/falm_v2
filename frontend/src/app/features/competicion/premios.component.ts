@@ -1,65 +1,64 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { FalmService } from '../../core/falm.service';
 import { environment } from '../../../environments/environment';
-
-const COLORES = ['#00e676', '#38bdf8', '#fb7185', '#a3e635', '#ffc24b', '#c084fc', '#f97316', '#2dd4bf', '#f472b6', '#60a5fa'];
+import { colorEquipo } from '../../shared/equipo-colores';
 
 /** Premios: beneficio del equipo + ranking de premios de la liga. */
 @Component({
   selector: 'app-premios',
   standalone: true,
   template: `
-    <h1>💰 Premios</h1>
+    <header class="phead">
+      <div>
+        <h1>Premios</h1>
+        <p class="sub">Lo que llevas ganado esta temporada entre premios de jornada y de competición.</p>
+      </div>
+    </header>
 
     @if (cargando()) {
       <p class="muted">Cargando…</p>
     } @else if (error()) {
       <p class="err">{{ error() }}</p>
     } @else {
-      <div class="hero card rise">
-        <span class="lbl">Tu beneficio acumulado</span>
-        <span class="big num">{{ miBeneficio() }}<small>€</small></span>
-        <span class="eq">{{ miEquipo() }}</span>
+      <div class="hero">
+        <span class="lb">Tu beneficio · {{ miEquipo() }}</span>
+        <span class="big num" [class.neg]="miBeneficio() < 0">{{ miBeneficio() }}<small>€</small></span>
       </div>
 
-      <h3 class="th">Ranking de premios</h3>
-      <div class="rank card rise">
+      <div class="tabla">
+        <div class="fila cab"><span>#</span><span>Equipo</span><span class="der">Beneficio</span></div>
         @for (e of ranking(); track e.nombre; let i = $index) {
-          <div class="row" [class.yo]="e.nombre === miEquipo()">
-            <span class="pos num">
-              @if (i < 3) { <span class="medal" [attr.data-m]="i+1">{{ i+1 }}</span> } @else { {{ i+1 }} }
+          <div class="fila" [class.yo]="e.nombre === miEquipo()">
+            <span class="puesto">
+              <span class="marca" [style.background]="color(e.nombre)"></span>
+              <span class="num">{{ i + 1 }}</span>
             </span>
-            <span class="av" [style.background]="color(e.nombre)">{{ ini(e.nombre) }}</span>
             <span class="nm">{{ e.nombre }}</span>
-            <span class="ben num">{{ e.beneficio }}<small>€</small></span>
+            <span class="der num ben" [class.neg]="e.beneficio < 0">{{ e.beneficio }}<small>€</small></span>
           </div>
         }
       </div>
     }
   `,
   styles: [`
-    h1 { margin: 0 0 16px; }
-    .hero { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 28px 16px; margin-bottom: 18px;
-      border: 1px solid rgba(255,194,75,.25); background: radial-gradient(120% 100% at 50% 0%, rgba(255,194,75,.1), var(--surface) 60%); }
-    .hero .lbl { color: var(--muted); font-size: .8rem; }
-    .hero .big { font-size: 3.2rem; font-weight: 900; color: var(--gold); letter-spacing: -.03em; line-height: 1; }
-    .hero .big small { font-size: 1.3rem; }
-    .hero .eq { font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; font-size: .8rem; }
-    .th { margin: 4px 0 10px; }
-    .rank { overflow: hidden; }
-    .row { display: grid; grid-template-columns: 38px 32px 1fr auto; align-items: center; gap: 11px;
-      padding: 11px 13px; border-bottom: 1px solid var(--border); }
-    .row:last-child { border-bottom: none; }
-    .row.yo { background: var(--accent-soft); box-shadow: inset 2px 0 0 var(--primary); }
-    .pos { text-align: center; font-weight: 800; color: var(--muted); }
-    .medal { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px;
-      border-radius: 50%; font-weight: 800; font-size: .78rem; color: var(--accent-ink); }
-    .medal[data-m="1"] { background: #ffc24b; } .medal[data-m="2"] { background: #cbd5e1; } .medal[data-m="3"] { background: #d4915a; }
-    .av { width: 32px; height: 32px; border-radius: 9px; display: flex; align-items: center; justify-content: center;
-      font-weight: 800; color: var(--accent-ink); font-size: .85rem; }
-    .nm { font-weight: 700; font-size: .9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .ben { font-weight: 900; color: var(--gold); } .ben small { font-size: .7rem; opacity: .8; }
-    .muted { color: var(--muted); } .err { color: var(--bad); }
+    /* La cifra propia manda: es la única de este tamaño en toda la app. */
+    .hero { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r);
+      padding: 24px 20px; margin-bottom: 16px; }
+    .hero .big { display: block; margin-top: 4px; font-size: 46px; font-weight: 700;
+      color: var(--good); letter-spacing: -.02em; line-height: 1; }
+    .hero .big.neg { color: var(--bad); }
+    .hero .big small { font-size: 20px; margin-left: 2px; }
+
+    .fila { grid-template-columns: 60px 1fr 110px; }
+    .fila.yo { background: var(--accent-soft); box-shadow: inset 2px 0 0 var(--accent); }
+    .puesto { display: flex; align-items: center; gap: 8px; }
+    .marca { width: 3px; height: 20px; border-radius: 2px; flex: 0 0 auto; }
+    .nm { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ben { font-weight: 700; color: var(--good); } .ben.neg { color: var(--bad); }
+    .ben small { font-size: 10px; opacity: .75; margin-left: 1px; }
+    .muted { color: var(--text2); } .err { color: var(--bad); }
+
+    @media (max-width: 480px) { .hero .big { font-size: 38px; } }
   `],
 })
 export class PremiosComponent implements OnInit {
@@ -71,7 +70,7 @@ export class PremiosComponent implements OnInit {
 
   constructor(private falm: FalmService) {}
   ini(n: string) { return (n || '?').charAt(0).toUpperCase(); }
-  color(n: string) { let h = 0; for (const c of n || '') h = (h * 31 + c.charCodeAt(0)) >>> 0; return COLORES[h % COLORES.length]; }
+  color(n: string) { return colorEquipo(n); }
 
   async ngOnInit() {
     try {

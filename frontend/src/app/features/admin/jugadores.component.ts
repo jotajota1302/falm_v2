@@ -50,28 +50,28 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     }
   `,
   styles: [`
-    .aviso { background: rgba(255,194,75,.08); border: 1px solid rgba(255,194,75,.22); color: var(--gold); padding: 10px 14px; border-radius: 10px; margin-bottom: 12px; }
+    .aviso { background: color-mix(in oklab, var(--por) 8%, var(--surface)); border: 1px solid color-mix(in oklab, var(--por) 32%, var(--line)); color: var(--por); padding: 10px 14px; border-radius: 10px; margin-bottom: 12px; }
     .err { color: var(--bad); }
     .buscar { width: 100%; margin-bottom: 10px; }
-    .total { margin: 0 0 10px; font-size: .8rem; }
+    .total { margin: 0 0 10px; font-size: 13px; }
     .tabla { overflow: hidden; }
-    .fila { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-bottom: 1px solid var(--border); }
+    .fila { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-bottom: 1px solid var(--line); }
     .fila:last-child { border-bottom: none; }
-    .pos { flex: 0 0 auto; width: 34px; padding: 3px 0; text-align: center; border-radius: 6px; font-size: .66rem; font-weight: 800; color: var(--accent-ink); }
-    .pos.POR { background: var(--pos-POR); } .pos.DEF { background: var(--pos-DEF); }
-    .pos.MED { background: var(--pos-MED); } .pos.DEL { background: var(--pos-DEL); }
+    .pos { flex: 0 0 auto; width: 34px; padding: 3px 0; text-align: center; border-radius: 6px; font-size: 10.5px; font-weight: 700; color: var(--accent-ink); }
+    .pos.POR { background: var(--por); } .pos.DEF { background: var(--def); }
+    .pos.MED { background: var(--med); } .pos.DEL { background: var(--del); }
     .info { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-    .nm { font-weight: 700; font-size: .88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .cl { color: var(--muted); font-size: .75rem; }
-    .precio { font-weight: 900; color: var(--gold); }
-    .bn { border: 1px solid var(--border); background: var(--surface-2); color: var(--muted); border-radius: 8px;
-      width: 30px; height: 30px; cursor: pointer; font-weight: 800; }
-    .bn.ok { background: var(--primary); color: var(--primary-ink); border-color: var(--primary); }
+    .nm { font-weight: 700; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cl { color: var(--text2); font-size: 12px; }
+    .precio { font-weight: 700; color: var(--por); }
+    .bn { border: 1px solid var(--line); background: var(--surface2); color: var(--text2); border-radius: 8px;
+      width: 30px; height: 30px; cursor: pointer; font-weight: 700; }
+    .bn.ok { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
     .bn.no { color: var(--bad); }
-    .ed-pos { width: 64px; } .ed-pre { width: 70px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 6px 8px; }
-    .mas { display: block; margin: 16px auto 0; background: var(--surface); border: 1px solid var(--border);
-      color: var(--ink); border-radius: 12px; padding: 10px 20px; cursor: pointer; font-weight: 700; }
-    .muted { color: var(--muted); }
+    .ed-pos { width: 64px; } .ed-pre { width: 70px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; }
+    .mas { display: block; margin: 16px auto 0; background: var(--surface); border: 1px solid var(--line);
+      color: var(--text); border-radius: 12px; padding: 10px 20px; cursor: pointer; font-weight: 700; }
+    .muted { color: var(--text2); }
   `],
 })
 export class AdminJugadoresComponent implements OnInit {
@@ -112,7 +112,7 @@ export class AdminJugadoresComponent implements OnInit {
       await this.admin.actualizarJugador(j.activoId, j.jugadorLfpId, this.edPre(), this.edPos());
       this.todos.set(await this.admin.jugadores());
       this.editId.set('');
-      this.aviso.set('✅ Jugador actualizado.');
+      this.aviso.set('Jugador actualizado.');
     } catch (e: any) { this.error.set(e?.message ?? 'Error al guardar'); }
   }
 }

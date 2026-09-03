@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from './core/auth.service';
@@ -7,9 +7,9 @@ import { SeasonService } from './core/season.service';
 import { environment } from '../environments/environment';
 import { FichaJugadorComponent } from './shared/ficha-jugador.component';
 
-interface NavItem { path: string; icon: string; label: string; }
+interface NavItem { path: string; label: string; corto: string; }
 
-/** Shell "Matchday": topbar translúcido + nav (sidebar desktop / bottom-nav móvil). */
+/** Marco de la app: la navegación va en la cabecera (barra inferior en móvil). */
 @Component({
   selector: 'app-root',
   standalone: true,
@@ -17,30 +17,42 @@ interface NavItem { path: string; icon: string; label: string; }
   template: `
     @if (auth.isLoggedIn()) {
       <header class="topbar">
-        <span class="brand">FALM</span>
-        @if (season.temporadas().length > 1) {
-          <select class="temp" [ngModel]="season.actualId()" (ngModelChange)="cambiarTemporada($event)" title="Temporada">
-            @for (t of season.temporadas(); track t.id) {
-              <option [value]="t.id">{{ t.nombre }}{{ t.activa ? '' : ' ·pruebas' }}</option>
-            }
-          </select>
-        }
-        <span class="team">{{ team }}</span>
-        <a class="gear" routerLink="/admin" aria-label="Administración" title="Administración">⚙️</a>
-        <button class="logout" (click)="logout()" aria-label="Salir">⎋</button>
-      </header>
+        <a class="brand" routerLink="/dashboard">
+          <span class="logo">F</span>
+          <span class="bt">
+            <span class="bn">FALM</span>
+            <span class="bs">{{ contexto() }}</span>
+          </span>
+        </a>
 
-      <div class="layout">
         <nav class="nav">
           @for (item of items; track item.path) {
             <a [routerLink]="item.path" routerLinkActive="active">
-              <span class="ic">{{ item.icon }}</span>
-              <span class="lb">{{ item.label }}</span>
+              <span class="lg">{{ item.label }}</span><span class="sm">{{ item.corto }}</span>
             </a>
           }
         </nav>
-        <main class="content"><router-outlet /></main>
-      </div>
+
+        <div class="right">
+          @if (season.temporadas().length > 1) {
+            <select class="temp" [ngModel]="season.actualId()" (ngModelChange)="cambiarTemporada($event)" title="Temporada">
+              @for (t of season.temporadas(); track t.id) {
+                <option [value]="t.id">{{ t.nombre }}{{ t.activa ? '' : ' ·pruebas' }}</option>
+              }
+            </select>
+          }
+          <span class="yo">
+            <span class="ava">{{ iniciales }}</span>
+            <span class="team">{{ team }}</span>
+          </span>
+          <span class="acc">
+            <a class="tlink" routerLink="/admin" title="Administración">Admin</a>
+            <button class="tlink" (click)="logout()">Salir</button>
+          </span>
+        </div>
+      </header>
+
+      <main class="content"><router-outlet /></main>
     } @else {
       <router-outlet />
     }
@@ -49,52 +61,81 @@ interface NavItem { path: string; icon: string; label: string; }
   styles: [`
     .topbar {
       position: sticky; top: 0; z-index: 30;
-      display: flex; align-items: center; gap: 12px;
-      height: 58px; padding: 0 18px;
+      display: flex; align-items: center; gap: 22px;
+      padding: 11px 24px;
       background: var(--surface);
       border-bottom: 1px solid var(--line);
     }
-    .brand { font-family: var(--fh); font-weight: 600; font-size: 16px;
-      text-transform: uppercase; letter-spacing: .01em; }
-    .temp { margin-left: auto; background: var(--surface-2); border: 1px solid var(--border); color: var(--ink);
-      border-radius: 9px; padding: 6px 8px; font-size: .76rem; font-weight: 700; max-width: 140px; }
-    .team { margin-left: auto; font-weight: 600; font-size: 13px; color: var(--text);
-      text-transform: uppercase; letter-spacing: .04em; }
-    .temp + .team { margin-left: 10px; }
-    .gear { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px;
-      border-radius: 9px; font-size: .95rem; opacity: .6; transition: opacity .14s ease; }
-    .gear:hover { opacity: 1; }
-    .logout { background: var(--surface-2); border: 1px solid var(--border); color: var(--muted);
-      width: 34px; height: 34px; border-radius: 9px; cursor: pointer; font-size: 1rem; }
 
-    .layout { display: flex; min-height: calc(100vh - 58px); }
-    .content { flex: 1; padding: 22px; max-width: 1080px; margin: 0 auto; width: 100%; }
+    /* Mancheta de periódico: sello, cabecera y línea de contexto. */
+    .brand { display: flex; align-items: center; gap: 11px; flex: 0 0 auto; }
+    .logo { width: 34px; height: 34px; border-radius: 10px; flex: 0 0 auto;
+      background: var(--accent); color: var(--accent-ink);
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--fh); font-size: 17px; font-weight: 600; }
+    .bt { display: flex; flex-direction: column; line-height: 1.15; }
+    .bn { font-family: var(--fh); font-size: 16px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: -.01em; }
+    .bs { font-size: 9px; color: var(--text2); letter-spacing: .15em; text-transform: uppercase; }
 
-    /* sidebar (desktop) */
-    .nav { width: 212px; padding: 14px 12px; display: flex; flex-direction: column; gap: 4px;
-      border-right: 1px solid var(--border); }
-    .nav a { display: flex; align-items: center; gap: 12px; padding: 11px 13px; border-radius: 11px;
-      color: var(--muted); font-weight: 700; font-size: .9rem; transition: all .14s ease; }
-    .nav a .ic { font-size: 1.15rem; width: 22px; text-align: center; }
-    .nav a:hover { background: var(--surface); color: var(--ink); }
-    .nav a.active { color: var(--accent); background: color-mix(in oklab, var(--accent) 9%, var(--surface));
-      box-shadow: inset 2px 0 0 var(--accent); }
+    .nav { display: flex; gap: 4px; flex-wrap: wrap; }
+    .nav a { padding: 8px 15px; border-radius: var(--pill);
+      color: var(--text2); font-weight: 600; font-size: 13px;
+      border: 1px solid transparent; transition: color .14s ease, background .14s ease; }
+    .nav a:hover { color: var(--text); background: var(--surface2); }
+    .nav a.active { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+    .nav .sm { display: none; }
 
-    /* bottom-nav (móvil) */
+    .right { display: flex; align-items: center; gap: 14px; margin-left: auto; flex: 0 0 auto; }
+    .temp { background: var(--surface2); border: 1px solid var(--line); color: var(--text);
+      border-radius: 9px; padding: 6px 8px; font-size: 12px; font-weight: 600; max-width: 150px; }
+    .yo { display: flex; align-items: center; gap: 9px; min-width: 0; }
+    .ava { width: 30px; height: 30px; border-radius: 50%; flex: 0 0 auto;
+      background: var(--surface2); border: 1px solid var(--line); color: var(--text2);
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--fm); font-size: 11px; font-weight: 700; }
+    .team { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .acc { display: flex; align-items: center; gap: 12px; padding-left: 14px; border-left: 1px solid var(--line); }
+    .tlink { background: none; border: none; padding: 0; cursor: pointer;
+      font-family: var(--fb); font-size: 10px; font-weight: 700; letter-spacing: .14em;
+      text-transform: uppercase; color: var(--text2); white-space: nowrap; }
+    .tlink:hover { color: var(--accent); }
+
+    .content { width: 100%; max-width: 1280px; margin: 0 auto; padding: 24px 26px 64px; }
+
+    /* Ancho intermedio: las ocho pestañas no caben junto a la mancheta, bajan de línea. */
+    @media (max-width: 1180px) and (min-width: 761px) {
+      .topbar { flex-wrap: wrap; gap: 12px 18px; }
+      .nav { order: 3; width: 100%; }
+    }
+
+    /* barra inferior (móvil): la navegación vuelve al pulgar */
     @media (max-width: 760px) {
-      .layout { flex-direction: column; }
-      .content { padding: 16px 14px 90px; }
+      .topbar { padding: 9px 13px; gap: 10px; }
+      .bs { display: none; }
+      .logo { width: 30px; height: 30px; font-size: 15px; }
+      .right { gap: 10px; }
+      .team { display: none; }
+      .acc { gap: 10px; padding-left: 10px; }
+      .tlink { font-size: 9px; letter-spacing: .1em; }
+      .temp { max-width: 104px; font-size: 11px; padding: 5px 6px; }
+
+      .content { padding: 16px 14px 96px; }
       .nav {
-        position: fixed; bottom: 0; left: 0; right: 0; width: auto; z-index: 30;
-        flex-direction: row; justify-content: space-around; gap: 0;
-        padding: 8px 4px calc(8px + env(safe-area-inset-bottom));
-        border-right: none; border-top: 1px solid var(--border);
+        position: fixed; bottom: 0; left: 0; right: 0; z-index: 30;
+        gap: 0; flex-wrap: nowrap;
+        padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
+        border-top: 1px solid var(--line);
         background: var(--surface);
+        /* Ocho secciones no caben aplastadas: la barra se desliza. */
+        overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;
       }
-      .nav a { flex-direction: column; gap: 3px; padding: 4px 2px; font-size: .58rem; flex: 1;
-        text-align: center; border-radius: 10px; }
-      .nav a.active { background: transparent; box-shadow: none; }
-      .nav a.active .ic { transform: translateY(-1px); }
+      .nav::-webkit-scrollbar { display: none; }
+      .nav a { flex: 0 0 auto; min-width: 62px; padding: 11px 8px; text-align: center; border-radius: 8px;
+        font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+      .nav a.active { background: transparent; border-color: transparent;
+        color: var(--accent); box-shadow: inset 0 2px 0 var(--accent); }
+      .nav .lg { display: none; } .nav .sm { display: inline; }
     }
   `],
 })
@@ -103,15 +144,27 @@ export class AppComponent {
     return environment.devEquipoNombre || localStorage.getItem('falm_equipo') ||
       (this.auth.user()?.user_metadata?.['equipo'] as string) || '';
   }
+  /** Dos letras para el avatar: las iniciales del equipo, como en una camiseta. */
+  get iniciales() {
+    const p = (this.team || '?').trim().split(/\s+/);
+    return ((p[0]?.[0] ?? '') + (p[1]?.[0] ?? '')).toUpperCase() || '?';
+  }
+
+  /** Línea de contexto bajo la marca: qué temporada se está mirando. */
+  contexto = computed(() => {
+    const t = this.season.actual();
+    return t ? `LaLiga · ${t.nombre}${t.activa ? '' : ' · pruebas'}` : 'Liga Fantasy';
+  });
+
   items: NavItem[] = [
-    { path: '/dashboard', icon: '🏠', label: 'Inicio' },
-    { path: '/plantilla', icon: '👕', label: 'Equipo' },
-    { path: '/alineacion', icon: '📋', label: 'Once' },
-    { path: '/mercado', icon: '🛒', label: 'Mercado' },
-    { path: '/draft', icon: '🎯', label: 'Draft' },
-    { path: '/clasificacion', icon: '🏆', label: 'Clasif.' },
-    { path: '/jornadas', icon: '📅', label: 'Partidos' },
-    { path: '/puntuaciones', icon: '📊', label: 'Stats' },
+    { path: '/dashboard', label: 'Inicio', corto: 'Inicio' },
+    { path: '/plantilla', label: 'Plantilla', corto: 'Equipo' },
+    { path: '/alineacion', label: 'Alineación', corto: 'Once' },
+    { path: '/mercado', label: 'Mercado', corto: 'Mercado' },
+    { path: '/draft', label: 'Draft', corto: 'Draft' },
+    { path: '/clasificacion', label: 'Clasificación', corto: 'Clasif.' },
+    { path: '/jornadas', label: 'Partidos', corto: 'Jornadas' },
+    { path: '/puntuaciones', label: 'Estadísticas', corto: 'Stats' },
   ];
 
   constructor(public auth: AuthService, public season: SeasonService, falm: FalmService) {

@@ -1,9 +1,6 @@
 import { Component, OnInit, computed, signal } from '@angular/core';
 import { Competicion, FalmService, FilaClasificacion, RondaEliminatoria } from '../../core/falm.service';
-
-/** Tintas de prensa: cada equipo tiene su marca de color, sin neones. */
-const COLORES = ['#a32b3f', '#1f6fa8', '#5c8a1f', '#b8791a', '#7b4f9d',
-                 '#2f7d4f', '#c05621', '#3b6ea5', '#8a2f6b', '#59606b'];
+import { colorEquipo } from '../../shared/equipo-colores';
 
 /** Clasificación de la competición elegida, con premios integrados en la tabla. */
 @Component({
@@ -155,10 +152,7 @@ export class ClasificacionComponent implements OnInit {
 
   constructor(private falm: FalmService) {}
 
-  color(n?: string) {
-    let h = 0; for (const ch of n || '') h = (h * 31 + ch.charCodeAt(0)) >>> 0;
-    return COLORES[h % COLORES.length];
-  }
+  color(n?: string) { return colorEquipo(n); }
   etiqueta(t: string) { return t === 'CHAMPIONS' ? 'Champions' : t === 'CLAUSURA' ? 'Clausura' : 'Liga'; }
   beneficio(nombre?: string) { return this.ranking().find((r) => r.nombre === nombre)?.beneficio ?? 0; }
 

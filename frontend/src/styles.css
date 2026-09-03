@@ -39,30 +39,6 @@
   --r-xs: 8px;
   --pill: 999px;
 
-  /* ------------------------------------------------------------------
-     Alias de los nombres antiguos del tema MATCHDAY. Los componentes
-     siguen usándolos, así que apuntan a los tokens nuevos y heredan la
-     paleta sin tocar cada fichero.
-     ------------------------------------------------------------------ */
-  --bg-elev: var(--surface);
-  --surface-2: var(--surface2);
-  --border: var(--line);
-  --border-strong: #c7bfad;
-  --ink: var(--text);
-  --muted: var(--text2);
-  --faint: #948a79;
-  --primary: var(--accent);
-  --primary-deep: var(--accent-deep);
-  --primary-ink: var(--accent-ink);
-  --gold: var(--por);
-  --glow: transparent;          /* la paleta prensa no usa resplandores */
-  --shadow: none;               /* ni sombras: la jerarquía va con bordes */
-  --shadow-sm: none;
-  --font: var(--fb);
-  --pos-POR: var(--por);
-  --pos-DEF: var(--def);
-  --pos-MED: var(--med);
-  --pos-DEL: var(--del);
 }
 
 * { box-sizing: border-box; }
@@ -88,6 +64,70 @@ h2 {
 }
 h3 { font-family: var(--fh); font-weight: 500; font-size: 13.5px; text-transform: uppercase; margin: 0; }
 
+/* ------------------------------------------------------------------
+   Piezas de página compartidas. Viven aquí para que todas las pantallas
+   midan y respiren igual; un componente solo redefine lo suyo (las
+   columnas de su tabla, por ejemplo).
+   ------------------------------------------------------------------ */
+
+/* cabecera de pantalla: titular + entradilla, con acciones a la derecha */
+.phead {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: 20px; flex-wrap: wrap; margin-bottom: 18px;
+}
+.phead .sub { margin: 5px 0 0; color: var(--text2); font-size: 13.5px; max-width: 68ch; }
+
+/* rótulo de columna o de bloque */
+.lb {
+  font-size: 9px; font-weight: 700; letter-spacing: .16em;
+  text-transform: uppercase; color: var(--text2);
+}
+
+/* fila de indicadores */
+.kpis { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
+.kpi {
+  flex: 1 1 190px; background: var(--surface);
+  border: 1px solid var(--line); border-radius: 16px; padding: 15px 17px;
+}
+.kpi .lb { display: block; }
+.kpi .v { display: block; margin-top: 4px; font-family: var(--fh); font-size: 27px; font-weight: 600; }
+.kpi .v small { font-size: 14px; color: var(--text2); }
+
+/* filtros en píldora */
+.chips { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.chips button, .chip-btn {
+  background: var(--surface); border: 1px solid var(--line); color: var(--text2);
+  border-radius: var(--pill); padding: 6px 14px; cursor: pointer;
+  font-family: var(--fb); font-weight: 600; font-size: 12px;
+}
+.chips button.on, .chip-btn.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+
+/* tabla-tarjeta: el patrón de lista de toda la app */
+.tabla { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; }
+.tabla .barra {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 13px 18px; border-bottom: 1px solid var(--line);
+}
+.tabla .fila {
+  width: 100%; display: grid; align-items: center; gap: 10px;
+  padding: 11px 18px; border: none; border-bottom: 1px solid var(--line);
+  background: transparent; text-align: left; font-size: 13px;
+  color: var(--text); font-family: var(--fb);
+}
+.tabla .fila:last-child { border-bottom: none; }
+.tabla button.fila { cursor: pointer; }
+.tabla button.fila:hover { background: var(--surface2); }
+.tabla .fila.cab {
+  cursor: default; padding: 12px 18px;
+  font-size: 9px; font-weight: 700; letter-spacing: .16em;
+  text-transform: uppercase; color: var(--text2);
+}
+.der { text-align: right; }
+
+/* pie de lista: recuento a la izquierda, "ver más" a la derecha */
+.pie { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 14px; flex-wrap: wrap; }
+.pie .muted { font-size: 12px; }
+
 /* ---- utilidades ---- */
 .card {
   background: var(--surface);
@@ -95,7 +135,7 @@ h3 { font-family: var(--fh); font-weight: 500; font-size: 13.5px; text-transform
   border-radius: var(--r);
 }
 .muted { color: var(--text2); }
-.faint { color: var(--faint); }
+.faint { color: var(--text2); }
 .err { color: var(--bad); }
 
 /* Las cifras van en mono: alinean en columna y se leen como resultados. */
@@ -152,7 +192,7 @@ input, select {
   padding: 11px 14px;
   font-size: 14px;
 }
-input::placeholder { color: var(--faint); }
+input::placeholder { color: var(--text2); opacity: .75; }
 input:focus, select:focus { outline: none; border-color: var(--accent); }
 
 /* botón primario */
@@ -189,4 +229,26 @@ input:focus, select:focus { outline: none; border-color: var(--accent); }
 @media (prefers-reduced-motion: reduce) {
   .rise { animation: none; }
   * { transition-duration: .01ms !important; }
+}
+
+/* ------------------------------------------------------------------
+   Móvil. La liga se juega desde el teléfono, así que aquí se ajustan
+   escala y superficies táctiles, no solo el ancho.
+   ------------------------------------------------------------------ */
+@media (max-width: 620px) {
+  /* 16px evita que iOS haga zoom al enfocar un campo. */
+  input, select, textarea { font-size: 16px; padding: 12px 14px; }
+  h1 { font-size: 27px; }
+  .phead { gap: 12px; margin-bottom: 15px; }
+  .phead .sub { font-size: 13px; }
+  .kpis { gap: 8px; }
+  .kpi { flex: 1 1 calc(50% - 4px); padding: 12px 13px; }
+  .kpi .v { font-size: 22px; }
+  .tabla .fila { padding: 11px 13px; gap: 8px; }
+  .tabla .fila.cab { padding: 11px 13px; }
+  .tabla .barra { padding: 12px 13px; }
+  /* Píldoras y botones: alto de dedo, no de ratón. */
+  .chips button, .chip-btn { padding: 9px 15px; font-size: 12.5px; }
+  .btn { padding: 13px 22px; }
+  .btn-sec { padding: 12px 16px; }
 }

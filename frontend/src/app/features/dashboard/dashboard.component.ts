@@ -2,7 +2,7 @@ import { Component, OnDestroy, OnInit, computed, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Agenda, AgendaItem, FalmService } from '../../core/falm.service';
 
-/** Inicio "Matchday": qué viene ahora — resumen, partido actual, próximo, alineación, fichajes. */
+/** Inicio: qué viene ahora — resumen, partido actual, próximo, alineación, fichajes. */
 @Component({
   selector: 'app-dashboard',
   standalone: true,
@@ -11,122 +11,119 @@ import { Agenda, AgendaItem, FalmService } from '../../core/falm.service';
     @if (cargando()) {
       <p class="muted">Cargando…</p>
     } @else {
-      <section class="hero rise">
-        <h1>{{ nombre() || 'Mi equipo' }}</h1>
-      </section>
-
-      @if (resumen(); as r) {
-        <a class="resumen rise" routerLink="/clasificacion">
-          <div class="rinfo">
-            <span class="rl">Tu liga</span>
-            <strong>{{ r.pos }}º<small> de {{ r.total }}</small> · {{ r.pts }} pts</strong>
-          </div>
-          <span class="go">Clasificación ›</span>
-        </a>
-      }
+      <header class="phead">
+        <div>
+          <h1>{{ nombre() || 'Mi equipo' }}</h1>
+          @if (resumen(); as r) {
+            <p class="sub">{{ r.pos }}º de {{ r.total }} en la liga · {{ r.pts }} puntos de clasificación.</p>
+          } @else {
+            <p class="sub">Temporada 2026/27.</p>
+          }
+        </div>
+        <a class="btn-sec" routerLink="/clasificacion">Ver clasificación</a>
+      </header>
 
       @if (ag()?.en_juego; as ej) {
-        <section class="live rise">
+        <section class="live">
           <span class="dot"></span>
           <div class="lt">
             <strong>Jornada {{ ej.numero }} en juego</strong>
-            <p>{{ nombre() }} {{ ej.es_local ? 'vs' : '@' }} {{ ej.rival }} · alineación cerrada</p>
+            <p>{{ nombre() }} {{ ej.es_local ? 'contra' : 'en casa de' }} {{ ej.rival }} · alineación cerrada</p>
           </div>
-          <a class="btn ghost" routerLink="/jornadas">Ver</a>
+          <a class="btn-sec" routerLink="/jornadas">Seguir</a>
         </section>
       }
 
       @if (ag()?.proximo; as pr) {
-        <section class="next card rise">
+        <section class="next">
           <div class="nh">
             <span class="jlbl">Jornada {{ pr.numero }} · {{ etiqueta(pr.comp) }}</span>
-            <span class="fecha">{{ fechaLarga(pr.fecha) }}</span>
+            <span class="fecha num">{{ fechaLarga(pr.fecha) }}</span>
           </div>
           <div class="match">
             <span class="tn">{{ nombre() }}</span>
-            <span class="vs">{{ pr.es_local ? 'VS' : '@' }}</span>
+            <span class="vs">{{ pr.es_local ? 'vs' : '@' }}</span>
             <span class="tn">{{ pr.rival }}</span>
           </div>
-          <p class="cd">⏳ {{ cuentaPartido() }}</p>
-          <a class="btn" routerLink="/alineacion">📋 Enviar alineación</a>
+          <p class="cd">{{ cuentaPartido() }}</p>
+          <a class="btn" routerLink="/alineacion">Manda tu alineación</a>
         </section>
       } @else {
-        <section class="next card rise"><p class="muted" style="text-align:center;padding:8px">Sin próximos partidos programados.</p></section>
+        <section class="next vacio"><p class="muted">Sin próximos partidos programados.</p></section>
       }
 
       @if (actual(); as ac) {
-        <a class="actual card rise" routerLink="/jornadas">
+        <a class="actual" routerLink="/jornadas">
           <div class="ah">
             <span class="al">{{ ag()?.en_juego ? 'Partido actual' : 'Último partido' }} · J{{ ac.numero }}</span>
             <span class="go">Ver detalle ›</span>
           </div>
           <div class="amatch">
             <span class="t" [class.win]="gane(ac)">{{ nombre() }}</span>
-            <span class="sc">{{ fmt(ac.mis_puntos) }}<i>-</i>{{ fmt(ac.rival_puntos) }}</span>
+            <span class="sc num">{{ fmt(ac.mis_puntos) }}<i>–</i>{{ fmt(ac.rival_puntos) }}</span>
             <span class="t" [class.win]="perdi(ac)">{{ ac.rival }}</span>
           </div>
         </a>
       }
 
-      <section class="accion rise">
-        <span class="ic">⏰</span>
+      <section class="accion">
         <div class="cd2">
-          <strong>Cierre de fichajes</strong>
-          <p class="muted">{{ cuenta() }}</p>
+          <span class="lb">Cierre de fichajes</span>
+          <strong class="num">{{ cuenta() }}</strong>
         </div>
-        <a class="btn-cd" routerLink="/fichajes">Pedir fichaje</a>
+        <a class="btn-sec" routerLink="/fichajes">Pedir fichaje</a>
       </section>
     }
   `,
   styles: [`
-    .hero { margin-bottom: 12px; }
-    .hero h1 { font-size: 1.6rem; }
+    .phead { display: flex; align-items: flex-end; justify-content: space-between;
+      gap: 20px; flex-wrap: wrap; margin-bottom: 18px; }
+    .phead .sub { margin: 5px 0 0; color: var(--text2); font-size: 13.5px; }
 
-    .resumen { display: flex; align-items: center; gap: 12px; padding: 13px 16px; margin-bottom: 14px;
-      background: var(--surface); border: 1px solid var(--border); border-radius: 14px; }
-    .resumen .rinfo { flex: 1; } .resumen .rl { font-size: .68rem; text-transform: uppercase; letter-spacing: .06em; color: var(--faint); font-weight: 800; }
-    .resumen strong { display: block; font-size: 1.15rem; margin-top: 2px; } .resumen strong small { color: var(--muted); font-weight: 600; font-size: .8rem; }
-    .resumen .go { color: var(--primary); font-size: .8rem; font-weight: 800; flex: 0 0 auto; }
+    .live { display: flex; align-items: center; gap: 12px; padding: 13px 17px; margin-bottom: 14px;
+      background: var(--accent-soft); border: 1px solid var(--accent-line); border-radius: var(--r-sm); }
+    .live .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--accent); flex: 0 0 auto; }
+    .live .lt { flex: 1; } .live strong { display: block; color: var(--accent); font-size: 13.5px; }
+    .live p { margin: 2px 0 0; font-size: 12.5px; color: var(--text2); }
 
-    .live { display: flex; align-items: center; gap: 12px; padding: 13px 16px; margin-bottom: 14px;
-      background: var(--accent-soft); border: 1px solid var(--accent-line); border-radius: 14px; }
-    .live .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--primary); animation: pulse 1.6s infinite; flex: 0 0 auto; }
-    @keyframes pulse { 0% { box-shadow: none; } 70% { box-shadow: none; } 100% { box-shadow: none; } }
-    .live .lt { flex: 1; } .live strong { display: block; color: var(--primary); }
-    .live p { margin: 2px 0 0; font-size: .82rem; color: var(--muted); }
-
-    .next { padding: 18px; margin-bottom: 14px; }
-    .nh { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; gap: 8px; }
-    .jlbl { font-size: .72rem; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--primary); }
-    .fecha { font-size: .76rem; color: var(--muted); text-transform: capitalize; }
-    .match { display: flex; align-items: center; justify-content: center; gap: 14px; padding: 4px 0 2px; }
-    .match .tn { font-weight: 800; font-size: 1.05rem; text-align: center; flex: 1; min-width: 0;
+    /* El duelo de la semana es la portada: se lee de lejos. */
+    .next { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r);
+      padding: 20px; margin-bottom: 14px; }
+    .next.vacio { padding: 26px; text-align: center; }
+    .nh { display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+      padding-bottom: 14px; border-bottom: 1px solid var(--line); margin-bottom: 20px; }
+    .jlbl { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .16em; color: var(--accent); }
+    .fecha { font-size: 12px; color: var(--text2); text-transform: capitalize; }
+    .match { display: flex; align-items: center; justify-content: center; gap: 16px; }
+    .match .tn { flex: 1; min-width: 0; text-align: center; font-family: var(--fh); font-size: 22px;
+      font-weight: 600; text-transform: uppercase; letter-spacing: -.01em;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .match .vs { font-weight: 900; color: var(--faint); font-size: .85rem; flex: 0 0 auto; padding: 3px 9px;
-      border: 1px solid var(--border); border-radius: 8px; }
-    .cd { text-align: center; color: var(--muted); font-size: .82rem; margin: 16px 0 14px; }
-    .btn { display: block; text-align: center; background: var(--primary); color: var(--primary-ink); font-weight: 800;
-      padding: 13px; border-radius: 12px; box-shadow: none; }
-    .btn.ghost { background: transparent; border: 1px solid var(--primary); color: var(--primary); padding: 8px 16px; box-shadow: none; flex: 0 0 auto; }
+    .match .vs { flex: 0 0 auto; font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .1em; color: var(--text2); padding: 4px 10px;
+      border: 1px solid var(--line); border-radius: var(--pill); }
+    .cd { text-align: center; color: var(--text2); font-size: 12.5px; margin: 16px 0 18px; }
+    .btn { display: block; text-align: center; }
 
-    .actual { display: block; padding: 14px 16px; margin-bottom: 14px; }
+    .actual { display: block; background: var(--surface); border: 1px solid var(--line);
+      border-radius: var(--r); padding: 15px 17px; margin-bottom: 14px; }
     .actual .ah { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-    .actual .al { font-size: .68rem; text-transform: uppercase; letter-spacing: .05em; color: var(--faint); font-weight: 800; }
-    .actual .go { color: var(--primary); font-size: .78rem; font-weight: 800; }
+    .actual .al { font-size: 9px; text-transform: uppercase; letter-spacing: .16em; color: var(--text2); font-weight: 700; }
+    .actual .go { color: var(--accent); font-size: 12px; font-weight: 600; }
     .actual .amatch { display: flex; align-items: center; justify-content: center; gap: 12px; }
-    .actual .t { flex: 1; text-align: center; font-weight: 700; font-size: .9rem; color: var(--muted);
+    .actual .t { flex: 1; text-align: center; font-weight: 600; font-size: 13.5px; color: var(--text2);
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .actual .t.win { color: var(--ink); font-weight: 800; }
-    .actual .sc { flex: 0 0 auto; font-weight: 900; font-size: 1.3rem; letter-spacing: .02em; color: var(--primary); }
-    .actual .sc i { color: var(--faint); font-style: normal; margin: 0 5px; font-size: 1rem; }
+    .actual .t.win { color: var(--text); font-weight: 700; }
+    .actual .sc { flex: 0 0 auto; font-size: 21px; font-weight: 700; color: var(--accent); }
+    .actual .sc i { color: var(--text2); font-style: normal; margin: 0 5px; }
 
-    .accion { display: flex; align-items: center; gap: 14px; padding: 14px 16px;
-      background: rgba(255,194,75,.07); border: 1px solid rgba(255,194,75,.2); border-radius: 14px; }
-    .accion .ic { font-size: 1.5rem; }
-    .accion .cd2 { flex: 1; } .accion strong { display: block; } .accion p { margin: 2px 0 0; font-size: .85rem; }
-    .btn-cd { flex: 0 0 auto; background: var(--gold); color: #1a1206; font-weight: 800; font-size: .8rem;
-      padding: 8px 14px; border-radius: 10px; white-space: nowrap; }
-    .muted { color: var(--muted); }
+    .accion { display: flex; align-items: center; gap: 14px; padding: 14px 17px;
+      background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--por);
+      border-radius: var(--r-sm); }
+    .accion .cd2 { flex: 1; }
+    .accion .lb { display: block; font-size: 9px; font-weight: 700; letter-spacing: .16em;
+      text-transform: uppercase; color: var(--text2); }
+    .accion strong { display: block; margin-top: 2px; font-size: 16px; }
+    .muted { color: var(--text2); }
   `],
 })
 export class DashboardComponent implements OnInit, OnDestroy {
@@ -161,7 +158,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     d.setDate(d.getDate() + dias); return d;
   }
   private restante(ms: number): string {
-    if (ms <= 0) return '¡En proceso!';
+    if (ms <= 0) return 'En proceso';
     const dd = Math.floor(ms / 86400000), hh = Math.floor((ms % 86400000) / 3600000), mm = Math.floor((ms % 3600000) / 60000);
     return dd > 0 ? `Faltan ${dd}d ${hh}h` : `Faltan ${hh}h ${mm}m`;
   }

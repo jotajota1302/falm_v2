@@ -33,8 +33,8 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
           <div class="fila">
             <span class="pos" [class]="abr(p.posicion)">{{ abr(p.posicion) }}</span>
             <div class="info"><span class="nm">{{ p.nombre }}</span><span class="cl">{{ p.equipo }}</span></div>
-            <span class="st">⚽ {{ p.goles }}</span>
-            <span class="st">🅰 {{ p.asistencias }}</span>
+            <span class="st">{{ p.goles }} gol(es)</span>
+            <span class="st">{{ p.asistencias }} asis.</span>
             @if (editId() === p.id) {
               <input class="ed" type="number" step="0.5" [ngModel]="edPts()" (ngModelChange)="edPts.set($event)" />
               <button class="bn ok" (click)="guardar(p)">✓</button>
@@ -49,26 +49,26 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
     }
   `,
   styles: [`
-    .aviso { background: rgba(255,194,75,.08); border: 1px solid rgba(255,194,75,.22); color: var(--gold); padding: 10px 14px; border-radius: 10px; margin-bottom: 12px; }
+    .aviso { background: color-mix(in oklab, var(--por) 8%, var(--surface)); border: 1px solid color-mix(in oklab, var(--por) 32%, var(--line)); color: var(--por); padding: 10px 14px; border-radius: 10px; margin-bottom: 12px; }
     .err { color: var(--bad); }
     .barra { display: flex; gap: 10px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
-    .barra label { font-size: .8rem; color: var(--muted); font-weight: 700; display: flex; gap: 6px; align-items: center; }
+    .barra label { font-size: 13px; color: var(--text2); font-weight: 700; display: flex; gap: 6px; align-items: center; }
     .buscar { flex: 1; min-width: 140px; }
     .tabla { overflow: hidden; }
-    .fila { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-bottom: 1px solid var(--border); }
+    .fila { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-bottom: 1px solid var(--line); }
     .fila:last-child { border-bottom: none; }
-    .pos { flex: 0 0 auto; width: 34px; padding: 3px 0; text-align: center; border-radius: 6px; font-size: .66rem; font-weight: 800; color: var(--accent-ink); }
-    .pos.POR { background: var(--pos-POR); } .pos.DEF { background: var(--pos-DEF); }
-    .pos.MED { background: var(--pos-MED); } .pos.DEL { background: var(--pos-DEL); }
+    .pos { flex: 0 0 auto; width: 34px; padding: 3px 0; text-align: center; border-radius: 6px; font-size: 10.5px; font-weight: 700; color: var(--accent-ink); }
+    .pos.POR { background: var(--por); } .pos.DEF { background: var(--def); }
+    .pos.MED { background: var(--med); } .pos.DEL { background: var(--del); }
     .info { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-    .nm { font-weight: 700; font-size: .86rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .cl { color: var(--muted); font-size: .74rem; }
-    .st { font-size: .76rem; color: var(--muted); }
-    .pts { font-weight: 900; color: var(--primary); min-width: 34px; text-align: right; }
-    .ed { width: 64px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 6px 8px; }
-    .bn { border: 1px solid var(--border); background: var(--surface-2); color: var(--muted); border-radius: 8px; width: 30px; height: 30px; cursor: pointer; font-weight: 800; }
-    .bn.ok { background: var(--primary); color: var(--primary-ink); border-color: var(--primary); } .bn.no { color: var(--bad); }
-    .muted { color: var(--muted); }
+    .nm { font-weight: 700; font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cl { color: var(--text2); font-size: 12px; }
+    .st { font-size: 12px; color: var(--text2); }
+    .pts { font-weight: 700; color: var(--accent); min-width: 34px; text-align: right; }
+    .ed { width: 64px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; }
+    .bn { border: 1px solid var(--line); background: var(--surface2); color: var(--text2); border-radius: 8px; width: 30px; height: 30px; cursor: pointer; font-weight: 700; }
+    .bn.ok { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); } .bn.no { color: var(--bad); }
+    .muted { color: var(--text2); }
   `],
 })
 export class AdminPuntuacionesComponent implements OnInit {
@@ -116,7 +116,7 @@ export class AdminPuntuacionesComponent implements OnInit {
       await this.admin.ejecutar('editar_puntos', { p_ext: p.id, p_lfp: lfp, p_puntos: this.edPts() });
       this.lista.update((arr) => arr.map((x) => x.id === p.id ? { ...x, puntos: this.edPts() } : x));
       this.editId.set(-1);
-      this.aviso.set(`✅ ${p.nombre}: ${this.edPts()} pts (manual). Para que afecte a clasificación/premios de una temporada en juego, recalcula en Simulación.`);
+      this.aviso.set(`${p.nombre}: ${this.edPts()} pts (manual). Para que afecte a clasificación/premios de una temporada en juego, recalcula en Simulación.`);
     } catch (e: any) { this.error.set(e?.message ?? 'Error al guardar'); }
   }
 }

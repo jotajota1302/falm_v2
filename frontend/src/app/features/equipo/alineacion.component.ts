@@ -24,7 +24,7 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
         <div class="comps">
           @for (c of competiciones(); track c.id) {
             <button class="comp" [class.on]="c.id === competicionId()" (click)="seleccionarCompeticion(c.id)">
-              {{ icono(c.tipo) }} {{ etiqueta(c.tipo) }}
+              {{ etiqueta(c.tipo) }}
             </button>
           }
         </div>
@@ -63,7 +63,7 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
 
       @if (!esLiga()) {
         <div class="atajos">
-          <button class="atajo" (click)="copiarDeLiga()">📋 Copiar de Liga</button>
+          <button class="atajo" (click)="copiarDeLiga()">Copiar de Liga</button>
         </div>
       }
       @if (aviso()) { <p class="aviso">{{ aviso() }}</p> }
@@ -155,17 +155,18 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
   `,
   styles: [`
     .comps { display: flex; gap: 8px; margin-bottom: 12px; overflow-x: auto; padding-bottom: 4px; }
-    .comp { flex: 0 0 auto; padding: 8px 14px; border-radius: 11px; border: 1px solid var(--border); background: var(--surface);
-      color: var(--muted); cursor: pointer; font-weight: 800; font-size: .82rem; white-space: nowrap; }
-    .comp.on { background: var(--accent-soft); color: var(--primary); border-color: var(--primary); }
+    .comp { flex: 0 0 auto; padding: 7px 16px; border-radius: var(--pill); border: 1px solid var(--line);
+      background: var(--surface); color: var(--text2); cursor: pointer; font-family: var(--fb);
+      font-weight: 600; font-size: 12.5px; white-space: nowrap; }
+    .comp.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
     .jchips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 12px; }
-    .jchip { flex: 0 0 auto; min-width: 42px; height: 36px; border: 1px solid var(--border); background: var(--surface);
-      color: var(--muted); border-radius: 10px; cursor: pointer; font-weight: 800; }
-    .jchip.on { background: var(--primary); color: var(--primary-ink); border-color: var(--primary); }
+    .jchip { flex: 0 0 auto; min-width: 44px; padding: 8px 10px; border: 1px solid var(--line); background: var(--surface);
+      color: var(--text2); border-radius: 10px; cursor: pointer; font-family: var(--fm); font-weight: 600; font-size: 12px; }
+    .jchip.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
     .jhead { display: flex; align-items: baseline; gap: 7px; margin: 4px 0 12px; }
-    .jhead .je { font-size: .68rem; text-transform: uppercase; letter-spacing: .06em; color: var(--faint); font-weight: 800; }
-    .jhead strong { font-size: 1.1rem; color: var(--primary); }
-    .jhead .jf { font-size: .76rem; color: var(--muted); text-transform: capitalize; }
+    .jhead .je { font-size: 9px; text-transform: uppercase; letter-spacing: .16em; color: var(--text2); font-weight: 700; }
+    .jhead strong { font-family: var(--fh); font-size: 17px; font-weight: 600; text-transform: uppercase; color: var(--accent); }
+    .jhead .jf { font-size: 12px; color: var(--text2); text-transform: capitalize; }
     /* cabecera de pantalla */
     .phead { display: flex; align-items: flex-start; justify-content: space-between;
       gap: 18px; flex-wrap: wrap; margin-bottom: 16px; }
@@ -229,7 +230,7 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
     .add { background: var(--surface); border: 1px solid var(--line); color: var(--text); border-radius: 11px;
       padding: 8px 13px; cursor: pointer; font-weight: 600; font-size: 12.5px; }
     .add:hover { border-color: var(--accent); }
-    .sm { font-size: 11.5px; } .faint { color: var(--faint); }
+    .sm { font-size: 11.5px; } .faint { color: var(--text2); }
     .bfila { display: flex; align-items: center; gap: 8px; padding: 8px 10px; margin-top: 6px;
       background: var(--surface2); border: 1px solid var(--line); border-radius: 11px; }
     .prio { width: 22px; height: 22px; border-radius: 50%; background: var(--surface); border: 1px solid var(--line);
@@ -239,40 +240,60 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
     .chips { display: flex; gap: 4px; }
     .ch { width: 28px; padding: 5px 0; border-radius: 6px; border: 1px solid var(--line); background: transparent;
       color: var(--text2); font-weight: 700; font-size: 9px; cursor: pointer; }
-    .ch.on.DEF { background: var(--pos-DEF); color: var(--accent-ink); border-color: var(--pos-DEF); }
-    .ch.on.MED { background: var(--pos-MED); color: var(--accent-ink); border-color: var(--pos-MED); }
-    .ch.on.DEL { background: var(--pos-DEL); color: var(--accent-ink); border-color: var(--pos-DEL); }
-    .mv { width: 26px; padding: 5px 0; border: 1px solid var(--border); background: var(--surface-2); color: var(--muted); border-radius: 7px; cursor: pointer; font-size: .7rem; }
+    .ch.on.DEF { background: var(--def); color: var(--accent-ink); border-color: var(--def); }
+    .ch.on.MED { background: var(--med); color: var(--accent-ink); border-color: var(--med); }
+    .ch.on.DEL { background: var(--del); color: var(--accent-ink); border-color: var(--del); }
+    .mv { width: 26px; padding: 5px 0; border: 1px solid var(--line); background: var(--surface); color: var(--text2);
+      border-radius: 7px; cursor: pointer; font-size: 11px; }
     .mv:disabled { opacity: .3; }
-    .rm { width: 26px; padding: 5px 0; border: 1px solid var(--border); background: var(--surface-2); color: var(--bad); border-radius: 7px; cursor: pointer; }
+    .rm { width: 26px; padding: 5px 0; border: 1px solid var(--line); background: var(--surface); color: var(--bad);
+      border-radius: 7px; cursor: pointer; font-size: 11px; }
 
     /* bottom sheet selector */
-    .back { position: fixed; inset: 0; z-index: 60; background: rgba(0,0,0,.55); backdrop-filter: blur(3px);
+    .back { position: fixed; inset: 0; z-index: 60; background: rgba(22,19,15,.42);
       display: flex; align-items: flex-end; justify-content: center; }
     .sheet { width: 100%; max-width: 520px; max-height: 82vh; display: flex; flex-direction: column;
       background: var(--surface); border: 1px solid var(--line);
       border-top: 3px solid var(--accent); border-radius: 20px 20px 0 0; padding: 16px; }
     @media (min-width: 560px) { .back { align-items: center; } .sheet { border-radius: 22px; } }
+
+    /* En el teléfono el campo se estrecha para que la línea no se parta en dos. */
+    @media (max-width: 620px) {
+      .pitch { padding: 14px 8px; min-height: 384px; gap: 8px; }
+      .fila { gap: 6px; padding: 5px 2px 5px 18px; }
+      .banda { width: 12px; font-size: 8px; letter-spacing: .14em; }
+      .slot { width: 62px; }
+      .slot.vacio { min-height: 76px; }
+      .slot.vacio .mas { width: 28px; height: 28px; font-size: 15px; }
+      .slot.vacio .lb { font-size: 8.5px; }
+      .kpis { gap: 16px; }
+      .formas { width: 100%; }
+      .forma { flex: 1; padding: 10px 8px; }
+      .atajo { flex: 1 1 auto; }
+    }
     .sh { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-    .st { font-weight: 800; font-size: .95rem; }
-    .quitar { background: rgba(251,113,133,.12); border: 1px solid var(--bad, #fb7185); color: var(--bad, #fb7185);
-      border-radius: 8px; padding: 6px 12px; cursor: pointer; font-weight: 800; font-size: .76rem; margin-left: auto; margin-right: 8px; }
-    .x { background: var(--surface-2); border: 1px solid var(--border); color: var(--muted); width: 30px; height: 30px; border-radius: 8px; cursor: pointer; }
+    .st { font-family: var(--fh); font-size: 15px; font-weight: 600; text-transform: uppercase; }
+    .quitar { background: transparent; border: 1px solid var(--bad); color: var(--bad);
+      border-radius: 8px; padding: 6px 12px; cursor: pointer; font-family: var(--fb);
+      font-weight: 600; font-size: 12px; margin-left: auto; margin-right: 8px; }
+    .x { background: var(--surface2); border: 1px solid var(--line); color: var(--text2);
+      width: 30px; height: 30px; border-radius: 8px; cursor: pointer; font-size: 13px; }
     .cands { overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
     .cand { display: grid; grid-template-columns: 32px 40px 1fr 22px; align-items: center; gap: 10px; padding: 8px 10px;
-      background: var(--surface-2); border: 1px solid var(--border); border-radius: 11px; cursor: pointer; text-align: left; }
-    .cand.sel { border-color: var(--primary); background: var(--accent-soft); }
-    .cm { font-weight: 900; color: var(--primary); text-align: center; }
-    .cav { width: 40px; height: 40px; border-radius: 11px; display: flex; align-items: center; justify-content: center;
-      font-weight: 800; color: var(--accent-ink); overflow: hidden; }
+      background: var(--surface); border: 1px solid var(--line); border-radius: 11px; cursor: pointer; text-align: left; }
+    .cand:hover { background: var(--surface2); }
+    .cand.sel { border-color: var(--accent); background: var(--accent-soft); }
+    .cm { font-family: var(--fm); font-weight: 700; color: var(--accent); text-align: center; }
+    .cav { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+      font-family: var(--fh); font-size: 16px; color: var(--accent-ink); overflow: hidden; }
     .cav img { width: 100%; height: 100%; object-fit: cover; } .cav img.esc { object-fit: contain; padding: 5px; }
-    .cav.POR { background: var(--pos-POR); } .cav.DEF { background: var(--pos-DEF); }
-    .cav.MED { background: var(--pos-MED); } .cav.DEL { background: var(--pos-DEL); }
-    .cn { font-weight: 700; font-size: .88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .ck { color: var(--primary); font-weight: 900; text-align: center; }
-    .listo { margin-top: 12px; background: var(--primary); color: var(--primary-ink); border: none; border-radius: 12px;
-      padding: 12px; cursor: pointer; font-weight: 800; }
-    .muted { color: var(--muted); }
+    .cav.POR { background: var(--por); } .cav.DEF { background: var(--def); }
+    .cav.MED { background: var(--med); } .cav.DEL { background: var(--del); }
+    .cn { font-weight: 700; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ck { color: var(--accent); font-weight: 700; text-align: center; }
+    .listo { margin-top: 12px; background: var(--accent); color: var(--accent-ink); border: none; border-radius: 11px;
+      padding: 12px; cursor: pointer; font-family: var(--fb); font-weight: 700; font-size: 13.5px; }
+    .muted { color: var(--text2); }
   `],
 })
 export class AlineacionComponent implements OnInit {
@@ -324,7 +345,6 @@ export class AlineacionComponent implements OnInit {
 
   constructor(private falm: FalmService) {}
 
-  icono(t: string) { return t === 'CHAMPIONS' ? '🌟' : t === 'CLAUSURA' ? '🔚' : '🏆'; }
   etiqueta(t: string) { return t === 'CHAMPIONS' ? 'Champions' : t === 'CLAUSURA' ? 'Clausura' : 'Liga'; }
   etiquetaPos(p: string) { return ETI[p] ?? p; }
   abr(p: string) { return ABR[p] ?? p; }
@@ -494,7 +514,7 @@ export class AlineacionComponent implements OnInit {
   async copiarDeLiga() {
     const eq = this.equipo(); const j = this.jornada(); if (!eq || !j) return;
     const liga = await this.falm.copiarDesdeLiga(eq.id, j.fecha);
-    if (liga) { this.aplicar(liga); this.aviso.set('📋 Copiada de Liga. Revisa y guarda.'); }
+    if (liga) { this.aplicar(liga); this.aviso.set('Copiada de Liga. Revisa y guarda.'); }
     else this.aviso.set('No hay alineación de Liga de ese fin de semana.');
   }
 
@@ -508,8 +528,8 @@ export class AlineacionComponent implements OnInit {
     this.guardando.set(true);
     try {
       await this.falm.guardarAlineacion(eq.id, jor.id, this.formacion(), jugadores);
-      try { await this.falm.recalcular(); this.aviso.set('✅ Alineación guardada y clasificación recalculada.'); }
-      catch { this.aviso.set('✅ Alineación guardada.'); }
+      try { await this.falm.recalcular(); this.aviso.set('Alineación guardada y clasificación recalculada.'); }
+      catch { this.aviso.set('Alineación guardada.'); }
     } catch (e: any) { this.aviso.set(e?.message ?? 'Error al guardar'); }
     finally { this.guardando.set(false); }
   }

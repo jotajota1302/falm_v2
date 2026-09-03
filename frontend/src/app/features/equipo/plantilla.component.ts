@@ -1,6 +1,5 @@
 import { Component, OnInit, computed, signal } from '@angular/core';
 import { Equipo, FalmService, ItemPlantilla } from '../../core/falm.service';
-import { FutCardComponent } from '../../shared/fut-card.component';
 import { FichaService } from '../../shared/ficha.service';
 
 const ORDEN: Record<string, number> = { PORTERO: 0, DEFENSA: 1, MEDIO: 2, DELANTERO: 3 };
@@ -10,7 +9,6 @@ const ETI: Record<string, string> = { PORTERO: 'Porteros', DEFENSA: 'Defensas', 
 @Component({
   selector: 'app-plantilla',
   standalone: true,
-  imports: [FutCardComponent],
   template: `
     @if (cargando()) {
       <p class="muted">Cargando…</p>
@@ -147,19 +145,6 @@ export class PlantillaComponent implements OnInit {
     const n = Number(s?.jornadas ?? s?.jugadas ?? 0);
     if (!n) return '—';
     return (Number(s?.puntos ?? 0) / n).toFixed(1);
-  }
-  statsDe(j: ItemPlantilla): { ico: string; n: number | string }[] | null {
-    const s = this.statsEq()[j.activo_id];
-    if (!s) return null;
-    const out: { ico: string; n: number | string }[] = [];
-    const esPor = j.posicion === 'PORTERO';
-    const defPor = esPor || j.posicion === 'DEFENSA';
-    if (s.goles) out.push({ ico: '⚽', n: s.goles });
-    if (s.asis) out.push({ ico: '🅰', n: s.asis });
-    if (defPor && s.imbatidos) out.push({ ico: '🧤', n: s.imbatidos });
-    if (esPor && s.goles_contra) out.push({ ico: '🥅', n: s.goles_contra });
-    if (s.estrellas) out.push({ ico: '⭐', n: s.estrellas });
-    return out.length ? out.slice(0, 3) : null;
   }
   abrir(j: ItemPlantilla) {
     const s = this.statsEq()[j.activo_id];

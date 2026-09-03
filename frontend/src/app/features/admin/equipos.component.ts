@@ -34,21 +34,21 @@ const COLORES = ['#00e676', '#38bdf8', '#fb7185', '#a3e635', '#ffc24b', '#c084fc
     }
   `,
   styles: [`
-    .aviso { background: rgba(255,194,75,.08); border: 1px solid rgba(255,194,75,.22); color: var(--gold); padding: 10px 14px; border-radius: 10px; margin-bottom: 12px; }
-    .err { color: var(--bad); } .muted { color: var(--muted); }
+    .aviso { background: color-mix(in oklab, var(--por) 8%, var(--surface)); border: 1px solid color-mix(in oklab, var(--por) 32%, var(--line)); color: var(--por); padding: 10px 14px; border-radius: 10px; margin-bottom: 12px; }
+    .err { color: var(--bad); } .muted { color: var(--text2); }
     .grid { display: flex; flex-direction: column; gap: 10px; }
     .eq { display: flex; align-items: center; gap: 14px; padding: 14px 16px; }
     .av { flex: 0 0 auto; width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center;
-      justify-content: center; font-weight: 800; color: var(--accent-ink); }
+      justify-content: center; font-weight: 700; color: var(--accent-ink); }
     .info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-    .info strong { font-size: .95rem; }
-    .meta { color: var(--muted); font-size: .78rem; }
-    .own { font-size: .68rem; font-weight: 800; text-transform: uppercase; color: var(--primary); }
-    .own.sin { color: var(--faint); }
+    .info strong { font-size: 15px; }
+    .meta { color: var(--text2); font-size: 12.5px; }
+    .own { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--accent); }
+    .own.sin { color: var(--text2); }
     .der { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
-    .ben { font-weight: 900; color: var(--gold); } .ben small { font-size: .7rem; }
-    .bn { border: 1px solid var(--border); background: var(--surface-2); color: var(--ink); border-radius: 8px;
-      padding: 6px 12px; cursor: pointer; font-weight: 700; font-size: .76rem; }
+    .ben { font-weight: 700; color: var(--por); } .ben small { font-size: 11px; }
+    .bn { border: 1px solid var(--line); background: var(--surface2); color: var(--text); border-radius: 8px;
+      padding: 6px 12px; cursor: pointer; font-weight: 700; font-size: 12px; }
   `],
 })
 export class AdminEquiposComponent implements OnInit {

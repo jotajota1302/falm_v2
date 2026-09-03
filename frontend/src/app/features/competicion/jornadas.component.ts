@@ -1,21 +1,23 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { Competicion, EnfrentamientoFila, FalmService, JornadaFalm } from '../../core/falm.service';
+import { colorEquipo } from '../../shared/equipo-colores';
 
-const COLORES = ['#00e676', '#38bdf8', '#fb7185', '#a3e635', '#ffc24b', '#c084fc', '#f97316', '#2dd4bf', '#f472b6', '#60a5fa'];
-
-/** Resultados de los enfrentamientos por jornada (tarjetas de partido). */
+/** Resultados de los enfrentamientos por jornada, con el detalle del once. */
 @Component({
   selector: 'app-jornadas',
   standalone: true,
   template: `
-    <h1>📅 Partidos</h1>
+    <header class="phead">
+      <div>
+        <h1>Partidos</h1>
+        <p class="sub">{{ subtitulo() }}</p>
+      </div>
+    </header>
 
     @if (competiciones().length > 1) {
-      <div class="comps">
+      <div class="chips comps">
         @for (c of competiciones(); track c.id) {
-          <button class="comp" [class.on]="c.id === competicionId()" (click)="seleccionarCompeticion(c.id)">
-            <span class="ci">{{ icono(c.tipo) }}</span> {{ etiqueta(c.tipo) }}
-          </button>
+          <button [class.on]="c.id === competicionId()" (click)="seleccionarCompeticion(c.id)">{{ etiqueta(c.tipo) }}</button>
         }
       </div>
     }
@@ -23,7 +25,7 @@ const COLORES = ['#00e676', '#38bdf8', '#fb7185', '#a3e635', '#ffc24b', '#c084fc
     @if (jornadas().length > 0) {
       <div class="jchips">
         @for (j of jornadas(); track j.id) {
-          <button class="jchip" [class.on]="j.id === jornadaId()" (click)="seleccionarJornada(j.id)">J{{ j.numero }}</button>
+          <button [class.on]="j.id === jornadaId()" (click)="seleccionarJornada(j.id)">J{{ j.numero }}</button>
         }
       </div>
     }
@@ -37,22 +39,22 @@ const COLORES = ['#00e676', '#38bdf8', '#fb7185', '#a3e635', '#ffc24b', '#c084fc
     } @else {
       <div class="lista">
         @for (e of enfrentamientos(); track e.enfrentamiento_id) {
-          <div class="match card rise" (click)="abrirDetalle(e)">
-            <div class="lado izq" [class.gana]="e.puntos_clasif_local > e.puntos_clasif_visitante">
+          <button class="match" (click)="abrirDetalle(e)">
+            <span class="lado izq" [class.gana]="e.puntos_clasif_local > e.puntos_clasif_visitante">
               <span class="nm">{{ e.equipo_local }}</span>
-              <span class="av" [style.background]="color(e.equipo_local)">{{ ini(e.equipo_local) }}</span>
-            </div>
-            <div class="centro">
-              <span class="marcador num">{{ e.puntos_local }}<i>·</i>{{ e.puntos_visitante }}</span>
-              @if (e.jornada_jugada) {
-                <span class="chip chip-ok">{{ e.puntos_clasif_local }} - {{ e.puntos_clasif_visitante }}</span>
-              } @else { <span class="chip chip-warn">—</span> }
-            </div>
-            <div class="lado der" [class.gana]="e.puntos_clasif_visitante > e.puntos_clasif_local">
-              <span class="av" [style.background]="color(e.equipo_visitante)">{{ ini(e.equipo_visitante) }}</span>
+              <span class="marca" [style.background]="color(e.equipo_local)"></span>
+            </span>
+            <span class="centro">
+              <span class="marcador num">{{ e.puntos_local }}<i>–</i>{{ e.puntos_visitante }}</span>
+              <span class="est">
+                {{ e.jornada_jugada ? e.puntos_clasif_local + ' – ' + e.puntos_clasif_visitante + ' en la tabla' : 'Sin jugar' }}
+              </span>
+            </span>
+            <span class="lado der" [class.gana]="e.puntos_clasif_visitante > e.puntos_clasif_local">
+              <span class="marca" [style.background]="color(e.equipo_visitante)"></span>
               <span class="nm">{{ e.equipo_visitante }}</span>
-            </div>
-          </div>
+            </span>
+          </button>
         }
       </div>
     }
@@ -60,15 +62,15 @@ const COLORES = ['#00e676', '#38bdf8', '#fb7185', '#a3e635', '#ffc24b', '#c084fc
     @if (detalle() || cargandoDetalle()) {
       <div class="back" (click)="detalle.set(null)">
         <div class="panel rise" (click)="$event.stopPropagation()">
-          <button class="x" (click)="detalle.set(null)">✕</button>
+          <button class="x" (click)="detalle.set(null)" aria-label="Cerrar">✕</button>
           @if (cargandoDetalle()) {
-            <p class="muted" style="padding:20px">Cargando detalle…</p>
+            <p class="muted pad">Cargando detalle…</p>
           } @else if (!detalle()?.local?.jugadores?.length && !detalle()?.visitante?.jugadores?.length) {
-            <p class="muted" style="padding:20px">Sin alineaciones en este partido (la temporada real no guarda once por equipo; prueba la temporada de pruebas).</p>
+            <p class="muted pad">Sin alineaciones guardadas en este partido.</p>
           } @else {
             <div class="dmarcador">
               <span class="de">{{ detalle().local.equipo }}</span>
-              <span class="dm num">{{ detalle().local.total }} · {{ detalle().visitante.total }}</span>
+              <span class="dm num">{{ detalle().local.total }} – {{ detalle().visitante.total }}</span>
               <span class="de">{{ detalle().visitante.equipo }}</span>
             </div>
             <div class="dcols">
@@ -76,7 +78,7 @@ const COLORES = ['#00e676', '#38bdf8', '#fb7185', '#a3e635', '#ffc24b', '#c084fc
                 <div class="dcol">
                   @for (j of lado.jugadores; track j.nombre) {
                     <div class="dj" [class.supl]="j.rol !== 'TITULAR'" [class.nojugo]="!j.jugo">
-                      <span class="dpos" [class]="abrPos(j.pos)">{{ abrPos(j.pos) }}</span>
+                      <span class="pos" [class]="abrPos(j.pos)">{{ abrPos(j.pos) }}</span>
                       <span class="dn">{{ j.nombre }}</span>
                       <span class="dp num" [class.neg]="j.puntos < 0">{{ j.puntos }}</span>
                     </div>
@@ -84,59 +86,68 @@ const COLORES = ['#00e676', '#38bdf8', '#fb7185', '#a3e635', '#ffc24b', '#c084fc
                 </div>
               }
             </div>
+            <p class="dleg">Los suplentes van con borde discontinuo; en gris, quien no llegó a jugar.</p>
           }
         </div>
       </div>
     }
   `,
   styles: [`
-    h1 { margin: 0 0 14px; }
-    .match { cursor: pointer; }
-    .back { position: fixed; inset: 0; z-index: 60; background: rgba(0,0,0,.66); backdrop-filter: blur(4px);
-      display: flex; align-items: flex-end; justify-content: center; }
-    .panel { position: relative; width: 100%; max-width: 640px; max-height: 88vh; overflow-y: auto;
-      background: linear-gradient(180deg, var(--surface), var(--bg-elev)); border: 1px solid var(--border);
-      border-top: 3px solid var(--primary); border-radius: 22px 22px 0 0; padding: 20px; }
-    @media (min-width: 680px) { .back { align-items: center; } .panel { border-radius: 22px; } }
-    .x { position: absolute; top: 14px; right: 14px; background: var(--surface-2); border: 1px solid var(--border);
-      color: var(--muted); width: 32px; height: 32px; border-radius: 9px; cursor: pointer; z-index: 1; }
-    .dmarcador { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; margin-bottom: 16px; }
-    .de { font-weight: 800; font-size: .9rem; } .dmarcador .de:last-child { text-align: right; }
-    .dm { font-weight: 900; font-size: 1.5rem; text-align: center; }
-    .dcols { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .dcol { display: flex; flex-direction: column; gap: 4px; }
-    .dj { display: grid; grid-template-columns: 30px 1fr auto; align-items: center; gap: 7px; padding: 6px 8px;
-      background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; font-size: .78rem; }
-    .dj.supl { opacity: .85; border-style: dashed; }
-    .dj.nojugo { opacity: .45; }
-    .dpos { text-align: center; padding: 1px 0; border-radius: 4px; font-size: .58rem; font-weight: 800; color: var(--accent-ink); }
-    .dpos.POR { background: var(--pos-POR); } .dpos.DEF { background: var(--pos-DEF); }
-    .dpos.MED { background: var(--pos-MED); } .dpos.DEL { background: var(--pos-DEL); }
-    .dn { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
-    .dp { font-weight: 900; color: var(--primary); } .dp.neg { color: var(--bad); }
-    .comps { display: flex; gap: 8px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 4px; }
-    .comp { flex: 0 0 auto; display: flex; align-items: center; gap: 6px; padding: 9px 15px; border-radius: 11px;
-      border: 1px solid var(--border); background: var(--surface); color: var(--muted); cursor: pointer;
-      font-weight: 800; font-size: .82rem; white-space: nowrap; transition: all .14s ease; }
-    .comp .ci { font-size: 1rem; }
-    .comp.on { background: var(--accent-soft); color: var(--primary); border-color: var(--primary);
-      box-shadow: inset 0 0 0 1px var(--primary); }
-    .jchips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 14px; }
-    .jchip { flex: 0 0 auto; min-width: 44px; height: 38px; border: 1px solid var(--border); background: var(--surface);
-      color: var(--muted); border-radius: 10px; cursor: pointer; font-weight: 800; }
-    .jchip.on { background: var(--primary); color: var(--primary-ink); border-color: var(--primary); }
+    .comps { margin-bottom: 12px; }
+    .jchips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 14px; }
+    .jchips button { flex: 0 0 auto; min-width: 44px; padding: 8px 10px; border: 1px solid var(--line);
+      background: var(--surface); color: var(--text2); border-radius: 10px; cursor: pointer;
+      font-family: var(--fm); font-weight: 600; font-size: 12px; }
+    .jchips button.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+
     .lista { display: flex; flex-direction: column; gap: 10px; }
-    .match { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 14px 12px; }
+    .match { width: 100%; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
+      gap: 12px; padding: 15px 16px; cursor: pointer; text-align: left;
+      background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); }
+    .match:hover { border-color: var(--accent-line); }
     .lado { display: flex; align-items: center; gap: 10px; min-width: 0; }
     .lado.izq { justify-content: flex-end; } .lado.der { justify-content: flex-start; }
-    .av { flex: 0 0 auto; width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center;
-      justify-content: center; font-weight: 800; color: var(--accent-ink); font-size: .9rem; }
-    .nm { font-weight: 700; font-size: .86rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .lado.gana .nm { color: var(--ink); }
-    .centro { display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 0 10px; }
-    .marcador { font-weight: 900; font-size: 1.3rem; letter-spacing: -.02em; }
-    .marcador i { color: var(--faint); margin: 0 5px; font-style: normal; }
-    .muted { color: var(--muted); } .err { color: var(--bad); }
+    .marca { width: 3px; height: 24px; border-radius: 2px; flex: 0 0 auto; }
+    .nm { font-family: var(--fh); font-size: 16px; font-weight: 500; text-transform: uppercase;
+      color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .lado.gana .nm { color: var(--text); font-weight: 600; }
+    .centro { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 0 8px; }
+    .marcador { font-size: 21px; font-weight: 700; white-space: nowrap; }
+    .marcador i { color: var(--text2); margin: 0 6px; font-style: normal; }
+    .est { font-size: 9px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+      color: var(--text2); white-space: nowrap; }
+
+    .back { position: fixed; inset: 0; z-index: 60; background: rgba(22,19,15,.42);
+      display: flex; align-items: flex-end; justify-content: center; }
+    .panel { position: relative; width: 100%; max-width: 640px; max-height: 88vh; overflow-y: auto;
+      background: var(--surface); border: 1px solid var(--line); border-top: 3px solid var(--accent);
+      border-radius: 22px 22px 0 0; padding: 22px; }
+    @media (min-width: 680px) { .back { align-items: center; } .panel { border-radius: 22px; } }
+    .x { position: absolute; top: 14px; right: 14px; background: var(--surface2); border: 1px solid var(--line);
+      color: var(--text2); width: 32px; height: 32px; border-radius: 9px; cursor: pointer; font-size: 13px; z-index: 1; }
+    .pad { padding: 18px 0; }
+    .dmarcador { display: grid; grid-template-columns: 1fr auto 1fr; align-items: baseline; gap: 12px;
+      margin-bottom: 18px; padding-right: 40px; }
+    .de { font-family: var(--fh); font-size: 15px; font-weight: 600; text-transform: uppercase; }
+    .dmarcador .de:last-child { text-align: right; }
+    .dm { font-size: 22px; font-weight: 700; text-align: center; color: var(--accent); white-space: nowrap; }
+    .dcols { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .dcol { display: flex; flex-direction: column; gap: 4px; }
+    .dj { display: grid; grid-template-columns: 32px 1fr auto; align-items: center; gap: 8px; padding: 6px 8px;
+      background: var(--surface); border: 1px solid var(--line); border-radius: 8px; font-size: 12px; }
+    .dj.supl { border-style: dashed; }
+    .dj.nojugo { color: var(--text2); }
+    .dj.nojugo .dp { color: var(--text2); }
+    .dj .pos { min-width: 30px; padding: 2px 4px; font-size: 8px; }
+    .dn { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
+    .dp { font-weight: 700; color: var(--accent); } .dp.neg { color: var(--bad); }
+    .dleg { margin: 14px 0 0; font-size: 11px; color: var(--text2); }
+    .muted { color: var(--text2); } .err { color: var(--bad); }
+
+    @media (max-width: 560px) {
+      .nm { font-size: 13.5px; }
+      .dcols { grid-template-columns: 1fr; }
+    }
   `],
 })
 export class JornadasComponent implements OnInit {
@@ -151,8 +162,17 @@ export class JornadasComponent implements OnInit {
   error = signal('');
 
   constructor(private falm: FalmService) {}
-  ini(n: string) { return (n || '?').charAt(0).toUpperCase(); }
   abrPos(p: string) { return ({ PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'MED', DELANTERO: 'DEL' } as Record<string, string>)[p] ?? p; }
+  color(n: string) { return colorEquipo(n); }
+  etiqueta(t: string) { return t === 'CHAMPIONS' ? 'Champions' : t === 'CLAUSURA' ? 'Clausura' : 'Liga'; }
+
+  subtitulo() {
+    const j = this.jornadas().find((x) => x.id === this.jornadaId());
+    const c = this.competiciones().find((x) => x.id === this.competicionId());
+    const eti = c ? this.etiqueta(c.tipo) : 'Liga';
+    return j ? `${eti} · jornada ${j.numero}. Toca un partido para ver los dos onces.`
+             : `${eti} · aún sin jornadas.`;
+  }
 
   async abrirDetalle(e: EnfrentamientoFila) {
     this.cargandoDetalle.set(true);
@@ -160,9 +180,6 @@ export class JornadasComponent implements OnInit {
     catch { this.detalle.set(null); }
     finally { this.cargandoDetalle.set(false); }
   }
-  color(n: string) { let h = 0; for (const c of n || '') h = (h * 31 + c.charCodeAt(0)) >>> 0; return COLORES[h % COLORES.length]; }
-  icono(t: string) { return t === 'CHAMPIONS' ? '🌟' : t === 'CLAUSURA' ? '🔚' : '🏆'; }
-  etiqueta(t: string) { return t === 'CHAMPIONS' ? 'Champions' : t === 'CLAUSURA' ? 'Clausura' : 'Liga'; }
 
   async ngOnInit() {
     try {

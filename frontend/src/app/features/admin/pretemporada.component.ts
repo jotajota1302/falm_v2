@@ -78,7 +78,7 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
               <button class="btn ghost" (click)="sorteoAbierto.set(false)">Cancelar</button>
             } @else {
               <button class="btn ghost" (click)="sorteoAbierto.set(true)">
-                🎲 Rehacer el orden del sorteo
+                Rehacer el orden del sorteo
               </button>
             }
           }
@@ -212,7 +212,7 @@ export class AdminPretemporadaComponent implements OnInit {
     await this.accion(
       () => this.admin.ejecutar('draft_crear',
         { p_temporada: t.id, p_nombre: 'Draft ' + t.nombre, p_rondas: 23, p_orden: orden }),
-      '✅ Draft creado con el orden del sorteo.'
+      'Draft creado con el orden del sorteo.'
     );
   }
 
@@ -222,7 +222,7 @@ export class AdminPretemporadaComponent implements OnInit {
     if (!d?.id) return;
     await this.accion(
       () => this.admin.ejecutar('draft_reordenar', { p_draft: d.id, p_orden: orden }),
-      '✅ Orden del draft actualizado.'
+      'Orden del draft actualizado.'
     );
     this.sorteoAbierto.set(false);
   }

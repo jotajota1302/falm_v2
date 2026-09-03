@@ -1,29 +1,29 @@
 import { Component, Input } from '@angular/core';
-import { clubGrad, clubInk } from './club-colors';
 
 const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'MED', DELANTERO: 'DEL' };
 
-/** Carta de jugador unificada (Once, Equipo, Mercado, Fichajes): color del club + escudo fundido.
- *  Layout ficha: nº (puntos/precio) + posición a la izquierda, cabeza arriba-derecha, nombre + stats abajo.
- *  Tamaños en cqw → se ve proporcional a cualquier tamaño (campo pequeño o cromos grandes). */
+/**
+ * Carta de jugador sobre el campo de la Alineación: papel con filo del color de
+ * la posición, retrato recortado y el dato (puntos o precio) en cifra mono.
+ * Todo mide en cqw, así que se ve igual en un hueco pequeño que en uno grande.
+ */
 @Component({
   selector: 'falm-fut-card',
   standalone: true,
   template: `
-    <div class="fut" [class.campo]="campo" [attr.data-pos]="abr" [style.background]="fondo" [style.color]="tinta">
-      <div class="sheen"></div>
+    <div class="fut" [class.campo]="campo" [attr.data-pos]="abr">
       @if (escudo) { <img class="wm" [src]="escudo" alt="" loading="lazy" /> }
       <div class="top">
         <div class="info">
           @if (num !== null) { <span class="val">{{ num }}@if (unidad) {<small>{{ unidad }}</small>}</span> }
-          @if (!campo) { <span class="pos">{{ abr }}</span> }
+          @if (!campo) { <span class="pos" [class]="abr">{{ abr }}</span> }
         </div>
         @if (foto) { <img class="face" [src]="foto" alt="" loading="lazy" (error)="foto = null" /> }
         @else if (escudo) { <img class="face esc" [src]="escudo" alt="" loading="lazy" /> }
-        @else { <span class="ph">{{ abr === 'POR' ? '🧤' : '⚽' }}</span> }
+        @else { <span class="ph">{{ abr }}</span> }
       </div>
       <div class="foot">
-        <span class="n1">{{ nombre }}</span>
+        <span class="n1">{{ corto }}</span>
         @if (stats?.length) {
           <div class="sline">@for (s of stats; track s.ico) { <span>{{ s.ico }}{{ s.n }}</span> }</div>
         }
@@ -33,37 +33,43 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
   `,
   styles: [`
     :host { container-type: inline-size; display: block; }
-    .fut { position: relative; width: 100%; aspect-ratio: 1 / 1.08; border-radius: 9cqw; overflow: hidden;
-      display: flex; flex-direction: column; padding: 6cqw 7cqw; color: #1a1206;
-      box-shadow: 0 6px 16px rgba(0,0,0,.45); border: 1px solid rgba(255,255,255,.26); cursor: pointer; }
-    .sheen { position: absolute; inset: 0; pointer-events: none; z-index: 2;
-      background: linear-gradient(120deg, rgba(255,255,255,.22), transparent 46%); }
-    .wm { position: absolute; right: -14%; top: 2%; width: 86%; opacity: .13; filter: saturate(.85);
+    .fut { position: relative; width: 100%; aspect-ratio: 1 / 1.08; overflow: hidden; cursor: pointer;
+      display: flex; flex-direction: column; padding: 6cqw 6cqw 5cqw;
+      background: var(--surface); border: 1px solid var(--line); border-radius: 8cqw;
+      border-top: 3px solid var(--c, var(--line)); color: var(--text); }
+    .fut[data-pos=POR] { --c: var(--por); } .fut[data-pos=DEF] { --c: var(--def); }
+    .fut[data-pos=MED] { --c: var(--med); } .fut[data-pos=DEL] { --c: var(--del); }
+    .fut:hover { border-color: var(--accent-line); border-top-color: var(--c, var(--line)); }
+
+    /* El escudo va de marca de agua: identifica el club sin gritar. */
+    .wm { position: absolute; right: -12%; top: 4%; width: 78%; opacity: .1;
       object-fit: contain; z-index: 0; pointer-events: none; }
 
-    .top { position: relative; z-index: 1; flex: 1; min-height: 0; display: flex; align-items: flex-start; justify-content: space-between; gap: 4cqw; }
-    .info { display: flex; flex-direction: column; align-items: flex-start; gap: 4cqw; }
-    .val { font-weight: 900; font-size: 21cqw; line-height: 1; color: inherit; text-shadow: 0 1px 2px rgba(0,0,0,.22); }
-    .val small { font-size: 8cqw; font-weight: 800; opacity: .8; margin-left: 1px; }
-    .pos { font-weight: 900; font-size: 8cqw; letter-spacing: .03em; color: var(--accent-ink); padding: 1.5cqw 5cqw; border-radius: 4cqw; background: #fff; }
-    .fut[data-pos=POR] .pos { background: var(--pos-POR); } .fut[data-pos=DEF] .pos { background: var(--pos-DEF); }
-    .fut[data-pos=MED] .pos { background: var(--pos-MED); } .fut[data-pos=DEL] .pos { background: var(--pos-DEL); }
-    .face { height: 100%; max-width: 60%; object-fit: contain; object-position: top right; align-self: stretch;
-      filter: drop-shadow(0 4px 6px rgba(0,0,0,.45)); z-index: 1; }
-    .face.esc { max-width: 52%; object-position: top; opacity: .96; }
-    .ph { font-size: 24cqw; opacity: .6; margin-left: auto; line-height: 1; }
+    .top { position: relative; z-index: 1; flex: 1; min-height: 0;
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 3cqw; }
+    .info { display: flex; flex-direction: column; align-items: flex-start; gap: 3cqw; }
+    .val { font-family: var(--fm); font-weight: 700; font-size: 17cqw; line-height: 1; }
+    .val small { font-size: 7cqw; opacity: .7; margin-left: 1px; }
+    .pos { min-width: 0; padding: 1.5cqw 4cqw; border-radius: 3cqw; font-size: 7cqw; letter-spacing: .06em; }
 
-    .foot { position: relative; z-index: 1; margin-top: 4cqw; }
-    .n1 { display: block; font-weight: 900; font-size: 12cqw; color: inherit; text-shadow: 0 1px 2px rgba(0,0,0,.22);
+    .face { height: 100%; max-width: 62%; object-fit: contain; object-position: top right; align-self: stretch; z-index: 1; }
+    .face.esc { max-width: 50%; object-position: top; opacity: .9; }
+    .ph { font-family: var(--fh); font-size: 14cqw; color: var(--text2); margin-left: auto; }
+
+    .foot { position: relative; z-index: 1; margin-top: 3cqw; }
+    .n1 { display: block; font-family: var(--fh); font-weight: 500; font-size: 11cqw;
+      text-transform: uppercase; letter-spacing: -.01em;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .sline { display: flex; gap: 6cqw; margin-top: 2cqw; font-size: 9cqw; font-weight: 800; color: inherit; opacity: .92; }
+    .sline { display: flex; gap: 5cqw; margin-top: 1cqw; font-family: var(--fm);
+      font-size: 8cqw; color: var(--text2); }
     .sline span { white-space: nowrap; }
 
-    /* modo campo (Once): sin posición (la da la banda), cara centrada, puntos en pastilla flotante */
-    .fut.campo .info { position: absolute; top: 5cqw; left: 6cqw; z-index: 3; }
-    .fut.campo .val { background: rgba(0,0,0,.36); color: #fff; padding: 1.5cqw 4cqw; border-radius: 5cqw; font-size: 18cqw; text-shadow: none; }
+    /* modo campo (Alineación): la banda ya dice la posición, así que sobra el badge */
+    .fut.campo .info { position: absolute; top: 4cqw; left: 5cqw; z-index: 3; }
+    .fut.campo .val { background: var(--surface2); border: 1px solid var(--line);
+      padding: 1cqw 3cqw; border-radius: 4cqw; font-size: 14cqw; }
     .fut.campo .top { justify-content: center; align-items: stretch; }
-    .fut.campo .face { max-width: 90%; object-position: center bottom; }
+    .fut.campo .face { max-width: 88%; object-position: center bottom; }
     .fut.campo .n1 { text-align: center; }
   `],
 })
@@ -79,9 +85,8 @@ export class FutCardComponent {
   @Input() campo = false;                           // Once: sin chip de posición, cara centrada
   abr = 'MED';
 
+  /** En el campo solo cabe una palabra: el apellido. */
   get corto() { const p = (this.nombre || '').split(' '); return p.length > 1 ? p[p.length - 1] : this.nombre; }
-  get fondo() { return clubGrad(this.escudo, this.abr); }
-  get tinta() { return clubInk(this.escudo); }
   get num(): number | string | null {
     if (this.media !== null && this.media !== undefined && this.media !== '') return this.media;
     if (this.precio != null) return this.precio;
