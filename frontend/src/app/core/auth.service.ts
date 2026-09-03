@@ -3,6 +3,14 @@ import { Session, User } from '@supabase/supabase-js';
 import { environment } from '../../environments/environment';
 import { SupabaseService } from './supabase.service';
 
+/**
+ * Un único mensaje para cualquier fallo de acceso: decir si lo que falló fue el
+ * nombre o la contraseña permitiría averiguar qué equipos existen probando
+ * nombres. Explica el formato, que es lo que de verdad hacía falta.
+ */
+const ERROR_LOGIN =
+  'No hemos podido entrar. El usuario y la contraseña son el nombre de tu equipo.';
+
 /** Autenticación contra Supabase Auth. Expone la sesión como signal. */
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -49,7 +57,7 @@ export class AuthService {
     const eq = nombre.trim();
     const { data, error } = await this.sb.client.rpc('email_de_equipo', { p_nombre: eq });
     if (error) throw error;
-    if (!data) throw new Error('No hay ningún equipo con ese nombre.');
+    if (!data) throw new Error(ERROR_LOGIN);
 
     const { data: canonico } = await this.sb.client.rpc('nombre_de_equipo', { p_nombre: eq });
     const nombreReal = (canonico as string) ?? eq;
@@ -60,8 +68,12 @@ export class AuthService {
       // La contraseña es el nombre del equipo, y Supabase distingue mayúsculas.
       // Si escribió el nombre pero con otra caja, se reintenta con el canónico.
       const quisoElNombre = password.trim().toLowerCase() === nombreReal.toLowerCase();
-      if (!quisoElNombre) throw new Error('Contraseña incorrecta.');
-      await this.signIn(data as string, nombreReal);
+      if (!quisoElNombre) throw new Error(ERROR_LOGIN);
+      try {
+        await this.signIn(data as string, nombreReal);
+      } catch {
+        throw new Error(ERROR_LOGIN);
+      }
     }
 
     localStorage.setItem('falm_equipo', nombreReal);
