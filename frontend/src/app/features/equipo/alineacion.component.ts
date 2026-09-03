@@ -81,7 +81,9 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
             @for (h of huecos(pos); track h) {
               <button class="slot vacio" (click)="abrirLinea(pos)" [attr.data-pos]="abr(pos)">
                 <span class="hueco">
-                  <span class="mas">+</span>
+                  <span class="mas">
+                    <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M7 1h2v6h6v2H9v6H7V9H1V7h6z" /></svg>
+                  </span>
                   <span class="col">
                     <span class="fig">
                       <svg viewBox="0 0 24 23" aria-hidden="true">
@@ -249,9 +251,15 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
        falta, con la posición debajo. */
     .hueco { display: flex; align-items: center; justify-content: center; gap: 8px; }
     .col { display: flex; flex-direction: column; align-items: center; gap: 1px; }
+    /* La cruz va dibujada, no escrita: el glifo "+" nunca cae centrado en un
+       círculo, le sobra hueco por debajo. */
     .slot.vacio .mas { display: flex; align-items: center; justify-content: center;
-      width: 28px; height: 28px; border-radius: 50%; font-size: var(--t-md); line-height: 1;
-      background: var(--surface); color: var(--text2); }
+      width: 30px; height: 30px; border-radius: 50%; flex: 0 0 auto;
+      background: var(--surface); border: 1px solid var(--line);
+      transition: background .12s ease, border-color .12s ease; }
+    .slot.vacio .mas svg { width: 12px; height: 12px; fill: var(--text2); }
+    .slot.vacio:hover .mas { background: var(--accent); border-color: var(--accent); }
+    .slot.vacio:hover .mas svg { fill: var(--accent-ink); }
     .fig { position: relative; display: flex; align-items: center; justify-content: center; }
     /* Una sola camiseta para todos los huecos: el color ya lo dice la etiqueta
        de debajo, y cuatro tonos en el campo eran ruido. */
