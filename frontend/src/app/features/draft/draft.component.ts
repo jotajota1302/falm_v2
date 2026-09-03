@@ -107,7 +107,11 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
                       (click)="togglePos(p)">{{ abr(p) }}</button>
             }
             <button [class.on]="soloCola()" (click)="soloCola.set(!soloCola())">★ Mi cola</button>
-            <button [class.on]="!soloLibres()" (click)="soloLibres.set(!soloLibres())">Ver fichados</button>
+            <button [class.on]="!soloLibres()" [disabled]="d.picks().length === 0"
+                    [title]="d.picks().length === 0 ? 'Todavía no ha fichado nadie en este draft' : ''"
+                    (click)="soloLibres.set(!soloLibres())">
+              Ver fichados ({{ d.picks().length }})
+            </button>
             <input class="buscar" type="search" placeholder="Buscar jugador o club…"
                    [ngModel]="texto()" (ngModelChange)="texto.set($event); limite.set(30)" />
           </div>
@@ -271,6 +275,7 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
       border-radius: var(--pill); padding: 6px 14px; cursor: pointer; font-weight: 600;
       font-size: var(--t-sm); font-family: var(--fb); }
     .barra button.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+    .barra button:disabled { opacity: .45; cursor: not-allowed; }
     .barra button.pos-f.on.POR { background: var(--por); border-color: var(--por); }
     .barra button.pos-f.on.DEF { background: var(--def); border-color: var(--def); }
     .barra button.pos-f.on.MED { background: var(--med); border-color: var(--med); }
@@ -289,7 +294,7 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     .fila.res { grid-template-columns: 46px 1.6fr 1fr; }
     .fila.tomado { color: var(--text2); }
     .fila.tomado .nom { text-decoration: line-through; font-weight: 600; }
-    .fila.tomado .pos, .fila.tomado .precio { opacity: .5; }
+    .fila.tomado .pos { opacity: .5; }
     .nom { font-weight: 700; min-width: 0; display: flex; align-items: center; gap: 9px;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .cola .nom, .orden .nom { display: block; text-overflow: ellipsis; }

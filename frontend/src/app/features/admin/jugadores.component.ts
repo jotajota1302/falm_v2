@@ -92,7 +92,6 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     .info { flex: 1; min-width: 0; display: flex; flex-direction: column; }
     .nm { font-weight: 700; font-size: var(--t-md); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .cl { color: var(--text2); font-size: var(--t-sm); }
-    .precio { font-weight: 700; color: var(--por); }
     .bn { border: 1px solid var(--line); background: var(--surface2); color: var(--text2); border-radius: 8px;
       width: 30px; height: 30px; cursor: pointer; font-weight: 700; }
     .bn.ok { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }

@@ -110,7 +110,6 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
       letter-spacing: .06em; text-transform: uppercase;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .club img { width: 16px; height: 16px; object-fit: contain; flex: 0 0 auto; }
-    .precio { color: var(--accent); font-weight: 700; }
     .vacio { padding: 22px 18px; margin: 0; font-size: var(--t-sm); }
 
     .pie { display: flex; align-items: center; justify-content: space-between;

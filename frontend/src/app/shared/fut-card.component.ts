@@ -4,7 +4,7 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
 
 /**
  * Carta de jugador sobre el campo de la Alineación: papel con filo del color de
- * la posición, retrato recortado y el dato (puntos o precio) en cifra mono.
+ * la posición, retrato recortado y los puntos en cifra mono.
  * Todo mide en cqw, así que se ve igual en un hueco pequeño que en uno grande.
  */
 @Component({
@@ -79,7 +79,6 @@ export class FutCardComponent {
   @Input() escudo: string | null = null;
   @Input() set posicion(v: string) { this.abr = ABR[v] ?? v; }
   @Input() media: number | string | null = null;   // puntos (Once/Equipo)
-  @Input() precio: number | null = null;            // precio (Mercado/Fichajes)
   @Input() sub: string | null = null;               // (reservado)
   @Input() stats: { ico: string; n: number | string }[] | null = null;
   @Input() campo = false;                           // Once: sin chip de posición, cara centrada
@@ -89,10 +88,9 @@ export class FutCardComponent {
   get corto() { const p = (this.nombre || '').split(' '); return p.length > 1 ? p[p.length - 1] : this.nombre; }
   get num(): number | string | null {
     if (this.media !== null && this.media !== undefined && this.media !== '') return this.media;
-    if (this.precio != null) return this.precio;
     return null;
   }
   get unidad(): string {
-    return (this.media === null || this.media === undefined || this.media === '') && this.precio != null ? 'M' : '';
+    return '';
   }
 }

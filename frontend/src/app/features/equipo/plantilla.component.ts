@@ -19,7 +19,6 @@ const ETI: Record<string, string> = { PORTERO: 'Porteros', DEFENSA: 'Defensas', 
     } @else {
       <header class="phead">
         <h1>Mi plantilla</h1>
-        <p class="sub">{{ resumen() }}</p>
       </header>
 
       <div class="kpis">
@@ -30,6 +29,7 @@ const ETI: Record<string, string> = { PORTERO: 'Porteros', DEFENSA: 'Defensas', 
         <div class="kpi">
           <span class="lb">Jugadores</span>
           <span class="v num">{{ items().length }}</span>
+          <span class="det">{{ resumen() }}</span>
         </div>
       </div>
 
@@ -83,6 +83,8 @@ const ETI: Record<string, string> = { PORTERO: 'Porteros', DEFENSA: 'Defensas', 
     .kpi .v { display: block; margin-top: 4px; font-family: var(--fh); font-size: var(--t-xl); font-weight: 600; }
     .kpi .v small { font-size: var(--t-md); color: var(--text2); }
     .kpi .v.neg { color: var(--bad); }
+    /* El desglose por líneas, donde está el número que desglosa. */
+    .kpi .det { display: block; margin-top: 3px; font-size: var(--t-xs); color: var(--text2); }
 
     /* La plantilla se lee como una clasificación: una fila por jugador. */
     .tabla { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; }
@@ -120,7 +122,6 @@ const ETI: Record<string, string> = { PORTERO: 'Porteros', DEFENSA: 'Defensas', 
     .estado { font-size: var(--t-xs); color: var(--text2); }
     .estado.virtual { color: var(--por); font-weight: 600; }
     .media { color: var(--text2); }
-    .precio { color: var(--accent); font-weight: 700; }
     .muted { color: var(--text2); } .err { color: var(--bad); }
 
     @media (max-width: 760px) {
@@ -148,9 +149,6 @@ export class PlantillaComponent implements OnInit {
 
   /** Por posición (POR, DEF, MED, DEL) y dentro por puntos, de más a menos. */
   /** Lo que costaría hoy la plantilla entera. */
-  valorPlantilla = computed(() =>
-    +this.items().reduce((t, j) => t + Number(j.precio ?? 0), 0).toFixed(1));
-
   filas = computed(() =>
     [...this.items()].sort((a, b) =>
       (ORDEN[a.posicion] - ORDEN[b.posicion]) || (this.puntosDe(b) - this.puntosDe(a))));

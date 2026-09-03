@@ -154,7 +154,6 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
       letter-spacing: .06em; text-transform: uppercase;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .club img { width: 16px; height: 16px; object-fit: contain; flex: 0 0 auto; }
-    .precio { color: var(--accent); font-weight: 700; }
     .pedir { background: var(--surface); border: 1px solid var(--line); color: var(--text2);
       border-radius: 8px; padding: 6px 0; cursor: pointer; font-family: var(--fb); font-weight: 700; font-size: var(--t-xs); }
     .pedir:hover { border-color: var(--accent); color: var(--accent); }
