@@ -72,6 +72,7 @@ dentro del repo.
 | `calendario_lfp.sql`, `refrescar_catalogo_ff.sql` | Ingesta de calendario y catálogo |
 | `ingestar_jornada_ff_marcadores.sql` | Ingesta de puntuaciones de una jornada |
 | `parseo_por_slug_ff.sql` | Emparejar por slug de futbolfantasy (y el año es el de FIN de temporada) |
+| `puntuaciones_a_demanda.sql` | Leer una jornada desde el panel, con guardias de rol |
 | `procesar_jornada_auto.sql`, `tareas_previas_jornada.sql` | Lo que ejecutan los cron |
 | `liga_falm_calendario.sql` | `generar_liga_falm` (mantenimiento; revocada a los usuarios) |
 | `admin_operaciones.sql` | `estado_crons` y el cierre de escritura en `equipo_falm` |

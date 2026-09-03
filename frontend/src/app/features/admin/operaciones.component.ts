@@ -1,6 +1,6 @@
 import { Component, OnInit, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { AdminService, CronAdmin, JornadaAdmin, Respaldo } from './admin.service';
+import { AdminService, CronAdmin, JornadaAdmin, JornadaLfpEstado, Respaldo } from './admin.service';
 
 interface Op {
   id: string;
@@ -42,6 +42,55 @@ interface Op {
                     [class.chip-warn]="c.estado && c.estado !== 'succeeded'">
                 {{ c.activo ? (c.estado ?? 'sin ejecutar') : 'parada' }}
               </span>
+            </div>
+          }
+        </div>
+      }
+    </section>
+
+    <section class="card">
+      <h3>Puntuaciones de LaLiga</h3>
+      <p class="hint">
+        Normalmente esto lo hace solo el sistema cada hora, en cuanto termina una jornada.
+        Esto es el <b>hazlo ahora</b>: para cuando falle, o para releer una jornada si la
+        prensa cambia una valoración. Las jornadas 1 a 4 no cuentan para la liga.
+      </p>
+
+      <div class="form">
+        <label>Jornada
+          <select [ngModel]="jornadaLfp()" (ngModelChange)="jornadaLfp.set($event)">
+            <option value="">— elige jornada —</option>
+            @for (j of jornadasLfp(); track j.numero) {
+              <option [value]="j.numero" [disabled]="j.con_marcador === 0">
+                J{{ j.numero }}{{ j.en_liga_falm ? '' : ' (fuera de la liga)' }} ·
+                {{ j.con_marcador === 0 ? 'sin jugar' :
+                   (j.puntuaciones > 0 ? j.puntuaciones + ' puntuaciones' : 'sin leer') }}
+              </option>
+            }
+          </select>
+        </label>
+        <label class="chk">
+          <input type="checkbox" [ngModel]="sobrescribir()" (ngModelChange)="sobrescribir.set($event)" />
+          Volver a leer si ya tiene puntuaciones
+        </label>
+        <button class="btn" [disabled]="leyendo() || !jornadaLfp()" (click)="leerPuntuaciones()">
+          {{ leyendo() ? 'Leyendo…' : 'Leer puntuaciones' }}
+        </button>
+      </div>
+
+      @if (avisoPt()) { <p class="aviso">{{ avisoPt() }}</p> }
+      @if (errorPt()) { <p class="err">{{ errorPt() }}</p> }
+
+      @if (sinCasar().length) {
+        <p class="hint">
+          No se han podido identificar estos {{ sinCasar().length }}. Suele ser gente que ya
+          no está en la liga o del filial; si alguno es titular, avisa y se revisa el catálogo.
+        </p>
+        <div class="lista">
+          @for (n of sinCasar(); track n.slug || n.jugador) {
+            <div class="row nc">
+              <span class="nm">{{ n.jugador }}</span>
+              <span class="faint">{{ n.equipo }}</span>
             </div>
           }
         </div>
@@ -151,6 +200,8 @@ interface Op {
     .aviso { padding: 9px 13px; border-radius: var(--r-sm); background: var(--surface);
       border: 1px solid var(--accent-line); font-size: var(--t-sm); margin: 0 0 10px; }
     .row.bk { grid-template-columns: 1fr 130px 170px 84px; }
+    .row.nc { grid-template-columns: 1fr 1fr; }
+    .form .chk { display: flex; gap: 7px; align-items: center; cursor: pointer; }
     .form input { padding: 7px 10px; border: 1px solid var(--line); border-radius: var(--r-xs);
       background: var(--surface); color: var(--text); font-family: var(--fb);
       font-size: var(--t-sm); min-width: 180px; }
@@ -171,6 +222,15 @@ export class AdminOperacionesComponent implements OnInit {
   corriendo = signal('');
   aviso = signal('');
   error = signal('');
+
+  // Puntuaciones de LaLiga
+  jornadasLfp = signal<JornadaLfpEstado[]>([]);
+  jornadaLfp = signal<string>('');
+  sobrescribir = signal(false);
+  leyendo = signal(false);
+  avisoPt = signal('');
+  errorPt = signal('');
+  sinCasar = signal<{ equipo: string; jugador: string; slug: string | null }[]>([]);
 
   // Copias de seguridad
   readonly tablasFalm = 29;
@@ -202,6 +262,35 @@ export class AdminOperacionesComponent implements OnInit {
       this.error.set(e?.message ?? 'No se pudo cargar el estado.');
     }
     await this.cargarRespaldos();
+    await this.cargarJornadasLfp();
+  }
+
+  private async cargarJornadasLfp() {
+    try {
+      this.jornadasLfp.set(await this.admin.estadoJornadasLfp());
+    } catch (e: any) {
+      this.errorPt.set(e?.message ?? 'No se pudo leer el estado de las jornadas.');
+    }
+  }
+
+  async leerPuntuaciones() {
+    const j = Number(this.jornadaLfp());
+    if (!j || this.leyendo()) return;
+    this.avisoPt.set(''); this.errorPt.set(''); this.sinCasar.set([]);
+    this.leyendo.set(true);
+    try {
+      const r = await this.admin.leerPuntuaciones(j, this.sobrescribir());
+      this.sinCasar.set(r.no_casados ?? []);
+      this.avisoPt.set(
+        `Jornada ${r.jornada_numero}: ${r.ingestados} puntuaciones de ${r.casados} jugadores` +
+        (r.no_casados?.length ? `, ${r.no_casados.length} sin identificar.` : '.')
+      );
+      await this.cargarJornadasLfp();
+    } catch (e: any) {
+      this.errorPt.set(e?.message ?? 'No se pudieron leer las puntuaciones.');
+    } finally {
+      this.leyendo.set(false);
+    }
   }
 
   private async cargarRespaldos() {

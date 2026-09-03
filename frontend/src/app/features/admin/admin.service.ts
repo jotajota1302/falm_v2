@@ -80,6 +80,28 @@ export class AdminService {
   }
 
   /** Tareas automáticas: horario, si están activas y cuándo corrieron. */
+  // ---- Puntuaciones de LaLiga -----------------------------------------------
+  // Normalmente lo hace el cron cada hora. Esto es el "hazlo ahora" para cuando
+  // falla, o para releer una jornada si la prensa cambió una valoración.
+
+  async estadoJornadasLfp(): Promise<JornadaLfpEstado[]> {
+    const { data, error } = await this.sb.client.rpc('estado_jornadas_lfp');
+    if (error) throw error;
+    return (data ?? []) as JornadaLfpEstado[];
+  }
+
+  async leerPuntuaciones(jornada: number, sobrescribir: boolean): Promise<IngestaResultado> {
+    // El año no se pasa: lo resuelve el servidor con temporada.anio_scrape. Es el
+    // de FIN de temporada (2027 para la 2026-27) y mandarlo a mano ya costó una
+    // ingesta entera de la temporada anterior.
+    const { data, error } = await this.sb.client.rpc('ingestar_jornada_ff', {
+      p_jornada: jornada,
+      p_sobreescribir: sobrescribir,
+    });
+    if (error) throw error;
+    return data as IngestaResultado;
+  }
+
   // ---- Copias de seguridad --------------------------------------------------
   // Restaurar NO está en el panel a propósito: se hace por SQL, que obliga a
   // pensarlo dos veces. Ver tools/sql/respaldos.sql.
@@ -273,6 +295,25 @@ export class AdminService {
       pl: Number(e.puntos_local ?? 0), pv: Number(e.puntos_visitante ?? 0),
     })).sort((a, b) => a.jornada - b.jornada);
   }
+}
+
+export interface JornadaLfpEstado {
+  numero: number;
+  fecha: string | null;
+  partidos: number;
+  con_marcador: number;
+  puntuaciones: number;
+  en_liga_falm: boolean;
+}
+
+export interface IngestaResultado {
+  jornada_numero: number;
+  anio: number;
+  marcadores: number;
+  casados: number;
+  por_slug: number;
+  ingestados: number;
+  no_casados: { equipo: string; jugador: string; slug: string | null }[];
 }
 
 export interface Respaldo {
