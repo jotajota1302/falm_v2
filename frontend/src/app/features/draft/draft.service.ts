@@ -45,6 +45,7 @@ export interface PickDetalle {
   nombre: string;
   posicion: string;
   club: string;
+  es_porteria: boolean;
 }
 
 export interface ItemCola {
@@ -226,6 +227,7 @@ export class DraftService {
     const hechos = new Set(filas.map((p) => p.orden_seleccion));
     this.orden.update((o) => o.map((f) => ({ ...f, completado: hechos.has(f.orden_global) })));
     this.draft.update((x) => (x ? { ...x, picks_hechos: filas.length } : x));
+    await this.cargarDetalle();
   }
 
   /** Los picks con datos del jugador, leídos de la BD y no del catálogo. */
@@ -252,6 +254,7 @@ export class DraftService {
           : `${a?.jugador_lfp?.nombre ?? ''} ${a?.jugador_lfp?.apellido ?? ''}`.trim(),
         posicion: esPorteria ? 'PORTERO' : (a?.jugador_lfp?.posicion ?? ''),
         club: esPorteria ? (a?.equipo_lfp?.nombre ?? '') : (a?.jugador_lfp?.equipo_lfp?.nombre ?? ''),
+        es_porteria: esPorteria,
       } as PickDetalle;
     }));
   }

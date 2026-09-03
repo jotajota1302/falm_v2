@@ -577,7 +577,6 @@ export class DraftComponent implements OnInit, OnDestroy {
    * durante la quedada hace falta una foto del conjunto, no solo tu plantilla.
    */
   readonly resumenEquipos = computed(() => {
-    const cat = new Map(this.d.catalogo().map((a) => [a.activo_id, a]));
     // El orden de la primera ronda es el del sorteo: seguir el draft por ahí.
     const orden = this.d.orden()
       .filter((o) => o.ronda === 1)
@@ -585,18 +584,16 @@ export class DraftComponent implements OnInit, OnDestroy {
       .map((o) => o.equipo_falm_id);
 
     return orden.map((id) => {
-      const suyos = this.d.picks().filter((p) => p.equipo_falm_id === id);
-      const act = suyos.map((p) => cat.get(p.activo_id)).filter((a): a is ActivoLibre => !!a);
+      const suyos = this.d.detalle().filter((p) => p.equipo_falm_id === id);
       const cuenta = (pos: string) =>
-        act.filter((a) => a.tipo !== 'DEFENSA' && this.abr(a.posicion) === pos).length;
-      const ultimo = act.length ? act[act.length - 1].nombre : '—';
+        suyos.filter((p) => !p.es_porteria && this.abr(p.posicion) === pos).length;
       return {
         id,
         nombre: this.nombreEquipo(id),
         picks: suyos.length,
-        porterias: act.filter((a) => a.tipo === 'DEFENSA').length,
+        porterias: suyos.filter((p) => p.es_porteria).length,
         PT: cuenta('POR'), DF: cuenta('DEF'), MC: cuenta('MED'), DL: cuenta('DEL'),
-        ultimo,
+        ultimo: suyos.length ? suyos[suyos.length - 1].nombre : '—',
       };
     });
   });
