@@ -195,14 +195,14 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
        mientras editas, para no tener que subir a buscar el botón. */
     .envio { position: sticky; bottom: 0; z-index: 6;
       display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-      margin-top: 4px; padding: 13px 16px;
+      margin: 4px auto 0; max-width: 760px; padding: 13px 16px;
       background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); }
     .envio .est { flex: 1; min-width: 140px; font-size: var(--t-sm); color: var(--bad); font-weight: 600; }
     .envio .est.ok { color: var(--good); }
 
     /* Formación y recuento de titulares, pegados al campo que gobiernan. */
     .fbar { display: flex; align-items: center; justify-content: center; gap: 14px;
-      flex-wrap: wrap; margin-bottom: 12px; }
+      flex-wrap: wrap; margin: 0 auto 12px; max-width: 760px; }
     .formas { display: flex; gap: 3px; padding: 3px; background: var(--surface2);
       border: 1px solid var(--line); border-radius: 11px; }
     .forma { font-family: var(--fb); font-size: var(--t-sm); font-weight: 700; padding: 8px 13px;
@@ -220,7 +220,7 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
 
     /* Campo de verdad: césped segado y líneas de cal dibujadas en CSS, sin
        imagen que cargar. La portería arriba, como se ha alineado siempre. */
-    .pitch { position: relative; overflow: hidden;
+    .pitch { position: relative; overflow: hidden; max-width: 760px; margin: 0 auto;
       background: repeating-linear-gradient(180deg, #e3e9d8 0 52px, #dde4d0 52px 104px);
       border: 1px solid var(--line); border-radius: 14px;
       padding: 26px 14px; display: flex; flex-direction: column; gap: 6px;
@@ -249,7 +249,7 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
     .slot.vacio:hover { background: rgba(255,255,255,.5); }
     /* Un hueco se lee de un vistazo: el signo de añadir y la silueta de quien
        falta, con la posición debajo. */
-    .hueco { display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .hueco { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 0 10px; }
     .col { display: flex; flex-direction: column; align-items: center; gap: 1px; }
     /* La cruz va dibujada, no escrita: el glifo "+" nunca cae centrado en un
        círculo, le sobra hueco por debajo. */
@@ -272,7 +272,8 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
     .slot.vacio .lb { font-family: var(--fb); font-size: var(--t-xs); font-weight: 700;
       letter-spacing: .08em; color: var(--text); }
 
-    .banco { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 16px; margin-bottom: 14px; }
+    .banco { background: var(--surface); border: 1px solid var(--line); border-radius: 18px;
+      padding: 16px; margin: 14px auto; max-width: 760px; }
     .bh { display: flex; align-items: center; justify-content: space-between; }
     .add { background: var(--surface); border: 1px solid var(--line); color: var(--text); border-radius: 11px;
       padding: 8px 13px; cursor: pointer; font-weight: 600; font-size: var(--t-sm); }
