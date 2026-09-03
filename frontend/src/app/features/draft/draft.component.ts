@@ -22,6 +22,25 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
       <p class="err">{{ d.error() }}</p>
     } @else if (!d.draft()) {
       <p class="muted">No hay ningún draft activo.</p>
+    } @else if (!d.miEquipoId()) {
+      <p class="muted">
+        Tu usuario no tiene ningún equipo asignado en esta temporada.
+        Habla con el administrador de la liga.
+      </p>
+    } @else if (terminado()) {
+      <h2>Draft terminado</h2>
+      <p class="faint num">
+        Tu plantilla: {{ d.misPicks().length }} jugadores · {{ d.misPorterias() }} porterías
+      </p>
+      <ol class="cola">
+        @for (a of misFichados(); track a.activo_id) {
+          <li>
+            <span class="nom">{{ a.nombre }}</span>
+            <span class="pos">{{ abr(a.posicion) }}</span>
+            <span class="club faint">{{ a.club }}</span>
+          </li>
+        }
+      </ol>
     } @else {
       @if (!d.conectado()) {
         <div class="aviso">Reconectando… los fichajes pueden tardar unos segundos en aparecer.</div>
@@ -95,6 +114,10 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
 
         <aside class="lat">
           <h3>Mi cola ({{ colaVisible().length }})</h3>
+          <label class="prepick">
+            <input type="checkbox" [ngModel]="prePick()" (ngModelChange)="prePick.set($event)" />
+            Pre-pick: fichar solo al llegar mi turno
+          </label>
           @if (colaVisible().length === 0) {
             <p class="muted">Marca jugadores con ★ para tenerlos aquí.</p>
           } @else {
@@ -152,6 +175,8 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     .orden li.ahora { font-weight: 700; border-left: 3px solid #2ecc71; padding-left: 6px; }
     .orden li.yo { color: var(--acc, #a855f7); }
     .mas { margin-top: 10px; }
+    .prepick { display: flex; gap: 6px; align-items: center; margin-bottom: 8px;
+               font-size: .85rem; color: var(--muted, #9aa); }
     h3 { margin: 0 0 6px; font-size: .95rem; }
     @media (max-width: 860px) { .cols { grid-template-columns: 1fr; } }
   `],
@@ -165,6 +190,7 @@ export class DraftComponent implements OnInit, OnDestroy {
   soloCola = signal(false);
   limite = signal(50);
   msg = signal('');
+  prePick = signal(false);
 
   private eraMiTurno = false;
   private tituloBase = document.title;
@@ -175,7 +201,10 @@ export class DraftComponent implements OnInit, OnDestroy {
     // "¿me toca a mí?" cada dos minutos.
     effect(() => {
       const mio = this.d.esMiTurno();
-      if (mio && !this.eraMiTurno) this.avisar();
+      if (mio && !this.eraMiTurno) {
+        this.avisar();
+        this.intentarPrePick();
+      }
       if (!mio && this.eraMiTurno) this.pararAviso();
       this.eraMiTurno = mio;
     });
@@ -268,6 +297,48 @@ export class DraftComponent implements OnInit, OnDestroy {
       .map((c) => cat.get(c.activo_id))
       .filter((a): a is ActivoLibre => !!a);
   });
+
+  readonly misFichados = computed(() => {
+    const cat = new Map(this.d.catalogo().map((a) => [a.activo_id, a]));
+    return this.d.misPicks()
+      .map((p) => cat.get(p.activo_id))
+      .filter((a): a is ActivoLibre => !!a);
+  });
+
+  readonly terminado = computed(() => {
+    const e = this.d.draft()?.estado;
+    return e === 'COMPLETADO' || e === 'CONSOLIDADO';
+  });
+
+  /** Primer elemento de la cola que sigue libre y vale según el cupo de porterías. */
+  candidatoPrePick(): ActivoLibre | null {
+    const cat = new Map(this.d.catalogo().map((a) => [a.activo_id, a]));
+    const tom = this.d.tomadoPor();
+    const soloPorteria = this.d.debeElegirPorteria();
+    for (const c of this.d.cola()) {
+      const a = cat.get(c.activo_id);
+      if (!a || tom.has(a.activo_id)) continue;
+      if (soloPorteria && a.tipo !== 'DEFENSA') continue;
+      return a;
+    }
+    return null;
+  }
+
+  /** Con pre-pick activo, ficha solo al llegar mi turno. Sin candidato, no hace nada. */
+  private async intentarPrePick() {
+    if (!this.prePick()) return;
+    const a = this.candidatoPrePick();
+    if (!a) {
+      this.msg.set('Pre-pick activo, pero ningún jugador de tu cola sirve. Elige a mano.');
+      return;
+    }
+    try {
+      await this.d.fichar(a.activo_id);
+      this.msg.set(`Pre-pick: fichado ${a.nombre}.`);
+    } catch (e: any) {
+      this.msg.set(e?.message ?? 'El pre-pick no pudo completarse.');
+    }
+  }
 
   readonly colaFichados = computed(() => {
     const tom = this.d.tomadoPor();
