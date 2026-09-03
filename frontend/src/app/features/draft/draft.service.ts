@@ -39,8 +39,11 @@ export interface DraftPickFila {
 
 /** Un pick con los datos del jugador, para el resumen final. */
 export interface PickDetalle {
+  /** id del pick: lo necesita el admin para corregirlo o anularlo. */
+  id: string;
   activo_id: string;
   equipo_falm_id: string;
+  ronda: number;
   orden_seleccion: number;
   nombre: string;
   posicion: string;
@@ -236,7 +239,7 @@ export class DraftService {
     if (!d) return;
     const { data, error } = await this.sb.client
       .from('draft_pick')
-      .select('activo_id, equipo_falm_id, orden_seleccion, ' +
+      .select('id, activo_id, equipo_falm_id, ronda, orden_seleccion, ' +
         'activo:activo_id (tipo, equipo_lfp:equipo_lfp_id (nombre), ' +
         'jugador_lfp:jugador_lfp_id (nombre, apellido, posicion, equipo_lfp:equipo_lfp_id (nombre)))')
       .eq('draft_id', d.id)
@@ -246,8 +249,10 @@ export class DraftService {
       const a = p.activo;
       const esPorteria = a?.tipo === 'DEFENSA';
       return {
+        id: p.id,
         activo_id: p.activo_id,
         equipo_falm_id: p.equipo_falm_id,
+        ronda: p.ronda,
         orden_seleccion: p.orden_seleccion,
         nombre: esPorteria
           ? `Portería ${a?.equipo_lfp?.nombre ?? ''}`.trim()
@@ -295,6 +300,13 @@ export class DraftService {
       .on(
         'postgres_changes',
         { event: 'DELETE', schema: 'falm', table: 'draft_pick', filter: `draft_id=eq.${d.id}` },
+        () => this.refrescarPicks()
+      )
+      // El admin puede corregir el jugador de un pick ya hecho: eso es un UPDATE,
+      // y sin esto los demás seguirían viendo al jugador equivocado.
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'falm', table: 'draft_pick', filter: `draft_id=eq.${d.id}` },
         () => this.refrescarPicks()
       )
       .on(
@@ -347,6 +359,29 @@ export class DraftService {
     if (error) throw new Error(this.traducir(error.message));
     await this.refrescarPicks();
     await this.quitarCola(activoId).catch(() => {});
+  }
+
+  /**
+   * Cambia el jugador de un pick ya hecho, sin tocar el equipo ni el turno.
+   * Solo admin: la guardia está en la función de Postgres.
+   */
+  async corregirPick(pickId: string, activoId: string): Promise<void> {
+    const { error } = await this.sb.client.rpc('draft_pick_corregir', {
+      p_pick: pickId,
+      p_activo: activoId,
+    });
+    if (error) throw new Error(this.traducir(error.message));
+    await this.refrescarPicks();
+  }
+
+  /**
+   * Borra un pick concreto y reabre su turno. Ojo: si es del medio, el turno en
+   * curso retrocede hasta ahí, porque el turno es el primero sin completar.
+   */
+  async anularPick(pickId: string): Promise<void> {
+    const { error } = await this.sb.client.rpc('draft_pick_anular', { p_pick: pickId });
+    if (error) throw new Error(this.traducir(error.message));
+    await this.refrescarPicks();
   }
 
   /** Los mensajes de Postgres, en cristiano. */

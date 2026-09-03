@@ -1,7 +1,7 @@
 import { Component, OnDestroy, OnInit, computed, effect, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivoLibre } from '../../core/falm.service';
-import { DraftService, MIN_PORTERIAS } from './draft.service';
+import { DraftService, MIN_PORTERIAS, PickDetalle } from './draft.service';
 
 const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
 const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'MED', DELANTERO: 'DEL' };
@@ -231,6 +231,40 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
             }
           }
         </section>
+
+        <!-- Arreglar una elección suelta sin deshacer las de después. -->
+        <section class="tabla global">
+          <div class="barra">
+            <span class="lb">Picks</span>
+            <span class="muted mini">Corregir o anular una elección concreta</span>
+            <button class="plegar" (click)="verPicks.set(!verPicks())">
+              {{ verPicks() ? 'Ocultar' : 'Mostrar' }}
+            </button>
+          </div>
+          @if (verPicks()) {
+            @if (d.detalle().length === 0) {
+              <p class="vacio muted">Todavía no ha elegido nadie.</p>
+            } @else {
+              <div class="fila cab pk">
+                <span class="der">#</span><span>Equipo</span><span>Pos</span>
+                <span>Jugador</span><span class="club">Club</span><span></span>
+              </div>
+              @for (p of picksRecientes(); track p.id) {
+                <div class="fila pk">
+                  <span class="der num">{{ p.orden_seleccion }}</span>
+                  <span class="nom eq">{{ nombreEquipo(p.equipo_falm_id) }}</span>
+                  <span class="pos" [class]="abr(p.posicion)">{{ abr(p.posicion) }}</span>
+                  <span class="nom">{{ p.nombre }}</span>
+                  <span class="club">{{ p.club }}</span>
+                  <span class="ops">
+                    <button class="mini-btn" (click)="abrirCambio(p)">Cambiar</button>
+                    <button class="mini-btn peligro" (click)="anulando.set(p)">Anular</button>
+                  </span>
+                </div>
+              }
+            }
+          }
+        </section>
       }
 
       @if (confirmando(); as c) {
@@ -262,6 +296,62 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
               <button class="btn-sec" (click)="confirmando.set(null)">Cancelar</button>
               <button class="btn" [disabled]="fichando()" (click)="confirmarFichaje()">
                 {{ fichando() ? 'Fichando…' : 'Fichar' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+
+      @if (corrigiendo(); as p) {
+        <div class="velo" (click)="cerrarCambio()">
+          <div class="dialogo ancho rise" role="dialog" aria-modal="true"
+               aria-labelledby="tit-cambio" (click)="$event.stopPropagation()">
+            <span class="lb" id="tit-cambio">Cambiar el pick {{ p.orden_seleccion }}</span>
+            <p class="aviso-mod">
+              {{ nombreEquipo(p.equipo_falm_id) }} eligió a <b>{{ p.nombre }}</b> en la ronda
+              {{ p.ronda }}. Elige por quién lo cambias: el equipo y el turno se quedan como están.
+            </p>
+            <input class="buscar full" type="search" placeholder="Buscar jugador o club…"
+                   [ngModel]="buscaCambio()" (ngModelChange)="buscaCambio.set($event)" />
+            @if (msgCambio()) { <p class="nota mal">{{ msgCambio() }}</p> }
+            <ul class="candidatos">
+              @for (a of candidatosCambio(); track a.activo_id) {
+                <li>
+                  <span class="pos" [class]="abr(a.posicion)">{{ abr(a.posicion) }}</span>
+                  <span class="nom">{{ a.nombre }}</span>
+                  <span class="club">{{ a.club }}</span>
+                  <button class="mini-btn" [disabled]="guardando()"
+                          (click)="confirmarCambio(a)">Poner</button>
+                </li>
+              } @empty {
+                <li class="muted mini">Ningún jugador libre para esa búsqueda.</li>
+              }
+            </ul>
+            <div class="acciones">
+              <button class="btn-sec" (click)="cerrarCambio()">Cerrar</button>
+            </div>
+          </div>
+        </div>
+      }
+
+      @if (anulando(); as p) {
+        <div class="velo" (click)="anulando.set(null)">
+          <div class="dialogo rise" role="dialog" aria-modal="true"
+               aria-labelledby="tit-anular" (click)="$event.stopPropagation()">
+            <span class="lb" id="tit-anular">Anular el pick {{ p.orden_seleccion }}</span>
+            <p class="aviso-mod">
+              Se borra el fichaje de <b>{{ p.nombre }}</b> por
+              {{ nombreEquipo(p.equipo_falm_id) }} y ese turno vuelve a quedar abierto.
+              @if (p.orden_seleccion < ultimoPick()) {
+                <br /><b>Cuidado:</b> no es el último, así que el turno retrocede hasta la
+                ronda {{ p.ronda }} y {{ nombreEquipo(p.equipo_falm_id) }} tendrá que volver a
+                elegir antes de que siga el resto.
+              }
+            </p>
+            <div class="acciones">
+              <button class="btn-sec" (click)="anulando.set(null)">Cancelar</button>
+              <button class="btn" [disabled]="guardando()" (click)="confirmarAnular()">
+                {{ guardando() ? 'Anulando…' : 'Anular' }}
               </button>
             </div>
           </div>
@@ -419,6 +509,28 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
       text-overflow: ellipsis; }
     .orden .r { text-align: right; color: var(--text2); font-size: var(--t-xs); }
 
+    /* Picks del admin: corregir o anular una elección suelta. */
+    .fila.pk { grid-template-columns: 42px 1.1fr 46px 1.5fr 1fr 152px; }
+    .fila.pk .eq { font-size: var(--t-xs); text-transform: uppercase; letter-spacing: .05em;
+      color: var(--text2); }
+    .ops { display: flex; gap: 6px; justify-content: flex-end; }
+    .mini-btn { background: var(--surface); border: 1px solid var(--line); color: var(--text);
+      border-radius: var(--pill); padding: 5px 11px; cursor: pointer; font-size: var(--t-xs);
+      font-weight: 700; font-family: var(--fb); white-space: nowrap; }
+    .mini-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+    .mini-btn:disabled { opacity: .45; cursor: default; }
+    .mini-btn.peligro:hover { border-color: var(--bad); color: var(--bad); }
+
+    .dialogo.ancho { max-width: 460px; }
+    .buscar.full { width: 100%; margin-bottom: 12px; }
+    .candidatos { list-style: none; margin: 0 0 14px; padding: 0; max-height: 46vh;
+      overflow-y: auto; border: 1px solid var(--line); border-radius: var(--r); }
+    .candidatos li { display: grid; grid-template-columns: 46px 1.4fr 1fr 62px; gap: 9px;
+      align-items: center; padding: 8px 11px; border-bottom: 1px solid var(--line); }
+    .candidatos li:last-child { border-bottom: 0; }
+    .candidatos .club { font-size: var(--t-xs); color: var(--text2); white-space: nowrap;
+      overflow: hidden; text-overflow: ellipsis; }
+
     @media (max-width: 900px) {
       .cols { grid-template-columns: 1fr; }
       /* Solo el catálogo: la vista general y el resumen tienen otras columnas. */
@@ -427,6 +539,9 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
       /* Vista general: en el móvil se queda en equipo, picks y porterías. */
       .fila.gl { grid-template-columns: 1.6fr 52px 52px; }
       .fila.gl > :nth-child(n+4) { display: none; }
+      /* Picks: turno, jugador y los dos botones; el club y el equipo se caen. */
+      .fila.pk { grid-template-columns: 34px 46px 1fr 140px; }
+      .fila.pk > :nth-child(2), .fila.pk > .club { display: none; }
       .fila.res { grid-template-columns: 42px 1.4fr; }
       .fila.res > :nth-child(3) { display: none; }
       .barra { padding: 11px 12px; }
@@ -449,6 +564,14 @@ export class DraftComponent implements OnInit, OnDestroy {
   /** Jugador pendiente de confirmar. El confirm() nativo no se puede maquetar. */
   confirmando = signal<ActivoLibre | null>(null);
   fichando = signal(false);
+
+  // Correcciones del admin sobre un pick concreto.
+  verPicks = signal(false);
+  corrigiendo = signal<PickDetalle | null>(null);
+  anulando = signal<PickDetalle | null>(null);
+  buscaCambio = signal('');
+  msgCambio = signal('');
+  guardando = signal(false);
 
   private eraMiTurno = false;
   private tituloBase = document.title;
@@ -491,7 +614,10 @@ export class DraftComponent implements OnInit, OnDestroy {
   };
 
   private alEscape = (e: KeyboardEvent) => {
-    if (e.key === 'Escape') this.confirmando.set(null);
+    if (e.key !== 'Escape') return;
+    this.confirmando.set(null);
+    this.anulando.set(null);
+    this.cerrarCambio();
   };
 
   private avisar() {
@@ -694,6 +820,73 @@ export class DraftComponent implements OnInit, OnDestroy {
       this.msg.set(e?.message ?? 'No se pudo fichar.');
     } finally {
       this.fichando.set(false);
+    }
+  }
+
+  // --- Correcciones del admin -------------------------------------------------
+  // En la quedada se dictan los nombres en voz alta y alguno se apunta mal. Esto
+  // arregla un pick suelto sin tener que deshacer todos los posteriores.
+
+  /** Lo último elegido, arriba: el error casi siempre es reciente. */
+  readonly picksRecientes = computed(() => [...this.d.detalle()].reverse());
+
+  /** Turno del último pick, para avisar cuando se anula uno del medio. */
+  ultimoPick(): number {
+    return this.d.detalle().at(-1)?.orden_seleccion ?? 0;
+  }
+
+  /** Jugadores libres que pueden ocupar el pick que se está corrigiendo. */
+  readonly candidatosCambio = computed(() => {
+    const t = this.buscaCambio().trim().toLowerCase();
+    const tom = this.d.tomadoPor();
+    return this.d.catalogo()
+      .filter((a) => !tom.has(a.activo_id))
+      .filter((a) => !t || `${a.nombre} ${a.club}`.toLowerCase().includes(t))
+      .slice(0, 40);
+  });
+
+  abrirCambio(p: PickDetalle) {
+    this.buscaCambio.set('');
+    this.msgCambio.set('');
+    this.corrigiendo.set(p);
+  }
+
+  cerrarCambio() {
+    this.corrigiendo.set(null);
+    this.msgCambio.set('');
+  }
+
+  async confirmarCambio(a: ActivoLibre) {
+    const p = this.corrigiendo();
+    if (!p || this.guardando()) return;
+    this.guardando.set(true);
+    this.msgCambio.set('');
+    try {
+      await this.d.corregirPick(p.id, a.activo_id);
+      this.cerrarCambio();
+      this.msg.set(`Pick ${p.orden_seleccion}: ${p.nombre} → ${a.nombre}.`);
+    } catch (e: any) {
+      // El error se queda dentro del diálogo: casi siempre es el tope por club
+      // o las porterías, y hay que poder probar con otro sin volver a abrirlo.
+      this.msgCambio.set(e?.message ?? 'No se pudo cambiar el pick.');
+    } finally {
+      this.guardando.set(false);
+    }
+  }
+
+  async confirmarAnular() {
+    const p = this.anulando();
+    if (!p || this.guardando()) return;
+    this.guardando.set(true);
+    try {
+      await this.d.anularPick(p.id);
+      this.anulando.set(null);
+      this.msg.set(`Anulado el pick ${p.orden_seleccion} (${p.nombre}): su turno vuelve a estar abierto.`);
+    } catch (e: any) {
+      this.anulando.set(null);
+      this.msg.set(e?.message ?? 'No se pudo anular el pick.');
+    } finally {
+      this.guardando.set(false);
     }
   }
 }
