@@ -729,13 +729,18 @@ export class FalmService {
     }));
   }
 
-  /** Responde a una oferta (ACEPTADA/RECHAZADA/CANCELADA). Escritura; RLS. */
+  /**
+   * Responde a una oferta. Va por RPC y no por update directo porque aceptar
+   * mueve de verdad los jugadores entre plantillas, y hay que comprobar por los
+   * dos lados el tope de 23 y el cupo por club. La función valida además que
+   * solo el receptor acepte o rechace, y solo el oferente cancele.
+   */
   async responderOferta(id: string, estado: 'ACEPTADA' | 'RECHAZADA' | 'CANCELADA'): Promise<void> {
-    const { error } = await this.sb.client
-      .from('oferta_intercambio')
-      .update({ estado, fecha_respuesta: new Date().toISOString() })
-      .eq('id', id);
-    if (error) throw error;
+    const { error } = await this.sb.client.rpc('oferta_responder', {
+      p_oferta: id,
+      p_estado: estado,
+    });
+    if (error) throw new Error(error.message);
   }
 
   /** Fichajes extra por lesión de un equipo (con el nombre del lesionado). */

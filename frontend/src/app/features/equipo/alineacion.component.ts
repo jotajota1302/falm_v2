@@ -57,15 +57,6 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
       @if (aviso()) { <p class="aviso">{{ aviso() }}</p> }
 
       <!-- CAMPO: huecos por formación -->
-      <div class="fbar">
-        <div class="formas">
-          @for (f of formaciones; track f) {
-            <button class="forma" [class.on]="f === formacion()" (click)="cambiarFormacion(f)">{{ f }}</button>
-          }
-        </div>
-        <span class="cuenta" [class.ok]="titulares().length === 11">{{ titulares().length }} de 11</span>
-      </div>
-
       <div class="zona">
         <div class="lado-campo">
           <div class="pitch">
@@ -127,6 +118,12 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
 
       <!-- Barra de envío: lo último de la pantalla y siempre a la vista. -->
       <div class="envio">
+        <label class="fsel">
+          <span class="lb">Formación</span>
+          <select [ngModel]="formacion()" (ngModelChange)="cambiarFormacion($event)">
+            @for (f of formaciones; track f) { <option [value]="f">{{ f }}</option> }
+          </select>
+        </label>
         <span class="est" [class.ok]="titulares().length === 11">
           {{ titulares().length }} de 11 titulares@if (banca().length) { · {{ banca().length }} en el banquillo }
         </span>
@@ -187,8 +184,9 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
     .jc h1 { font-size: var(--t-xl); }
     .jf { font-size: var(--t-sm); color: var(--text2); text-transform: capitalize; }
     .jhoy { background: none; border: none; cursor: pointer; padding: 0;
-      font-family: var(--fb); font-size: var(--t-xs); font-weight: 700; letter-spacing: .1em;
-      text-transform: uppercase; color: var(--accent); }
+      font-family: var(--fb); font-size: var(--t-sm); color: var(--text2);
+      text-decoration: underline; text-underline-offset: 3px; }
+    .jhoy:hover { color: var(--accent); }
 
     .comps { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 12px; }
 
@@ -198,19 +196,13 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
       display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
       margin: 14px auto 0; max-width: 1120px; padding: 13px 16px;
       background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); }
-    .envio .est { flex: 1; min-width: 140px; font-size: var(--t-sm); color: var(--bad); font-weight: 600; }
+    .envio .est { flex: 1; min-width: 130px; font-size: var(--t-sm); color: var(--bad); font-weight: 600; }
     .envio .est.ok { color: var(--good); }
 
     /* Formación y recuento de titulares, pegados al campo que gobiernan. */
-    .fbar { display: flex; align-items: center; justify-content: center; gap: 14px;
-      flex-wrap: wrap; margin: 0 auto 12px; max-width: 1120px; }
-    .formas { display: flex; gap: 3px; padding: 3px; background: var(--surface2);
-      border: 1px solid var(--line); border-radius: 11px; }
-    .forma { font-family: var(--fb); font-size: var(--t-sm); font-weight: 700; padding: 8px 13px;
-      border: none; border-radius: 8px; background: transparent; color: var(--text2); cursor: pointer; }
-    .forma.on { background: var(--accent); color: var(--accent-ink); }
-    .cuenta { font-size: var(--t-sm); font-weight: 700; color: var(--bad); }
-    .cuenta.ok { color: var(--good); }
+    /* La formación vive con las demás acciones, no en una fila propia. */
+    .fsel { display: flex; align-items: center; gap: 8px; }
+    .fsel select { padding: 8px 10px; font-size: var(--t-sm); font-weight: 700; }
 
     .atajos { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
     .atajo { background: var(--surface); border: 1px solid var(--line); color: var(--text); border-radius: 11px;
