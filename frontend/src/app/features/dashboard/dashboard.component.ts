@@ -6,7 +6,7 @@ const ORDEN = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'] as const;
 const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'MED', DELANTERO: 'DEL' };
 
 /** Un titular ya cruzado con su ficha de plantilla. */
-interface EnCampo { pos: string; nombre: string; }
+interface EnCampo { pos: string; nombre: string; foto: string | null; escudo: string | null; }
 /** Un suplente: quién es y qué líneas cubre. */
 interface EnBanca { nombre: string; pos: string; cubre: string[]; }
 /** La alineación de un equipo en la jornada, lista para pintar. */
@@ -62,49 +62,51 @@ interface Once { equipo: string; formacion: string; campo: EnCampo[]; banca: EnB
         <section class="next vacio"><p class="muted">Sin próximos partidos programados.</p></section>
       }
 
-      <!-- Los dos onces enfrentados, como la alineación de un periódico: cada
-           equipo a un lado y la demarcación en medio. Solo nombres. -->
+      <!-- Los dos onces, uno en cada columna. Cada lado lleva sus propias
+           etiquetas, así el que esté vacío no descoloca al otro. -->
       @if (mio()?.enviada) {
         <section class="once">
           <div class="duelo">
-            <div class="eq a">
-              <strong>{{ mio()!.equipo }}</strong>
-              <span class="f">{{ mio()!.formacion }}</span>
-            </div>
-            <span class="ce"></span>
-            <div class="eq b">
-              <strong>{{ rival()?.equipo }}</strong>
-              <span class="f">{{ rival()?.enviada ? rival()!.formacion : 'sin enviar' }}</span>
-            </div>
+            @for (o of lados(); track $index) {
+              <div class="col">
+                <div class="eqh">
+                  <strong>{{ o.equipo }}</strong>
+                  <span class="f">{{ o.enviada ? o.formacion : 'sin enviar' }}</span>
+                </div>
 
-            @for (f of duelo(); track f.pos) {
-              <div class="lado a">
-                @for (j of f.mios; track $index) { <span class="j">{{ corto(j.nombre) }}</span> }
-              </div>
-              <span class="et" [class]="abr(f.pos)">{{ abr(f.pos) }}</span>
-              <div class="lado b">
-                @if (rival()?.enviada) {
-                  @for (j of f.suyos; track $index) { <span class="j">{{ corto(j.nombre) }}</span> }
+                @if (o.enviada) {
+                  @for (f of lineasDe(o); track f.pos) {
+                    @if (f.js.length) {
+                      <div class="ln">
+                        <span class="lp" [class]="abr(f.pos)">{{ abr(f.pos) }}</span>
+                        <div class="js">
+                          @for (j of f.js; track $index) {
+                            <span class="j">
+                              @if (j.foto || j.escudo) {
+                                <img [src]="j.foto || j.escudo" alt="" loading="lazy"
+                                     [class.esc]="!j.foto" (error)="j.foto = null" />
+                              }
+                              {{ corto(j.nombre) }}
+                            </span>
+                          }
+                        </div>
+                      </div>
+                    }
+                  }
+                  @if (o.banca.length) {
+                    <div class="ln banq">
+                      <span class="lp">Banq.</span>
+                      <div class="js">
+                        @for (b of o.banca; track $index) {
+                          <span class="j sup"><i>{{ $index + 1 }}</i>{{ corto(b.nombre) }}<em>{{ cubre(b) }}</em></span>
+                        }
+                      </div>
+                    </div>
+                  }
+                } @else {
+                  <p class="esperando">Aún no ha mandado su alineación.</p>
                 }
               </div>
-            }
-
-            <div class="lado a banq">
-              @for (b of mio()!.banca; track $index) {
-                <span class="j sup">{{ corto(b.nombre) }}<em>{{ cubre(b) }}</em></span>
-              }
-            </div>
-            <span class="et">Banq.</span>
-            <div class="lado b banq">
-              @if (rival()?.enviada) {
-                @for (b of rival()!.banca; track $index) {
-                  <span class="j sup">{{ corto(b.nombre) }}<em>{{ cubre(b) }}</em></span>
-                }
-              }
-            </div>
-
-            @if (!rival()?.enviada) {
-              <p class="esperando">Aún no ha mandado su alineación.</p>
             }
           </div>
 
@@ -176,32 +178,38 @@ interface Once { equipo: string; formacion: string; campo: EnCampo[]; banca: EnB
     .form { flex: 0 0 auto; font-family: var(--fm); font-weight: 700; font-size: var(--t-lg);
       padding: 3px 12px; border: 1px solid var(--line); border-radius: var(--pill); }
 
-    /* Los dos onces enfrentados: cada equipo a un lado, la demarcación en la
-       columna del medio, y las líneas de los dos siempre a la misma altura. */
-    .duelo { display: grid; grid-template-columns: 1fr 52px 1fr; align-items: baseline;
-      row-gap: 2px; }
-    .eq { display: flex; flex-direction: column; gap: 2px; padding-bottom: 12px;
-      margin-bottom: 8px; border-bottom: 1px solid var(--line); }
-    .eq strong { font-family: var(--fh); font-size: var(--t-lg); font-weight: 600;
-      text-transform: uppercase; letter-spacing: -.01em; line-height: 1.1; }
-    .eq .f { font-family: var(--fm); font-size: var(--t-sm); color: var(--text2); }
-    .eq.a { align-items: flex-end; text-align: right; }
-    .ce { border-bottom: 1px solid var(--line); margin-bottom: 8px; }
+    /* Los dos onces, uno a cada lado, con la raya del periódico en medio. */
+    .duelo { display: grid; grid-template-columns: 1fr 1fr; gap: 0 24px; }
+    .col:last-child { padding-left: 24px; margin-left: -24px; border-left: 1px solid var(--line); }
+    .eqh { display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+      padding-bottom: 9px; margin-bottom: 8px; border-bottom: 1px solid var(--line); }
+    .eqh strong { font-family: var(--fh); font-size: var(--t-lg); font-weight: 600;
+      text-transform: uppercase; letter-spacing: -.01em; line-height: 1.1;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .eqh .f { flex: 0 0 auto; font-family: var(--fm); font-size: var(--t-sm); color: var(--text2); }
 
-    .lado { display: flex; flex-wrap: wrap; gap: 4px 8px; padding: 5px 0; min-height: 26px; }
-    .lado.a { justify-content: flex-end; }
-    .j { font-size: var(--t-sm); font-weight: 600; white-space: nowrap; }
-    .et { align-self: center; text-align: center; font-size: var(--t-xs); font-weight: 700;
-      letter-spacing: .08em; text-transform: uppercase; color: var(--text2); }
-    .et.POR { color: var(--por); } .et.DEF { color: var(--def); }
-    .et.MED { color: var(--med); } .et.DEL { color: var(--del); }
+    .ln { display: grid; grid-template-columns: 42px 1fr; align-items: center; gap: 8px;
+      padding: 5px 0; }
+    .lp { font-size: var(--t-xs); font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+      color: var(--text2); }
+    .lp.POR { color: var(--por); } .lp.DEF { color: var(--def); }
+    .lp.MED { color: var(--med); } .lp.DEL { color: var(--del); }
+    .js { display: flex; flex-wrap: wrap; gap: 5px; }
+    .j { display: inline-flex; align-items: center; gap: 6px; font-size: var(--t-sm);
+      font-weight: 600; padding: 3px 10px 3px 3px;
+      border: 1px solid var(--line); border-radius: var(--pill); background: var(--bg); }
+    .j img { width: 22px; height: 22px; border-radius: 50%; object-fit: cover;
+      object-position: top center; background: var(--surface2); }
+    .j img.esc { object-fit: contain; padding: 2px; }
+    .j:not(:has(img)) { padding-left: 10px; }
+    /* El banquillo entra por orden, así que lleva su número y la línea que cubre. */
+    .banq { border-top: 1px solid var(--line); margin-top: 6px; padding-top: 9px; }
+    .j.sup { font-weight: 500; padding-left: 8px; }
+    .j.sup i { font-family: var(--fm); font-style: normal; font-size: var(--t-xs);
+      color: var(--text2); margin-right: 2px; }
+    .j.sup em { font-style: normal; font-size: var(--t-xs); color: var(--text2); letter-spacing: .06em; }
+    .esperando { margin: 14px 0 0; font-size: var(--t-sm); color: var(--text2); }
 
-    /* El banquillo va debajo, más callado, con la línea que cubre cada uno. */
-    .banq { border-top: 1px solid var(--line); padding-top: 8px; margin-top: 6px; }
-    .j.sup { font-weight: 400; color: var(--text2); }
-    .j.sup em { font-style: normal; font-size: var(--t-xs); margin-left: 4px; opacity: .75; }
-    .esperando { grid-column: 3; grid-row: 2 / -1; align-self: center; margin: 0;
-      padding-left: 4px; font-size: var(--t-sm); color: var(--text2); }
     .cambiar { display: block; text-align: center; margin: 14px 0 0;
       padding: 10px; border: 1px solid var(--line); border-radius: var(--r-sm);
       font-size: var(--t-sm); font-weight: 600; }
@@ -227,10 +235,13 @@ interface Once { equipo: string; formacion: string; campo: EnCampo[]; banca: EnB
     .accion strong { display: block; margin-top: 2px; font-size: var(--t-md); }
     .muted { color: var(--text2); }
 
-    @media (max-width: 620px) {
-      .duelo { grid-template-columns: 1fr 40px 1fr; }
-      .eq strong { font-size: var(--t-md); }
-      .lado { gap: 3px 6px; }
+    @media (max-width: 900px) {
+      /* Uno debajo del otro: en el móvil no caben dos columnas de nombres. */
+      .duelo { grid-template-columns: 1fr; }
+      .col:last-child { padding-left: 0; margin-left: 0; border-left: none;
+        margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); }
+      .eqh strong { font-size: var(--t-md); }
+      .ln { grid-template-columns: 38px 1fr; }
     }
   `],
 })
@@ -251,12 +262,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
   /** La jornada cuyo once enseñamos: la que viene, y si no la que está en juego. */
   private foco = computed<AgendaItem | null>(() => this.ag()?.proximo ?? this.ag()?.en_juego ?? null);
 
-  /** Una fila por demarcación con los de cada lado, para que cuadren de altura. */
-  duelo = computed(() => ORDEN.map((pos) => ({
-    pos,
-    mios: (this.mio()?.campo ?? []).filter((j) => j.pos === pos),
-    suyos: (this.rival()?.campo ?? []).filter((j) => j.pos === pos),
-  })));
+  /** Mi once y el del rival, en ese orden. */
+  lados = computed<Once[]>(() => [this.mio(), this.rival()].filter((o): o is Once => !!o));
+  lineasDe(o: Once) { return ORDEN.map((pos) => ({ pos, js: o.campo.filter((j) => j.pos === pos) })); }
 
   constructor(private falm: FalmService) {}
   ngOnDestroy() { if (this.timer) clearInterval(this.timer); }
@@ -317,7 +325,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
       enviada: true,
       campo: dentro('TITULAR').flatMap<EnCampo>((j) => {
         const p = ficha.get(j.activo_id);
-        return p ? [{ pos: p.posicion, nombre: p.nombre }] : [];
+        return p ? [{ pos: p.posicion, nombre: p.nombre, foto: p.foto ?? null, escudo: p.escudo ?? null }] : [];
       }),
       banca: dentro('SUPLENTE').flatMap<EnBanca>((j) => {
         const p = ficha.get(j.activo_id);
