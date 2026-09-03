@@ -34,7 +34,7 @@ export interface Equipo {
   beneficio?: number;
 }
 
-export interface AgendaItem { numero: number; fecha: string; comp: 'LIGA' | 'CHAMPIONS' | 'CLAUSURA'; rival: string; es_local: boolean; mis_puntos: number | null; rival_puntos: number | null; }
+export interface AgendaItem { jornada_id: string; numero: number; fecha: string; comp: 'LIGA' | 'CHAMPIONS' | 'CLAUSURA'; rival_id: string; rival: string; es_local: boolean; mis_puntos: number | null; rival_puntos: number | null; }
 export interface Agenda { proximo: AgendaItem | null; en_juego: AgendaItem | null; ultimo: AgendaItem | null; }
 
 export interface PorteroClub { id: number | null; nombre: string; foto: string | null; }
@@ -520,6 +520,23 @@ export class FalmService {
     if (error) throw error;
     if (!data) return null;
     return { formacion: (data as any).formacion, jugadores: this.aMapa((data as any).alineacion_activo) };
+  }
+
+  /**
+   * Qué equipos de una lista ya han mandado alineación en una jornada.
+   * Se lee de todos, no solo del propio: en Inicio decimos si el rival ya la
+   * ha enviado, pero nunca cuál — eso sigue siendo suyo hasta que se cierre.
+   */
+  async quienHaAlineado(jornadaFalmId: string, equipoIds: string[]): Promise<Set<string>> {
+    const ids = [...new Set(equipoIds.filter(Boolean))];
+    if (!ids.length) return new Set();
+    const { data, error } = await this.sb.client
+      .from('alineacion')
+      .select('equipo_falm_id')
+      .eq('jornada_falm_id', jornadaFalmId)
+      .in('equipo_falm_id', ids);
+    if (error) throw error;
+    return new Set((data ?? []).map((r: any) => r.equipo_falm_id));
   }
 
   /** Convierte filas alineacion_activo en la lista Alineado ordenada. */
