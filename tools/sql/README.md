@@ -17,6 +17,27 @@ Scripts de la base de datos (Supabase, proyecto `rgpzrbwpyaewughahpgo`, schema `
    nace con `EXECUTE` para `PUBLIC`, así que quitárselo solo a `authenticated`
    no cierra nada.
 
+## Copias de seguridad
+
+El proyecto está en el **plan free de Supabase, que no hace copias automáticas**
+(los backups diarios son de Pro). La red de seguridad es `respaldos.sql`:
+
+- `select falm.respaldo_crear('antes-del-draft');` copia las 29 tablas de `falm`
+  a un schema `bk_falm_<fecha>_<etiqueta>`. Tarda un segundo y ocupa ~840 kB.
+  **Lánzalo antes de cualquier operación gorda.**
+- `select * from falm.respaldos();` lista lo que hay.
+- `select falm.respaldo_restaurar('bk_falm_...', null, true);` devuelve el
+  schema entero; con el nombre de una tabla en vez de `null`, solo esa (y las
+  que cuelgan de ella, porque el `truncate cascade` las vacía igual). Antes de
+  tocar nada deja un respaldo automático `antes_de_restaurar`.
+- El cron `falm-respaldo-diario` hace una copia cada día a las 04:15 y conserva
+  las 7 últimas.
+
+**Esto vive dentro de la misma base**: protege de un borrado por error, no de
+perder el proyecto. Un volcado a fichero fuera (`pg_dump --schema=falm`) sigue
+pendiente. Y ojo: el repositorio es público, así que el volcado **no** puede ir
+dentro del repo.
+
 ## Reglas de juego de la temporada 2026-27
 
 - Plantilla de **23 jugadores**. **No se juega con dinero**: el presupuesto no se
@@ -53,6 +74,7 @@ Scripts de la base de datos (Supabase, proyecto `rgpzrbwpyaewughahpgo`, schema `
 | `procesar_jornada_auto.sql`, `tareas_previas_jornada.sql` | Lo que ejecutan los cron |
 | `liga_falm_calendario.sql` | `generar_liga_falm` (mantenimiento; revocada a los usuarios) |
 | `admin_operaciones.sql` | `estado_crons` y el cierre de escritura en `equipo_falm` |
+| `respaldos.sql` | Copias de `falm` a schemas `bk_falm_*`, purga y restauración |
 | `funciones_admin_cerradas.sql` | `puede_gestionar` y guardias de las funciones de admin |
 | `revocar_funciones_internas.sql` | Revocación de funciones internas y RLS de las tablas de respaldo |
 | `precios_15m.sql` | Precios planos y presupuesto (histórico; el dinero ya no se usa) |
@@ -65,6 +87,7 @@ Scripts de la base de datos (Supabase, proyecto `rgpzrbwpyaewughahpgo`, schema `
 | `draft_pick_correcciones_test.sql` | 8 casos de corregir y anular un pick |
 | `pretemporada_protecciones_test.sql` | 11 casos de protecciones y edición del calendario |
 | `draft_orden_manual_test.sql` | 4 casos del orden manual del sorteo |
+| `respaldos_test.sql` | 8 casos de respaldo y restauración (borra tablas de verdad) |
 
 ## Dónde está la verdad
 
