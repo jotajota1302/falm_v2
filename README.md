@@ -1,6 +1,6 @@
 # FALM V2
 
-Segunda versión de **FALM** (Fantasy Andaluza League Management), la liga fantasy de LaLiga.
+Segunda versión de **FALM**
 
 Este repositorio es la **evolución** de la app actual:
 - **Producción actual:** [ligafalm.com](https://ligafalm.com) (Angular 18 + Spring Boot + Heroku). Sigue funcionando intacta.
