@@ -49,7 +49,6 @@ Carencias que este trabajo cubre:
 2. No hay wishlist.
 3. Realtime no está habilitado para ninguna tabla de `falm`.
 4. No hay UI de draft para el mánager, ni forma de deshacer un pick.
-5. Los 103 porteros individuales son fichables.
 
 ## 4. Arquitectura
 
@@ -68,14 +67,23 @@ vuelta de la pestaña a primer plano) que refrescan los picks completos.
 
 ## 5. Cambios en Supabase
 
-### 5.1 `activo.fichable`
+### 5.1 Porteros individuales — ya resuelto, sin cambios
 
-Columna nueva `boolean not null default true`. Se pone a `false` en los 103
-porteros individuales. Se filtra en `v_activo_libre`, con lo que desaparecen a la
-vez del draft y del mercado sin dejar de existir para la puntuación.
+Al inspeccionar `v_activo_libre` resulta que **ya excluye a los porteros
+individuales**:
 
-Se usa un flag explícito en vez de filtrar por `posicion='PORTERO'` para poder
-excluir otros activos en el futuro con un `update` en vez de una migración.
+```sql
+where ... and not (a.tipo = 'JUGADOR' and jl.posicion = 'PORTERO')
+              and (a.tipo = 'DEFENSA' or jl.primer_equipo)
+```
+
+Es decir, los 103 porteros ya no aparecen ni en el mercado ni aparecerán en el
+draft, y el filtro `primer_equipo` deja fuera además a los suplentes de filial.
+La columna `activo.fichable` que este diseño proponía **no hace falta y se
+descarta**: sería duplicar una regla que ya existe.
+
+Catálogo real del draft: **494 activos** (474 jugadores de campo + 20 porterías).
+Con 230 picks, sobra material de sobra.
 
 ### 5.2 `falm.draft_wishlist`
 
@@ -140,7 +148,7 @@ Ruta `/draft` en `app.routes.ts`, bajo `authGuard` como el resto. Feature en
 
 ### 6.1 Carga y filtrado
 
-Al entrar se cargan tres cosas: el catálogo de activos fichables (~757 filas con
+Al entrar se cargan tres cosas: el catálogo de activos fichables (494 filas con
 nombre, club, escudo, posición y precio), el estado del draft con sus picks, y las
 230 filas de `draft_orden` completas.
 
@@ -149,7 +157,7 @@ A partir de ahí **todo el filtrado ocurre en cliente**: buscador, posición, cl
 
 Nota sobre el catálogo: `v_activo_libre` excluye a los que ya están en una
 plantilla, y las plantillas no se crean hasta `draft_consolidar`. Así que durante
-el draft devuelve los 757 completos, y quién está ya pillado se marca en cliente
+el draft devuelve los 494 completos, y quién está ya pillado se marca en cliente
 cruzando con los picks. Es lo que permite pintar las filas tachadas en vez de
 hacerlas desaparecer.
 
