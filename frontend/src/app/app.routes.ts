@@ -46,6 +46,11 @@ export const routes: Routes = [
           import('./features/fichajes/intercambios.component').then((m) => m.IntercambiosComponent),
       },
       {
+        path: 'draft',
+        loadComponent: () =>
+          import('./features/draft/draft.component').then((m) => m.DraftComponent),
+      },
+      {
         path: 'clasificacion',
         loadComponent: () =>
           import('./features/competicion/clasificacion.component').then(
