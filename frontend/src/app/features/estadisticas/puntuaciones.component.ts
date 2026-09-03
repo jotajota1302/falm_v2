@@ -116,7 +116,7 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
       display: flex; align-items: flex-end; justify-content: center; }
     .av .wm { position: absolute; width: 118%; left: 50%; top: 50%; transform: translate(-50%,-50%); opacity: .16; object-fit: contain; }
     .av .pl { position: relative; z-index: 1; height: 100%; width: 100%; object-fit: contain; }
-    .av .ini { position: relative; z-index: 1; font-family: var(--fh); font-size: var(--t-lg); padding-bottom: 6px; color: var(--text2); }
+    .av .ini { position: relative; z-index: 1; font-family: var(--fb); font-weight: 700; font-size: var(--t-md); padding-bottom: 6px; color: var(--text2); }
 
     .who { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
     .nm { font-weight: 700; font-size: var(--t-md); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

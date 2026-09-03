@@ -352,7 +352,7 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
     .otros { padding-top: 10px; border-top: 1px solid var(--line); }
     .btog { width: 100%; display: flex; align-items: center; justify-content: space-between;
       background: none; border: none; padding: 0 0 4px; cursor: pointer; }
-    .btog .chev { font-family: var(--fm); color: var(--text2); }
+    .btog .chev { font-family: var(--fb); font-weight: 700; color: var(--text2); }
     .otros .bfila { background: transparent; border-color: transparent; padding: 5px 0; }
     .add { background: var(--surface); border: 1px solid var(--line); color: var(--text); border-radius: 11px;
       padding: 8px 13px; cursor: pointer; font-weight: 600; font-size: var(--t-sm); }
@@ -421,7 +421,7 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
     .cand.sel { border-color: var(--accent); background: var(--accent-soft); }
     .cm { font-family: var(--fm); font-weight: 700; color: var(--accent); text-align: center; }
     .cav { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
-      font-family: var(--fh); font-size: var(--t-md); color: var(--accent-ink); overflow: hidden; }
+      font-family: var(--fb); font-weight: 700; font-size: var(--t-md); color: var(--accent-ink); overflow: hidden; }
     .cav img { width: 100%; height: 100%; object-fit: cover; } .cav img.esc { object-fit: contain; padding: 5px; }
     .cav.POR { background: var(--por); } .cav.DEF { background: var(--def); }
     .cav.MED { background: var(--med); } .cav.DEL { background: var(--del); }

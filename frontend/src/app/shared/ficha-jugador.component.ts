@@ -83,7 +83,7 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
       display: flex; align-items: flex-end; justify-content: center; }
     .av .wm { position: absolute; width: 124%; left: 50%; top: 50%; transform: translate(-50%,-50%); opacity: .16; object-fit: contain; }
     .av .pl { position: relative; z-index: 1; width: 100%; height: 100%; object-fit: contain; object-position: bottom; }
-    .av .ini { position: relative; z-index: 1; font-family: var(--fh); font-size: var(--t-2xl); padding-bottom: 6px; color: var(--text2); }
+    .av .ini { position: relative; z-index: 1; font-family: var(--fb); font-weight: 700; font-size: var(--t-xl); padding-bottom: 6px; color: var(--text2); }
     .meta h2 { margin: 5px 0; font-size: var(--t-xl); letter-spacing: -.01em; }
     .eq { display: flex; align-items: center; gap: 6px; color: var(--text2); font-size: var(--t-sm);
       letter-spacing: .06em; text-transform: uppercase; }
