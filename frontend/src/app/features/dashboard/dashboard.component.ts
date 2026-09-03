@@ -62,46 +62,43 @@ interface Once { equipo: string; formacion: string; campo: EnCampo[]; banca: EnB
         <section class="next vacio"><p class="muted">Sin próximos partidos programados.</p></section>
       }
 
-      <!-- Los dos onces, uno en cada columna. Cada lado lleva sus propias
-           etiquetas, así el que esté vacío no descoloca al otro. -->
+      <!-- Los dos onces, uno en cada columna, en tabla: una fila por jugador
+           y todas del mismo alto, que las píldoras de ancho variable mareaban. -->
       @if (mio()?.enviada) {
         <section class="once">
           <div class="duelo">
             @for (o of lados(); track $index) {
-              <div class="col">
-                <div class="eqh">
+              <div class="tabla">
+                <div class="barra">
                   <strong>{{ o.equipo }}</strong>
                   <span class="f">{{ o.enviada ? o.formacion : 'sin enviar' }}</span>
                 </div>
 
                 @if (o.enviada) {
-                  @for (f of lineasDe(o); track f.pos) {
-                    @if (f.js.length) {
-                      <div class="ln">
-                        <span class="lp" [class]="abr(f.pos)">{{ abr(f.pos) }}</span>
-                        <div class="js">
-                          @for (j of f.js; track $index) {
-                            <span class="j">
-                              @if (j.foto || j.escudo) {
-                                <img [src]="j.foto || j.escudo" alt="" loading="lazy"
-                                     [class.esc]="!j.foto" (error)="j.foto = null" />
-                              }
-                              {{ corto(j.nombre) }}
-                            </span>
-                          }
-                        </div>
-                      </div>
-                    }
+                  @for (j of once(o); track $index) {
+                    <div class="fila j11">
+                      <span class="p" [class]="abr(j.pos)">{{ abr(j.pos) }}</span>
+                      @if (j.foto) {
+                        <img class="fo" [src]="j.foto" alt="" loading="lazy" (error)="j.foto = null" />
+                      } @else if (j.escudo) {
+                        <img class="fo es" [src]="j.escudo" alt="" loading="lazy" />
+                      } @else { <span class="fo"></span> }
+                      <span class="nb">{{ j.nombre }}</span>
+                      @if (j.foto && j.escudo) {
+                        <img class="cl" [src]="j.escudo" alt="" loading="lazy" />
+                      } @else { <span></span> }
+                    </div>
                   }
                   @if (o.banca.length) {
-                    <div class="ln banq">
-                      <span class="lp">Banq.</span>
-                      <div class="js">
-                        @for (b of o.banca; track $index) {
-                          <span class="j sup"><i>{{ $index + 1 }}</i>{{ corto(b.nombre) }}<em>{{ cubre(b) }}</em></span>
-                        }
+                    <div class="fila cab">Banquillo</div>
+                    @for (b of o.banca; track $index) {
+                      <div class="fila j11 sup">
+                        <span class="p n">{{ $index + 1 }}</span>
+                        <span class="fo"></span>
+                        <span class="nb">{{ b.nombre }}</span>
+                        <span class="cubre">{{ cubre(b) }}</span>
                       </div>
-                    </div>
+                    }
                   }
                 } @else {
                   <p class="esperando">Aún no ha mandado su alineación.</p>
@@ -167,48 +164,31 @@ interface Once { equipo: string; formacion: string; campo: EnCampo[]; banca: EnB
     .cd:last-child { margin-bottom: 0; }
     .btn { display: block; text-align: center; }
 
-    /* El once mandado: el mismo campo que en Alineación, en pequeño. */
-    .once { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r);
-      padding: 18px 18px 20px; margin-bottom: 14px; }
-    .oh { display: flex; align-items: center; justify-content: space-between; gap: 14px;
-      padding-bottom: 14px; border-bottom: 1px solid var(--line); margin-bottom: 16px; }
-    .ot strong { display: block; font-size: var(--t-md); }
-    .ot strong::before { content: '\\2713'; color: var(--por); font-weight: 700; margin-right: 7px; }
-    .ot p { margin: 3px 0 0; font-size: var(--t-sm); color: var(--text2); }
-    .form { flex: 0 0 auto; font-family: var(--fm); font-weight: 700; font-size: var(--t-lg);
-      padding: 3px 12px; border: 1px solid var(--line); border-radius: var(--pill); }
-
-    /* Los dos onces, uno a cada lado, con la raya del periódico en medio. */
-    .duelo { display: grid; grid-template-columns: 1fr 1fr; gap: 0 24px; }
-    .col:last-child { padding-left: 24px; margin-left: -24px; border-left: 1px solid var(--line); }
-    .eqh { display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
-      padding-bottom: 9px; margin-bottom: 8px; border-bottom: 1px solid var(--line); }
-    .eqh strong { font-family: var(--fh); font-size: var(--t-lg); font-weight: 600;
+    .once { margin-bottom: 14px; }
+    /* Los dos onces, uno a cada lado y en tabla. */
+    .duelo { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+    .tabla .barra { justify-content: space-between; padding: 12px 14px; }
+    .barra strong { font-family: var(--fh); font-size: var(--t-lg); font-weight: 600;
       text-transform: uppercase; letter-spacing: -.01em; line-height: 1.1;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .eqh .f { flex: 0 0 auto; font-family: var(--fm); font-size: var(--t-sm); color: var(--text2); }
+      min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .barra .f { font-family: var(--fm); font-size: var(--t-sm); color: var(--text2); }
 
-    .ln { display: grid; grid-template-columns: 42px 1fr; align-items: center; gap: 8px;
-      padding: 5px 0; }
-    .lp { font-size: var(--t-xs); font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
-      color: var(--text2); }
-    .lp.POR { color: var(--por); } .lp.DEF { color: var(--def); }
-    .lp.MED { color: var(--med); } .lp.DEL { color: var(--del); }
-    .js { display: flex; flex-wrap: wrap; gap: 5px; }
-    .j { display: inline-flex; align-items: center; gap: 6px; font-size: var(--t-sm);
-      font-weight: 600; padding: 3px 10px 3px 3px;
-      border: 1px solid var(--line); border-radius: var(--pill); background: var(--bg); }
-    .j img { width: 22px; height: 22px; border-radius: 50%; object-fit: cover;
+    /* Todas las filas iguales: demarcación, cara, nombre y club. */
+    .tabla .fila { padding: 6px 14px; }
+    .j11 { grid-template-columns: 32px 26px 1fr 18px; gap: 9px; }
+    .p { font-size: var(--t-xs); font-weight: 700; letter-spacing: .06em; color: var(--text2); }
+    .p.POR { color: var(--por); } .p.DEF { color: var(--def); }
+    .p.MED { color: var(--med); } .p.DEL { color: var(--del); }
+    .p.n { font-family: var(--fm); font-weight: 400; }
+    .fo { width: 26px; height: 26px; border-radius: 50%; object-fit: cover;
       object-position: top center; background: var(--surface2); }
-    .j img.esc { object-fit: contain; padding: 2px; }
-    .j:not(:has(img)) { padding-left: 10px; }
-    /* El banquillo entra por orden, así que lleva su número y la línea que cubre. */
-    .banq { border-top: 1px solid var(--line); margin-top: 6px; padding-top: 9px; }
-    .j.sup { font-weight: 500; padding-left: 8px; }
-    .j.sup i { font-family: var(--fm); font-style: normal; font-size: var(--t-xs);
-      color: var(--text2); margin-right: 2px; }
-    .j.sup em { font-style: normal; font-size: var(--t-xs); color: var(--text2); letter-spacing: .06em; }
-    .esperando { margin: 14px 0 0; font-size: var(--t-sm); color: var(--text2); }
+    .fo.es { object-fit: contain; padding: 3px; background: none; border-radius: 0; }
+    .nb { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+    .cl { width: 18px; height: 18px; object-fit: contain; opacity: .85; }
+    /* El banquillo entra por orden, y cada uno cubre las líneas que marcó. */
+    .sup .nb { font-weight: 400; color: var(--text2); }
+    .cubre { font-size: var(--t-xs); color: var(--text2); letter-spacing: .06em; white-space: nowrap; }
+    .esperando { margin: 0; padding: 22px 14px; font-size: var(--t-sm); color: var(--text2); }
 
     .cambiar { display: block; text-align: center; margin: 14px 0 0;
       padding: 10px; border: 1px solid var(--line); border-radius: var(--r-sm);
@@ -235,13 +215,11 @@ interface Once { equipo: string; formacion: string; campo: EnCampo[]; banca: EnB
     .accion strong { display: block; margin-top: 2px; font-size: var(--t-md); }
     .muted { color: var(--text2); }
 
-    @media (max-width: 900px) {
-      /* Uno debajo del otro: en el móvil no caben dos columnas de nombres. */
+    @media (max-width: 760px) {
+      /* Una tabla debajo de la otra: dos no caben en un móvil. */
       .duelo { grid-template-columns: 1fr; }
-      .col:last-child { padding-left: 0; margin-left: 0; border-left: none;
-        margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); }
-      .eqh strong { font-size: var(--t-md); }
-      .ln { grid-template-columns: 38px 1fr; }
+      .barra strong { font-size: var(--t-md); }
+      .j11 { grid-template-columns: 30px 24px 1fr 18px; }
     }
   `],
 })
@@ -264,7 +242,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   /** Mi once y el del rival, en ese orden. */
   lados = computed<Once[]>(() => [this.mio(), this.rival()].filter((o): o is Once => !!o));
-  lineasDe(o: Once) { return ORDEN.map((pos) => ({ pos, js: o.campo.filter((j) => j.pos === pos) })); }
+  /** Los once, de portería a delantera. */
+  once(o: Once) { return ORDEN.flatMap((pos) => o.campo.filter((j) => j.pos === pos)); }
 
   constructor(private falm: FalmService) {}
   ngOnDestroy() { if (this.timer) clearInterval(this.timer); }
