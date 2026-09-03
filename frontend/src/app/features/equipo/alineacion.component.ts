@@ -85,7 +85,17 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
             }
             @for (h of huecos(pos); track h) {
               <button class="slot vacio" (click)="abrirLinea(pos)" [attr.data-pos]="abr(pos)">
-                <span class="mas">+</span><span class="lb">{{ abr(pos) }}</span>
+                <span class="hueco">
+                  <span class="mas">+</span>
+                  <span class="fig">
+                    <svg viewBox="0 0 24 28" aria-hidden="true">
+                      <circle cx="12" cy="6" r="4.4" />
+                      <path d="M12 12.4c-4.3 0-7.8 3-7.8 6.7V26h15.6v-6.9c0-3.7-3.5-6.7-7.8-6.7z" />
+                    </svg>
+                    <span class="q">?</span>
+                  </span>
+                </span>
+                <span class="lb">{{ abr(pos) }}</span>
               </button>
             }
           </div>
@@ -218,14 +228,22 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
       border: 1.5px dashed rgba(255,255,255,.9);
       background: rgba(255,255,255,.28); }
     .slot.vacio:hover { background: rgba(255,255,255,.5); }
+    /* Un hueco se lee de un vistazo: el signo de añadir y la silueta de quien
+       falta, con la posición debajo. */
+    .hueco { display: flex; align-items: center; justify-content: center; gap: 7px; }
     .slot.vacio .mas { display: flex; align-items: center; justify-content: center;
-      width: 34px; height: 34px; border-radius: 50%; font-size: var(--t-lg); line-height: 1;
-      background: var(--surface); color: var(--text2); }
+      width: 28px; height: 28px; border-radius: 50%; font-size: var(--t-md); line-height: 1;
+      background: var(--surface); color: var(--c); }
+    .fig { position: relative; display: flex; align-items: center; justify-content: center; }
+    .fig svg { width: 26px; height: 30px; fill: var(--c); opacity: .38; }
+    .fig .q { position: absolute; top: 46%; left: 50%; transform: translate(-50%, -50%);
+      font-family: var(--fb); font-size: var(--t-sm); font-weight: 700; color: var(--surface); }
     /* El color de la posición vive aquí, en el hueco, no en franjas de fondo. */
-    .slot.vacio[data-pos=POR] .mas { color: var(--por); }
-    .slot.vacio[data-pos=DEF] .mas { color: var(--def); }
-    .slot.vacio[data-pos=MED] .mas { color: var(--med); }
-    .slot.vacio[data-pos=DEL] .mas { color: var(--del); }
+    .slot.vacio { --c: var(--text2); }
+    .slot.vacio[data-pos=POR] { --c: var(--por); }
+    .slot.vacio[data-pos=DEF] { --c: var(--def); }
+    .slot.vacio[data-pos=MED] { --c: var(--med); }
+    .slot.vacio[data-pos=DEL] { --c: var(--del); }
     .slot.vacio .lb { font-size: var(--t-xs); font-weight: 700; letter-spacing: .12em; color: var(--text); }
 
     .banco { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 16px; margin-bottom: 18px; }
