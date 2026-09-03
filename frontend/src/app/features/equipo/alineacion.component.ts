@@ -46,7 +46,7 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
           </button>
           <div class="jc">
             <strong>Jornada {{ j.numero }}</strong>
-            @if (j.fecha) { <span class="jf">Cierra {{ fechaCorta(j.fecha) }}</span> }
+            @if (j.fecha) { <span class="jf">{{ fechaCorta(j.fecha) }}</span> }
             @if (!esJornadaPorDefecto()) {
               <button class="jhoy" (click)="irAJornadaActual()">Ir a la actual</button>
             }
@@ -66,18 +66,17 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
 
       <!-- CAMPO: huecos por formación -->
       <div class="fbar">
-        <span class="lb">Formación</span>
         <div class="formas">
           @for (f of formaciones; track f) {
             <button class="forma" [class.on]="f === formacion()" (click)="cambiarFormacion(f)">{{ f }}</button>
           }
         </div>
-        <span class="cuenta num" [class.ok]="titulares().length === 11">{{ titulares().length }}/11</span>
+        <span class="cuenta" [class.ok]="titulares().length === 11">{{ titulares().length }} de 11</span>
       </div>
       <div class="pitch">
-        @for (pos of ['DELANTERO','MEDIO','DEFENSA','PORTERO']; track pos) {
+        <span class="lineas" aria-hidden="true"></span>
+        @for (pos of ['PORTERO','DEFENSA','MEDIO','DELANTERO']; track pos) {
           <div class="fila" [attr.data-linea]="abr(pos)">
-            <span class="banda">{{ etiquetaPos(pos) }}s</span>
             @for (j of enLinea(pos); track j.activo_id) {
               <button class="slot" (click)="abrirLinea(pos, j.activo_id)">
                 <falm-fut-card [nombre]="j.nombre" [posicion]="j.posicion" [foto]="j.foto ?? null"
@@ -173,13 +172,14 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
     .acciones { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
 
     /* Formación y recuento de titulares, pegados al campo que gobiernan. */
-    .fbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+    .fbar { display: flex; align-items: center; justify-content: center; gap: 14px;
+      flex-wrap: wrap; margin-bottom: 12px; }
     .formas { display: flex; gap: 3px; padding: 3px; background: var(--surface2);
       border: 1px solid var(--line); border-radius: 11px; }
-    .forma { font-family: var(--fm); font-size: var(--t-sm); font-weight: 700; padding: 8px 12px;
+    .forma { font-family: var(--fb); font-size: var(--t-sm); font-weight: 700; padding: 8px 13px;
       border: none; border-radius: 8px; background: transparent; color: var(--text2); cursor: pointer; }
     .forma.on { background: var(--accent); color: var(--accent-ink); }
-    .cuenta { margin-left: auto; font-size: var(--t-md); font-weight: 700; color: var(--bad); }
+    .cuenta { font-size: var(--t-sm); font-weight: 700; color: var(--bad); }
     .cuenta.ok { color: var(--good); }
 
     .atajos { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
@@ -189,34 +189,44 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
     .aviso { background: var(--surface); border: 1px solid var(--accent); color: var(--accent);
       padding: 10px 15px; border-radius: 11px; margin-bottom: 12px; font-size: var(--t-sm); font-weight: 600; }
 
-    /* campo: hierba segada sobre papel, no estadio nocturno */
-    .pitch { position: relative; background: var(--pitch); border: 1px solid var(--line);
-      border-radius: 14px; padding: 18px 12px; display: flex; flex-direction: column; gap: 10px;
-      min-height: 430px; justify-content: space-between; overflow: hidden; }
-    .fila { position: relative; display: flex; justify-content: center; align-items: center;
-      gap: 10px; flex-wrap: wrap; padding: 6px 4px 6px 22px; border-radius: 12px; }
-    .fila[data-linea=POR] { background: color-mix(in oklab, var(--por) 12%, transparent); }
-    .fila[data-linea=DEF] { background: color-mix(in oklab, var(--def) 12%, transparent); }
-    .fila[data-linea=MED] { background: color-mix(in oklab, var(--med) 12%, transparent); }
-    .fila[data-linea=DEL] { background: color-mix(in oklab, var(--del) 12%, transparent); }
-    .banda { position: absolute; left: 2px; top: 0; bottom: 0; width: 14px; display: flex; align-items: center; justify-content: center;
-      writing-mode: vertical-rl; transform: rotate(180deg); font-size: var(--t-xs); font-weight: 700; letter-spacing: .18em;
-      text-transform: uppercase; pointer-events: none; }
-    .fila[data-linea=POR] .banda { color: var(--por); }
-    .fila[data-linea=DEF] .banda { color: var(--def); }
-    .fila[data-linea=MED] .banda { color: var(--med); }
-    .fila[data-linea=DEL] .banda { color: var(--del); }
+    /* Campo de verdad: césped segado y líneas de cal dibujadas en CSS, sin
+       imagen que cargar. La portería arriba, como se ha alineado siempre. */
+    .pitch { position: relative; overflow: hidden;
+      background: repeating-linear-gradient(180deg, #e3e9d8 0 52px, #dde4d0 52px 104px);
+      border: 1px solid var(--line); border-radius: 14px;
+      padding: 26px 14px; display: flex; flex-direction: column; gap: 6px;
+      min-height: 500px; justify-content: space-between; }
+    .lineas { position: absolute; inset: 14px; pointer-events: none; z-index: 0;
+      border: 2px solid rgba(255,255,255,.8); border-radius: 4px;
+      background:
+        linear-gradient(rgba(255,255,255,.8), rgba(255,255,255,.8)) center / 100% 2px no-repeat,
+        radial-gradient(circle at 50% 50%, transparent 56px, rgba(255,255,255,.8) 56px,
+                        rgba(255,255,255,.8) 58px, transparent 58px); }
+    /* áreas grandes, arriba y abajo */
+    .lineas::before, .lineas::after { content: ''; position: absolute; left: 50%;
+      transform: translateX(-50%); width: 54%; height: 74px;
+      border: 2px solid rgba(255,255,255,.8); }
+    .lineas::before { top: -2px; border-top: none; border-radius: 0 0 4px 4px; }
+    .lineas::after { bottom: -2px; border-bottom: none; border-radius: 4px 4px 0 0; }
+
+    .fila { position: relative; z-index: 1; display: flex; justify-content: center;
+      align-items: center; gap: 10px; flex-wrap: wrap; padding: 4px; }
+
     .slot { background: none; border: none; cursor: pointer; width: 88px; padding: 0; }
-    .slot.vacio { min-height: 104px; border: 1.5px dashed var(--line); border-radius: 13px; display: flex;
+    .slot.vacio { min-height: 104px; border-radius: 13px; display: flex;
       flex-direction: column; align-items: center; justify-content: center; gap: 6px;
-      background: color-mix(in oklab, var(--surface) 55%, transparent); }
+      border: 1.5px dashed rgba(255,255,255,.9);
+      background: rgba(255,255,255,.28); }
+    .slot.vacio:hover { background: rgba(255,255,255,.5); }
     .slot.vacio .mas { display: flex; align-items: center; justify-content: center;
-      width: 34px; height: 34px; border-radius: 50%; font-size: var(--t-lg); line-height: 1; color: var(--text2); }
-    .slot.vacio[data-pos=POR] .mas { border: 1.5px dashed var(--por); color: var(--por); }
-    .slot.vacio[data-pos=DEF] .mas { border: 1.5px dashed var(--def); color: var(--def); }
-    .slot.vacio[data-pos=MED] .mas { border: 1.5px dashed var(--med); color: var(--med); }
-    .slot.vacio[data-pos=DEL] .mas { border: 1.5px dashed var(--del); color: var(--del); }
-    .slot.vacio .lb { font-size: var(--t-xs); font-weight: 700; letter-spacing: .14em; color: var(--text2); }
+      width: 34px; height: 34px; border-radius: 50%; font-size: var(--t-lg); line-height: 1;
+      background: var(--surface); color: var(--text2); }
+    /* El color de la posición vive aquí, en el hueco, no en franjas de fondo. */
+    .slot.vacio[data-pos=POR] .mas { color: var(--por); }
+    .slot.vacio[data-pos=DEF] .mas { color: var(--def); }
+    .slot.vacio[data-pos=MED] .mas { color: var(--med); }
+    .slot.vacio[data-pos=DEL] .mas { color: var(--del); }
+    .slot.vacio .lb { font-size: var(--t-xs); font-weight: 700; letter-spacing: .12em; color: var(--text); }
 
     .banco { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 16px; margin-bottom: 18px; }
     .bh { display: flex; align-items: center; justify-content: space-between; }

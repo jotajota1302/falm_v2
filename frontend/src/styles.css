@@ -26,8 +26,6 @@
   --good: #2f7d4f;
   --bad: #b83248;
 
-  --pitch: repeating-linear-gradient(0deg, #e6e1d4 0 46px, #dfd9ca 46px 92px);
-
   /* ---- tipografía ----
      Tres familias con un papel fijo cada una:
        fh  titulares y nombres propios (condensada)

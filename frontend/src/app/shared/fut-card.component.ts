@@ -54,11 +54,11 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
 
     .face { height: 100%; max-width: 62%; object-fit: contain; object-position: top right; align-self: stretch; z-index: 1; }
     .face.esc { max-width: 50%; object-position: top; opacity: .9; }
-    .ph { font-family: var(--fh); font-size: 14cqw; color: var(--text2); margin-left: auto; }
+    .ph { font-family: var(--fb); font-weight: 700; font-size: 11cqw; color: var(--text2); margin-left: auto; }
 
     .foot { position: relative; z-index: 1; margin-top: 3cqw; }
-    .n1 { display: block; font-family: var(--fh); font-weight: 500; font-size: 11cqw;
-      text-transform: uppercase; letter-spacing: -.01em;
+    .n1 { display: block; font-family: var(--fb); font-weight: 700; font-size: 10cqw;
+      letter-spacing: 0;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .sline { display: flex; gap: 5cqw; margin-top: 1cqw; font-family: var(--fm);
       font-size: 8cqw; color: var(--text2); }
