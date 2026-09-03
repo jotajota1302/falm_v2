@@ -1,4 +1,4 @@
-import { Component, computed, signal } from '@angular/core';
+import { AfterViewChecked, Component, ElementRef, HostListener, ViewChild, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from './core/auth.service';
@@ -25,7 +25,7 @@ interface NavItem { path: string; label: string; corto: string; }
           </span>
         </a>
 
-        <nav class="nav">
+        <nav class="nav" #navref (scroll)="medir()">
           @for (item of items; track item.path) {
             <a class="ni" [routerLink]="item.path" routerLinkActive="active"
                (pointerdown)="tocar($event)" (pointerup)="soltar($event, item.path)">
@@ -53,6 +53,10 @@ interface NavItem { path: string; label: string; corto: string; }
           </span>
         </div>
       </header>
+
+      <!-- Avisan de que la barra sigue a los lados, y la mueven al pulsarlas. -->
+      @if (hayIzq()) { <button class="navf izq" (click)="desplazar(-1)" aria-label="Ver secciones anteriores">‹</button> }
+      @if (hayDer()) { <button class="navf der" (click)="desplazar(1)" aria-label="Ver más secciones">›</button> }
 
       <main class="content"><router-outlet /></main>
 
@@ -97,6 +101,7 @@ interface NavItem { path: string; label: string; corto: string; }
     .nav a.active { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
     .nav .sm { display: none; }
     .nav .masb { display: none; }
+    .navf { display: none; }
 
     .right { display: flex; align-items: center; gap: 14px; margin-left: auto; flex: 0 0 auto; }
     .temp { background: var(--surface2); border: 1px solid var(--line); color: var(--text);
@@ -167,6 +172,16 @@ interface NavItem { path: string; label: string; corto: string; }
       .nav .masb { display: block; margin-right: 4px; }
       .nav .lg { display: none; } .nav .sm { display: inline; }
 
+      .navf { display: flex; align-items: center; justify-content: center;
+        position: fixed; z-index: 52; width: 26px; height: 26px; padding: 0;
+        bottom: calc(15px + env(safe-area-inset-bottom));
+        border: 1px solid var(--line); border-radius: 50%;
+        background: var(--surface); color: var(--accent);
+        font-family: var(--fb); font-size: var(--t-md); line-height: 1; cursor: pointer;
+        touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+      .navf:active { background: var(--surface2); }
+      .navf.izq { left: 4px; } .navf.der { right: 4px; }
+
       .masback { position: fixed; inset: 0; z-index: 49; background: rgba(22,19,15,.42); }
       .maspanel { position: fixed; z-index: 51; left: 0; right: 0;
         bottom: calc(47px + env(safe-area-inset-bottom));
@@ -183,7 +198,7 @@ interface NavItem { path: string; label: string; corto: string; }
     }
   `],
 })
-export class AppComponent {
+export class AppComponent implements AfterViewChecked {
   /** Panel con las opciones de cuenta (solo móvil). */
   mas = signal(false);
 
@@ -192,6 +207,25 @@ export class AppComponent {
   // si al levantar el dedo apenas se ha movido, es un toque y navegamos.
   private px = 0;
   private py = 0;
+
+  /** Si la barra tiene recorrido a un lado, se enseña su flecha. */
+  hayIzq = signal(false);
+  hayDer = signal(false);
+  @ViewChild('navref') navRef?: ElementRef<HTMLElement>;
+
+  ngAfterViewChecked() { this.medir(); }
+  @HostListener('window:resize') medir() {
+    const el = this.navRef?.nativeElement;
+    if (!el) { this.hayIzq.set(false); this.hayDer.set(false); return; }
+    const resto = el.scrollWidth - el.clientWidth;
+    this.hayIzq.set(el.scrollLeft > 4);
+    this.hayDer.set(resto > 4 && el.scrollLeft < resto - 4);
+  }
+  /** Un toque en la flecha mueve la barra poco menos de una pantalla. */
+  desplazar(dir: number) {
+    const el = this.navRef?.nativeElement;
+    el?.scrollBy({ left: dir * Math.max(120, el.clientWidth * 0.7), behavior: 'smooth' });
+  }
   tocar(e: PointerEvent) { this.px = e.clientX; this.py = e.clientY; }
   soltar(e: PointerEvent, path: string) {
     if (Math.abs(e.clientX - this.px) < 12 && Math.abs(e.clientY - this.py) < 12) {
