@@ -20,22 +20,17 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
     } @else if (!equipo()) {
       <p class="muted">No tienes equipo en esta temporada.</p>
     } @else {
-      @if (competiciones().length > 1) {
-        <div class="comps">
-          @for (c of competiciones(); track c.id) {
-            <button class="comp" [class.on]="c.id === competicionId()" (click)="seleccionarCompeticion(c.id)">
-              {{ etiqueta(c.tipo) }}
-            </button>
-          }
-        </div>
-      }
-
       <header class="phead">
         <h1>Manda tu alineación</h1>
-        <div class="acciones">
-          <button class="btn-sec" (click)="repetirUltima()">Repetir última</button>
-          <button class="btn" (click)="guardar()" [disabled]="guardando()">{{ guardando() ? 'Enviando…' : 'Enviar alineación' }}</button>
-        </div>
+        @if (competiciones().length > 1) {
+          <div class="comps">
+            @for (c of competiciones(); track c.id) {
+              <button class="comp" [class.on]="c.id === competicionId()" (click)="seleccionarCompeticion(c.id)">
+                {{ etiqueta(c.tipo) }}
+              </button>
+            }
+          </div>
+        }
       </header>
 
       <!-- Jornada: se abre en la que toca y se pasa de una en una. -->
@@ -124,6 +119,15 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
           </div>
         }
       </div>
+
+      <!-- Barra de envío: lo último de la pantalla y siempre a la vista. -->
+      <div class="envio">
+        <span class="est" [class.ok]="titulares().length === 11">
+          {{ titulares().length }} de 11 titulares@if (banca().length) { · {{ banca().length }} en el banquillo }
+        </span>
+        <button class="btn-sec" (click)="repetirUltima()">Repetir última</button>
+        <button class="btn" (click)="guardar()" [disabled]="guardando()">{{ guardando() ? 'Enviando…' : 'Enviar alineación' }}</button>
+      </div>
     }
 
     <!-- SELECTOR (bottom sheet) -->
@@ -179,7 +183,16 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
       text-transform: uppercase; color: var(--accent); }
 
     .phead .sub { max-width: 62ch; }
-    .acciones { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+    .comps { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    /* Se compone arriba y se envía abajo: la barra se queda pegada al fondo
+       mientras editas, para no tener que subir a buscar el botón. */
+    .envio { position: sticky; bottom: 0; z-index: 6;
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      margin-top: 4px; padding: 13px 16px;
+      background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); }
+    .envio .est { flex: 1; min-width: 140px; font-size: var(--t-sm); color: var(--bad); font-weight: 600; }
+    .envio .est.ok { color: var(--good); }
 
     /* Formación y recuento de titulares, pegados al campo que gobiernan. */
     .fbar { display: flex; align-items: center; justify-content: center; gap: 14px;
@@ -246,7 +259,7 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
     .slot.vacio[data-pos=DEL] { --c: var(--del); }
     .slot.vacio .lb { font-size: var(--t-xs); font-weight: 700; letter-spacing: .12em; color: var(--text); }
 
-    .banco { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 16px; margin-bottom: 18px; }
+    .banco { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 16px; margin-bottom: 14px; }
     .bh { display: flex; align-items: center; justify-content: space-between; }
     .add { background: var(--surface); border: 1px solid var(--line); color: var(--text); border-radius: 11px;
       padding: 8px 13px; cursor: pointer; font-weight: 600; font-size: var(--t-sm); }
@@ -279,6 +292,10 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
     @media (min-width: 560px) { .back { align-items: center; } .sheet { border-radius: 22px; } }
 
     /* En el teléfono el campo se estrecha para que la línea no se parta en dos. */
+    @media (max-width: 760px) {
+      .envio { bottom: calc(47px + env(safe-area-inset-bottom)); }
+    }
+
     @media (max-width: 620px) {
       .pitch { padding: 14px 8px; min-height: 384px; gap: 8px; }
       .fila { gap: 6px; padding: 5px 2px 5px 18px; }
@@ -324,6 +341,8 @@ export class AlineacionComponent implements OnInit {
   competiciones = signal<Competicion[]>([]);
   competicionId = signal('');
   jornadasComp = signal<JornadaFalm[]>([]);
+  /** Calendario de cada competición, ya consultado al arrancar. */
+  private cacheJornadas = new Map<string, JornadaFalm[]>();
   jornada = signal<JornadaFalm | null>(null);
   plantilla = signal<ItemPlantilla[]>([]);
   puntos = signal<Record<string, number>>({});
@@ -521,8 +540,13 @@ export class AlineacionComponent implements OnInit {
       this.plantilla.set(plant); this.puntos.set(pts);
       const orden = { LIGA: 0, CHAMPIONS: 1, CLAUSURA: 2 } as Record<string, number>;
       comps.sort((a, b) => (orden[a.tipo] ?? 9) - (orden[b.tipo] ?? 9));
-      this.competiciones.set(comps);
-      const liga = comps.find((c) => c.tipo === 'LIGA') ?? comps[0];
+      // La Champions y la Clausura empiezan a mitad de temporada: hasta que no
+      // tienen jornadas no hay nada que alinear, así que ni se ofrecen.
+      const calendarios = await Promise.all(comps.map((c) => this.falm.jornadas(c.id).catch(() => [])));
+      comps.forEach((c, i) => this.cacheJornadas.set(c.id, calendarios[i]));
+      const conCalendario = comps.filter((c, i) => calendarios[i].length > 0);
+      this.competiciones.set(conCalendario.length ? conCalendario : comps);
+      const liga = this.competiciones().find((c) => c.tipo === 'LIGA') ?? this.competiciones()[0];
       if (liga) await this.seleccionarCompeticion(liga.id);
     } catch (e: any) { this.aviso.set(e?.message ?? 'Error'); }
     finally { this.cargando.set(false); }
@@ -530,7 +554,8 @@ export class AlineacionComponent implements OnInit {
 
   async seleccionarCompeticion(compId: string) {
     this.competicionId.set(compId);
-    const js = await this.falm.jornadas(compId);
+    const js = this.cacheJornadas.get(compId) ?? await this.falm.jornadas(compId);
+    this.cacheJornadas.set(compId, js);
     this.jornadasComp.set(js);
     const proxima = this.porDefecto();
     if (proxima) await this.seleccionarJornada(proxima);
