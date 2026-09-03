@@ -1,8 +1,9 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { AdminService, AdminTemporada } from './admin.service';
+import { AdminService, AdminTemporada, EstadoPretemporada, JornadaCalendario } from './admin.service';
 import { AdminDraftSorteoComponent, EquipoSorteo } from './draft-sorteo.component';
+import { AdminCalendarioEditorComponent } from './calendario-editor.component';
 
 const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'MED', DELANTERO: 'DEL' };
 
@@ -10,7 +11,7 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
 @Component({
   selector: 'app-admin-pretemporada',
   standalone: true,
-  imports: [FormsModule, RouterLink, AdminDraftSorteoComponent],
+  imports: [FormsModule, RouterLink, AdminDraftSorteoComponent, AdminCalendarioEditorComponent],
   template: `
     @if (aviso()) { <p class="aviso">{{ aviso() }}</p> }
     @if (error()) { <p class="err">{{ error() }}</p> }
@@ -38,13 +39,72 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     <!-- 2. Jornadas y calendario -->
     <section class="card">
       <h3>2 · Jornadas y calendario (Liga)</h3>
-      <p class="hint">Crea jornadas LFP + FALM, el mapeo configurable y el calendario round-robin.</p>
-      <div class="form">
-        <label>LFP desde <input type="number" [(ngModel)]="lfpDesde" style="width:70px" /></label>
-        <label>hasta <input type="number" [(ngModel)]="lfpHasta" style="width:70px" /></label>
-        <button class="btn" (click)="generarJornadas()">Generar jornadas + mapeo</button>
-        <button class="btn ghost" (click)="generarCalendario()">Generar calendario</button>
-      </div>
+
+      @if (estado(); as e) {
+        <div class="estado">
+          @if (e.jornadas > 0) {
+            <span class="chip chip-ok">{{ e.jornadas }} jornadas · LFP {{ e.lfp_desde }}-{{ e.lfp_hasta }}</span>
+          } @else {
+            <span class="chip">Sin jornadas</span>
+          }
+          @if (e.enfrentamientos > 0) {
+            <span class="chip chip-ok">{{ e.enfrentamientos }} enfrentamientos</span>
+          } @else {
+            <span class="chip">Sin calendario</span>
+          }
+          @if (e.jugados > 0) { <span class="chip chip-warn">{{ e.jugados }} con resultado</span> }
+          @if (e.con_alineacion > 0) { <span class="chip chip-warn">{{ e.con_alineacion }} con alineación</span> }
+        </div>
+
+        @if (e.bloqueado) {
+          <p class="hint alerta">
+            La liga ya está en marcha. Regenerar borraría los resultados, así que está
+            bloqueado en la propia base de datos. Para retoques puntuales (cambiar un cruce,
+            mover una jornada) usa la edición de abajo.
+          </p>
+        } @else if (e.enfrentamientos > 0 || e.jornadas > 0) {
+          <p class="hint">
+            Ya está generado. Regenerar <strong>borra el calendario actual y vuelve a sortear</strong>
+            los cruces desde cero: solo tiene sentido si aún no habéis empezado.
+          </p>
+          <label class="conf">
+            <input type="checkbox" [ngModel]="confirmar()" (ngModelChange)="confirmar.set($event)" />
+            Entiendo que se borra el calendario actual
+          </label>
+        } @else {
+          <p class="hint">Crea jornadas LFP + FALM, el mapeo configurable y el calendario round-robin.</p>
+        }
+
+        <div class="form">
+          <label>LFP desde <input type="number" [(ngModel)]="lfpDesde" style="width:70px"
+                                  [disabled]="e.bloqueado" /></label>
+          <label>hasta <input type="number" [(ngModel)]="lfpHasta" style="width:70px"
+                              [disabled]="e.bloqueado" /></label>
+          <button class="btn" [class.peligro]="e.jornadas > 0"
+                  [disabled]="e.bloqueado || (e.jornadas > 0 && !confirmar())"
+                  (click)="generarJornadas()">
+            {{ e.jornadas > 0 ? 'Regenerar jornadas + mapeo' : 'Generar jornadas + mapeo' }}
+          </button>
+          <button class="btn ghost" [class.peligro]="e.enfrentamientos > 0"
+                  [disabled]="e.bloqueado || e.jornadas === 0 || (e.enfrentamientos > 0 && !confirmar())"
+                  (click)="generarCalendario()">
+            {{ e.enfrentamientos > 0 ? 'Regenerar calendario' : 'Generar calendario' }}
+          </button>
+        </div>
+
+        @if (jornadas().length) {
+          <h4 class="ph">Editar el calendario sin rehacerlo</h4>
+          <p class="hint">
+            Cambiar un cruce concreto o mover una jornada a otra jornada de LaLiga. Esto sí se
+            puede con la liga en marcha, salvo en las jornadas ya jugadas.
+          </p>
+          <admin-calendario-editor
+            [jornadas]="jornadas()"
+            [equipos]="equipos()"
+            (cruceEditado)="editarCruce($event)"
+            (jornadaEditada)="editarJornada($event)" />
+        }
+      }
     </section>
 
     <!-- 3. Draft inicial -->
@@ -115,6 +175,12 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     .form { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
     .form input { background: var(--surface); border: 1px solid var(--line); border-radius: 9px; padding: 8px 10px; }
     .form label { font-size: var(--t-sm); color: var(--text2); display: flex; gap: 6px; align-items: center; }
+    .estado { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 10px; }
+    .hint.alerta { color: var(--bad); border-left: 2px solid var(--bad); padding-left: 9px; }
+    .conf { display: flex; gap: 7px; align-items: center; margin-bottom: 11px;
+      font-size: var(--t-sm); color: var(--text2); cursor: pointer; }
+    .btn.peligro { background: var(--bad); border-color: var(--bad); color: #fff; }
+    .btn.ghost.peligro { background: var(--surface); color: var(--bad); border-color: var(--bad); }
     .btn.ghost { background: var(--surface2); color: var(--text); border: 1px solid var(--line); }
     .lista { display: flex; flex-direction: column; gap: 6px; }
     .row { display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: var(--surface2); border: 1px solid var(--line); border-radius: 9px; }
@@ -147,6 +213,9 @@ export class AdminPretemporadaComponent implements OnInit {
   draft = signal<any | null>(null);
   picks = signal<{ orden: number; ronda: number; equipo: string; jugador: string; posicion: string }[]>([]);
   equipos = signal<EquipoSorteo[]>([]);
+  estado = signal<EstadoPretemporada | null>(null);
+  jornadas = signal<JornadaCalendario[]>([]);
+  confirmar = signal(false);
   sorteoAbierto = signal(false);
   cargando = signal(true);
   aviso = signal('');
@@ -166,6 +235,18 @@ export class AdminPretemporadaComponent implements OnInit {
     try {
       this.temporadas.set(await this.admin.temporadas());
       this.equipos.set((await this.admin.equipos()).map((e) => ({ id: e.id, nombre: e.nombre })));
+      const act = this.temporadas().find((x) => x.activa);
+      if (act) {
+        const est = await this.admin.estadoPretemporada(act.id);
+        this.estado.set(est);
+        // El rango que se ofrece es el que ya hay, para no proponer un cambio sin querer.
+        if (est.lfp_desde != null) this.lfpDesde = est.lfp_desde;
+        if (est.lfp_hasta != null) this.lfpHasta = est.lfp_hasta;
+        this.jornadas.set(await this.admin.calendarioLiga(act.id));
+      } else {
+        this.estado.set(null);
+        this.jornadas.set([]);
+      }
       const d = await this.admin.draftActivo();
       this.draft.set(d);
       if (d?.id) this.picks.set(await this.admin.draftPicks(d.id)); else this.picks.set([]);
@@ -191,13 +272,16 @@ export class AdminPretemporadaComponent implements OnInit {
   async generarJornadas() {
     const t = this.temporadas().find((x) => x.activa);
     if (!t) { this.error.set('No hay temporada activa.'); return; }
-    await this.accion(() => this.admin.ejecutar('generar_jornadas_liga', { p_temporada: t.id, p_lfp_desde: this.lfpDesde, p_lfp_hasta: this.lfpHasta }),
+    await this.accion(() => this.admin.ejecutar('generar_jornadas_liga',
+      { p_temporada: t.id, p_lfp_desde: this.lfpDesde, p_lfp_hasta: this.lfpHasta, p_forzar: this.confirmar() }),
       'Jornadas y mapeo generados.');
   }
   async generarCalendario() {
     const t = this.temporadas().find((x) => x.activa);
     if (!t) { this.error.set('No hay temporada activa.'); return; }
-    await this.accion(() => this.admin.ejecutar('generar_calendario_liga', { p_temporada: t.id }), 'Calendario generado.');
+    await this.accion(() => this.admin.ejecutar('generar_calendario_liga',
+      { p_temporada: t.id, p_forzar: this.confirmar() }), 'Calendario generado.');
+    this.confirmar.set(false);
   }
   async crearDraft() {
     const t = this.temporadas().find((x) => x.activa);
@@ -205,6 +289,16 @@ export class AdminPretemporadaComponent implements OnInit {
     await this.accion(() => this.admin.ejecutar('draft_crear', { p_temporada: t.id, p_nombre: 'Draft ' + t.nombre, p_rondas: 23 }),
       'Draft creado.');
   }
+  /** Cambia los equipos de un cruce (o les da la vuelta). */
+  async editarCruce([id, local, visitante]: [string, string, string]) {
+    await this.accion(() => this.admin.editarCruce(id, local, visitante), 'Cruce actualizado.');
+  }
+
+  /** Mueve una jornada FALM a otra jornada de LaLiga. */
+  async editarJornada([id, lfp]: [string, number]) {
+    await this.accion(() => this.admin.editarJornada(id, lfp), 'Jornada remapeada.');
+  }
+
   /** Crea el draft con el orden cantado en el sorteo físico. */
   async crearDraftConOrden(orden: string[]) {
     const t = this.temporadas().find((x) => x.activa);

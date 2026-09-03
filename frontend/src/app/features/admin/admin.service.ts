@@ -91,6 +91,39 @@ export class AdminService {
     return (data ?? []).map((t: any) => ({ id: t.id, nombre: t.nombre, anio: t.anio_inicio, activa: t.activa }));
   }
 
+  /** Qué hay hecho ya de la pretemporada, para no regenerar por encima. */
+  async estadoPretemporada(temporadaId: string): Promise<EstadoPretemporada> {
+    const { data, error } = await this.sb.client.rpc('estado_pretemporada', { p_temporada: temporadaId });
+    if (error) throw error;
+    return (typeof data === 'string' ? JSON.parse(data) : data) as EstadoPretemporada;
+  }
+
+  /** Calendario de la liga con sus cruces, para editarlo jornada a jornada. */
+  async calendarioLiga(temporadaId: string): Promise<JornadaCalendario[]> {
+    const { data, error } = await this.sb.client.rpc('calendario_liga', { p_temporada: temporadaId });
+    if (error) throw error;
+    const d = typeof data === 'string' ? JSON.parse(data) : data;
+    return (Array.isArray(d) ? d : []) as JornadaCalendario[];
+  }
+
+  /** Cambia los equipos de un cruce. Para invertir la localía, se pasan al revés. */
+  async editarCruce(enfrentamientoId: string, localId: string, visitanteId: string): Promise<void> {
+    const { error } = await this.sb.client.rpc('enfrentamiento_editar', {
+      p_enfrentamiento: enfrentamientoId, p_local: localId, p_visitante: visitanteId,
+    });
+    if (error) throw error;
+  }
+
+  /** Remapea una jornada FALM a otra jornada LFP y/o cambia su fecha de cierre. */
+  async editarJornada(jornadaFalmId: string, lfpNumero?: number, fechaCierre?: string): Promise<void> {
+    const { error } = await this.sb.client.rpc('jornada_editar', {
+      p_jornada_falm: jornadaFalmId,
+      p_lfp_numero: lfpNumero ?? null,
+      p_fecha_cierre: fechaCierre ?? null,
+    });
+    if (error) throw error;
+  }
+
   /** Draft activo (no consolidado) de la temporada activa, con su estado/turno. */
   async draftActivo(): Promise<any | null> {
     const { data: t } = await this.sb.client.from('temporada').select('id').eq('activa', true).maybeSingle();
@@ -162,6 +195,38 @@ export interface AdminJugador {
   activoId: string; jugadorLfpId: string; nombre: string; posicion: string;
   club: string; escudo: string | null; precio: number;
 }
+export interface CruceCalendario {
+  id: string;
+  local_id: string;
+  visitante_id: string;
+  local: string;
+  visitante: string;
+  puntos_local: number | null;
+  puntos_visitante: number | null;
+}
+
+export interface JornadaCalendario {
+  id: string;
+  n: number;
+  lfp: number | null;
+  fecha_cierre: string | null;
+  /** Con resultados o alineaciones: intocable. */
+  jugada: boolean;
+  cruces: CruceCalendario[];
+}
+
+export interface EstadoPretemporada {
+  equipos: number;
+  jornadas: number;
+  lfp_desde: number | null;
+  lfp_hasta: number | null;
+  enfrentamientos: number;
+  jugados: number;
+  con_alineacion: number;
+  /** La liga ya tiene resultados o alineaciones: no se regenera nada. */
+  bloqueado: boolean;
+}
+
 export interface AdminEquipo {
   id: string; nombre: string; presupuesto: number; beneficio: number; usuarioId: string | null; jugadores: number;
 }

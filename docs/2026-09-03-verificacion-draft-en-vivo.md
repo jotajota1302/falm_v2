@@ -82,3 +82,47 @@ orden en que salen los equipos en vez de que lo sortee la BD.
 | **Ahora** | `draft_crear` acepta un cuarto parámetro opcional `p_orden uuid[]`: si es null sortea al azar (comportamiento anterior intacto), y si viene lo valida y lo usa. Nuevas `draft_validar_orden` (permutación exacta de los equipos de la temporada), `draft_generar_orden` (serpiente, compartida) y `draft_reordenar(p_draft, p_orden)` para corregir el orden mientras no haya ningún pick. En el admin, componente `admin-draft-sorteo`: se pulsan los equipos en el orden en que se cantan (un clic por equipo), con "quitar el último" y "empezar de nuevo". |
 | **Test real** | `tools/sql/draft_orden_manual_test.sql`, 4 casos: orden incompleto rechazado, orden con repetidos rechazado, orden válido genera ronda 1 en ese orden y ronda 2 invertida con el total de turnos correcto, y reordenar bloqueado en cuanto hay un pick. Resultado: **TEST OK: los 4 casos pasaron**, revertido al terminar. |
 | **Nota** | Se sustituyó la firma de 3 argumentos de `draft_crear` por la de 4 (con default) en vez de añadir una sobrecarga, para que las llamadas de 3 argumentos sigan resolviendo a la versión nueva. |
+
+## 7. Protecciones de la pretemporada (2026-09-03) — ✅
+
+El panel tenía botones que, pulsados por segunda vez con la liga en marcha,
+hacían daño de verdad. Diagnóstico y arreglo:
+
+| Función | Antes | Ahora |
+|---|---|---|
+| `generar_calendario_liga` | **Destructiva sin aviso**: `delete` de todos los enfrentamientos de la liga y regeneración con `order by random()`. Se llevaba los `puntos_local`/`puntos_visitante` de las jornadas ya jugadas. | Con calendario existente exige `p_forzar`. Con resultados o alineaciones se niega **siempre**, incluso forzando. |
+| `generar_jornadas_liga` | Con el mismo rango era idempotente (`on conflict do nothing` + índices únicos). Con otro rango añadía jornadas sin borrar las viejas → temporada incoherente. | Mismo rango: devuelve `ya_estaba` sin tocar nada. Otro rango: exige `p_forzar` y entonces rehace limpio (borra y regenera) en vez de mezclar. Bloqueada si la liga ya empezó. |
+| `crear_temporada` | Creaba temporadas duplicadas con el mismo nombre. | Rechaza nombres repetidos (sin distinguir mayúsculas). |
+| `activar_temporada` | `update set activa = (id = p_temporada)` en una sentencia, con el índice único parcial `uq_temporada_activa` ya existente: **fallo latente**, porque según el orden en que Postgres tocara las filas podía haber dos activas a la vez y violar el índice. Con una sola temporada nunca dio la cara. | Dos sentencias: primero desactiva, luego activa. |
+| `montar_temporada_prueba` | — | Revisada: segura. Solo borra la temporada llamada `Pruebas 26-27`, nunca la real. |
+| `recalcular_clasificacion` | — | Revisada: segura, recalcula datos derivados y es idempotente. |
+| `draft_consolidar` | — | Revisada: segura, solo inserta y exige estado COMPLETADO. |
+
+**Editar sin sobrescribir.** Con la liga en marcha lo que hace falta no es
+regenerar, es corregir una cosa concreta. Nuevas funciones:
+
+- `enfrentamiento_editar(p_enfrentamiento, p_local, p_visitante)`: cambia los
+  equipos de un cruce (invertir la localía = llamarla al revés). Rechaza la
+  jornada con resultados o alineaciones, equipos de otra temporada, equipo
+  contra sí mismo y equipos que ya juegan en esa jornada.
+- `jornada_editar(p_jornada_falm, p_lfp_numero, p_fecha_cierre)`: mueve una
+  jornada FALM a otra jornada de LaLiga y/o cambia su cierre. Rechaza remapear
+  una jornada con alineaciones o apuntar a una LFP que no existe.
+- `estado_pretemporada(p_temporada)` y `calendario_liga(p_temporada)`: lectura
+  para que el panel diga qué hay hecho y permita editarlo.
+
+**En el panel**: la sección de jornadas muestra chips con el estado real
+(`32 jornadas · LFP 5-36`, `180 enfrentamientos`, y en ámbar los jugados), los
+botones pasan a "Regenerar" en rojo y exigen marcar *"entiendo que se borra el
+calendario actual"*, y con la liga empezada salen deshabilitados con la
+explicación. Debajo, el editor `admin-calendario-editor`: eliges jornada, ves
+sus cinco cruces y puedes invertir localía de un clic, cambiar equipos con dos
+desplegables o remapear la jornada. Las jugadas salen en solo lectura.
+
+**Test real**: `tools/sql/pretemporada_protecciones_test.sql`, 11 casos —
+estado correcto, mismo rango idempotente, rango distinto sin forzar rechazado,
+calendario sin forzar rechazado, temporada duplicada rechazada, calendario con
+resultados rechazado incluso forzando, edición de cruce jugado rechazada,
+inversión de localía válida aplicada, equipo duplicado en jornada rechazado,
+remapeo válido aplicado y remapeo a LFP inexistente rechazado. Resultado:
+**TEST OK: los 11 casos pasaron**, revertido al terminar.
