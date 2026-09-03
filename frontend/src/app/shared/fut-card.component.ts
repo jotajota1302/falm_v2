@@ -16,7 +16,6 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
       <!-- La marca de agua solo acompaña a un retrato: en una portería el
            escudo ya es la imagen, y salían dos, uno de ellos en sombra. -->
       @if (escudo && foto) { <img class="wm" [src]="escudo" alt="" loading="lazy" /> }
-      @if (campo && escudo && foto) { <img class="marca" [src]="escudo" alt="" loading="lazy" /> }
       <div class="top">
         <div class="info">
           @if (num !== null) { <span class="val">{{ num }}@if (unidad) {<small>{{ unidad }}</small>}</span> }
@@ -27,7 +26,8 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
         @else { <span class="ph">{{ abr }}</span> }
       </div>
       <div class="foot">
-        <span class="n1">{{ campo ? nombre : corto }}</span>
+        <span class="n1" [class.largo]="campo && nombre.length > 15"
+              [class.muylargo]="campo && nombre.length > 21">{{ campo ? nombre : corto }}</span>
         @if (stats?.length) {
           <div class="sline">@for (s of stats; track s.ico) { <span>{{ s.ico }}{{ s.n }}</span> }</div>
         }
@@ -70,29 +70,24 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
       font-size: var(--t-xs); color: var(--text2); }
     .sline span { white-space: nowrap; }
 
-    /* Modo campo: retrato recortado en círculo, escudo pequeño en la esquina y
-       el nombre debajo. Los archivos de origen no vienen encuadrados igual, así
-       que el círculo es lo único que garantiza que todas las caras midan lo
-       mismo; y la marca de agua estorbaba más que ayudaba. */
-    .fut.campo { padding: 8px 8px 10px; justify-content: space-between; }
-    .fut.campo .wm { display: none; }
-    .fut.campo .marca { position: absolute; top: 7px; right: 7px; z-index: 3;
-      width: 18px; height: 18px; object-fit: contain; }
-    .fut.campo .top { justify-content: center; align-items: center; padding-top: 4px; }
-    .fut.campo .face { width: 74px; height: 74px; max-width: none; max-height: none;
-      border-radius: 50%; object-fit: cover; object-position: center top;
-      background: var(--surface2); border: 1px solid var(--line); }
-    .fut.campo .info { position: absolute; top: 6px; left: 7px; z-index: 3; }
-    .fut.campo .val { background: var(--surface); border: 1px solid var(--line);
-      padding: 1px 6px; border-radius: 6px; font-size: var(--t-xs); }
-    /* La portería lleva escudo, no cara: entra entero y sin círculo. */
-    .fut.campo .face.esc { width: auto; max-width: 66%; height: auto; max-height: 74%;
-      border-radius: 0; border: none; background: none;
-      object-fit: contain; object-position: center; }
-    .fut.campo.solo-escudo .top { padding-top: 14px; }
+    /* modo campo (Alineación): la banda ya dice la posición, así que sobra el badge */
+    .fut.campo .info { position: absolute; top: 4cqw; left: 5cqw; z-index: 3; }
+    .fut.campo .val { background: var(--surface2); border: 1px solid var(--line);
+      padding: 1px 6px; border-radius: 6px; font-size: var(--t-sm); }
+    .fut.campo .top { justify-content: center; align-items: stretch; }
+    .fut.campo .face { max-width: 88%; object-position: center bottom; }
+    .fut.campo .face.esc { max-width: 58%; max-height: 74%; object-position: center; }
+    /* En una portería la cifra iba encima del escudo: le dejamos su sitio. */
+    .fut.campo.solo-escudo .top { padding-top: 16%; }
+    .fut.campo.solo-escudo .face.esc { max-height: 84%; }
+    /* Dos líneas como mucho, y si una palabra no cabe se parte antes que
+       comerse el resto del nombre. */
     .fut.campo .n1 { text-align: center; white-space: normal; overflow-wrap: anywhere;
       display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
-      line-clamp: 2; margin-top: 8px; }
+      line-clamp: 2; }
+    /* Un nombre largo baja de tamaño antes que quedarse a medias. */
+    .fut.campo .n1.largo { font-size: var(--t-sm); }
+    .fut.campo .n1.muylargo { font-size: var(--t-xs); line-height: 1.25; }
 
     /* En el móvil la carta es la mitad de ancha: el nombre baja un escalón. */
     @media (max-width: 620px) {
