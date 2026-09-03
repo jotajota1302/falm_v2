@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Archivo+Black&family=JetBrains+Mono:wght@400;700&family=Oswald:wght@500;600;700&family=Source+Sans+3:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+:root{
+  --bg:#f2efe8; --surface:#fffdf9; --surface2:#eae5da; --line:#d9d2c3;
+  --text:#16130f; --text2:#6d6353; --accent:#a32b3f; --accent-ink:#fff8f2;
+  --pitch:repeating-linear-gradient(0deg,#e6e1d4 0 46px,#dfd9ca 46px 92px);
+  --por:#b8791a; --def:#1f6fa8; --med:#5c8a1f; --del:#b83248;
+  --good:#2f7d4f; --bad:#b83248;
+  --fh:'Oswald',Helvetica,sans-serif; --fb:'Source Sans 3',Helvetica,sans-serif; --fm:'IBM Plex Mono',monospace;
+}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:var(--fb);-webkit-font-smoothing:antialiased}
+*{box-sizing:border-box}
+h1,h2,h3{margin:0}
+a{color:var(--accent);text-decoration:none}
+a:hover{color:var(--text)}
+button{font-family:var(--fb)}
+::selection{background:var(--accent);color:var(--accent-ink)}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-thumb{background:var(--line);border-radius:99px}
+@keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+</style>
+</helmet>
+
+<div style="{{ themeVars }}" data-screen-label="FALM">
+<div style="min-height:100vh;background:var(--bg);color:var(--text);display:flex;flex-direction:column">
+
+  <header style="display:flex;align-items:center;gap:22px;padding:13px 26px;background:var(--surface);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:30;flex-wrap:wrap">
+    <div style="display:flex;align-items:center;gap:11px">
+      <div style="width:34px;height:34px;border-radius:10px;background:var(--accent);color:var(--accent-ink);font-family:var(--fh);font-size:16px;display:flex;align-items:center;justify-content:center">F</div>
+      <div style="display:flex;flex-direction:column;line-height:1.15">
+        <span style="font-family:var(--fh);font-size:16px;letter-spacing:-.01em;text-transform:uppercase">{{ nombreLiga }}</span>
+        <span style="font-size:10px;color:var(--text2);letter-spacing:.15em;text-transform:uppercase">LaLiga · 12 equipos · J5</span>
+      </div>
+    </div>
+
+    <nav style="display:flex;gap:5px;flex-wrap:wrap">
+      <sc-for list="{{ nav }}" as="n" hint-placeholder-count="5">
+        <button onClick="{{ n.go }}" style="background:{{ n.bg }};color:{{ n.fg }};border:1px solid {{ n.bd }};padding:8px 15px;border-radius:999px;font-size:13px;font-weight:600;cursor:pointer" style-hover="opacity:.82">{{ n.label }}</button>
+      </sc-for>
+    </nav>
+
+    <div style="flex:1;min-width:12px"></div>
+
+    <div style="display:flex;align-items:center;gap:16px">
+      <div style="display:flex;flex-direction:column;align-items:flex-end;line-height:1.2">
+        <span style="font-size:9px;color:var(--text2);letter-spacing:.16em;text-transform:uppercase">Cierra la jornada</span>
+        <span style="font-family:var(--fm);font-size:14px;font-weight:700;color:var(--accent)">sáb 14:00 · 2d 04h</span>
+      </div>
+      <div style="display:flex;gap:5px;padding:4px;background:var(--surface2);border-radius:999px;border:1px solid var(--line)">
+        <sc-for list="{{ temas }}" as="t" hint-placeholder-count="3">
+          <button onClick="{{ t.go }}" title="{{ t.label }}" style="width:24px;height:24px;border-radius:50%;border:2px solid {{ t.bd }};background:{{ t.sw }};cursor:pointer;padding:0"></button>
+        </sc-for>
+      </div>
+      <div style="display:flex;gap:3px;padding:3px;background:var(--surface2);border-radius:9px;border:1px solid var(--line)">
+        <sc-for list="{{ tipografias }}" as="f" hint-placeholder-count="3">
+          <button onClick="{{ f.go }}" title="{{ f.title }}" style="background:{{ f.bg }};color:{{ f.fg }};border:none;padding:5px 10px;border-radius:6px;font-family:{{ f.font }};font-size:12px;font-weight:700;cursor:pointer">{{ f.label }}</button>
+        </sc-for>
+      </div>
+      <div style="display:flex;align-items:center;gap:9px;padding-left:15px;border-left:1px solid var(--line)">
+        <div style="width:30px;height:30px;border-radius:50%;background:var(--surface2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--text2)">GB</div>
+        <span style="font-size:13px;font-weight:600">Golden Boys</span>
+      </div>
+    </div>
+  </header>
+
+  <main style="flex:1;width:100%;max-width:1520px;margin:0 auto;padding:24px 26px 64px">
+
+    <!-- ── ALINEACIÓN ── -->
+    <sc-if value="{{ esAlineacion }}" hint-placeholder-val="{{ true }}">
+      <div data-screen-label="Alineación">
+        <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:18px">
+          <div>
+            <h1 style="font-family:var(--fh);font-size:34px;text-transform:uppercase;letter-spacing:-.02em">Manda tu alineación</h1>
+            <p style="margin:5px 0 0;color:var(--text2);font-size:13.5px">Arrastra del banquillo al campo, o toca un jugador y luego su hueco. 11 titulares + suplentes con cobertura por línea.</p>
+          </div>
+          <div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap">
+            <div style="display:flex;gap:3px;padding:3px;background:var(--surface2);border:1px solid var(--line);border-radius:11px">
+              <sc-for list="{{ formaciones }}" as="f" hint-placeholder-count="4">
+                <button onClick="{{ f.go }}" style="background:{{ f.bg }};color:{{ f.fg }};border:none;padding:8px 12px;border-radius:8px;font-family:var(--fm);font-size:12.5px;font-weight:700;cursor:pointer">{{ f.label }}</button>
+              </sc-for>
+            </div>
+            <button onClick="{{ repetirUltima }}" style="background:var(--surface);color:var(--text);border:1px solid var(--line);padding:10px 15px;border-radius:11px;font-size:13px;font-weight:600;cursor:pointer" style-hover="border-color:var(--accent)">↩ Repetir última</button>
+            <button onClick="{{ autoOnce }}" style="background:var(--surface);color:var(--text);border:1px solid var(--line);padding:10px 15px;border-radius:11px;font-size:13px;font-weight:600;cursor:pointer" style-hover="border-color:var(--accent)">Once óptimo</button>
+            <button onClick="{{ guardar }}" style="background:var(--accent);color:var(--accent-ink);border:none;padding:11px 22px;border-radius:11px;font-size:13.5px;font-weight:700;cursor:pointer" style-hover="opacity:.88">{{ etiquetaGuardar }}</button>
+          </div>
+        </div>
+
+        <sc-if value="{{ hayAviso }}" hint-placeholder-val="{{ false }}">
+          <div style="background:var(--surface);border:1px solid var(--accent);color:var(--accent);padding:10px 15px;border-radius:11px;margin-bottom:16px;font-size:13px;font-weight:600">{{ aviso }}</div>
+        </sc-if>
+
+        <div style="display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap">
+
+          <section style="flex:1 1 640px;min-width:540px;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:13px;flex-wrap:wrap">
+              <div style="display:flex;gap:26px">
+                <sc-for list="{{ kpisOnce }}" as="k" hint-placeholder-count="3">
+                  <div style="display:flex;flex-direction:column;gap:2px">
+                    <span style="font-size:9px;color:var(--text2);letter-spacing:.16em;text-transform:uppercase">{{ k.label }}</span>
+                    <span style="font-family:var(--fm);font-size:17px;font-weight:700;color:{{ k.color }}">{{ k.value }}</span>
+                  </div>
+                </sc-for>
+              </div>
+              <span style="font-family:var(--fm);font-size:12px;color:var(--text2);letter-spacing:.1em">{{ formacion }}</span>
+            </div>
+
+            <div style="background:var(--pitch);border:1px solid var(--line);border-radius:14px;padding:18px 12px;display:flex;flex-direction:column;gap:10px;min-height:600px;justify-content:space-between;position:relative">
+              <sc-for list="{{ lineas }}" as="row" hint-placeholder-count="4">
+                <div style="display:flex;align-items:center;gap:10px">
+                  <span style="writing-mode:vertical-rl;transform:rotate(180deg);font-size:9px;font-weight:700;letter-spacing:.18em;color:{{ row.color }};text-transform:uppercase;width:14px;text-align:center">{{ row.pos }}</span>
+                  <div style="flex:1;display:flex;justify-content:center;gap:10px;flex-wrap:wrap;padding:6px 4px;border-radius:12px;background:{{ row.tint }}">
+                    <sc-for list="{{ row.slots }}" as="s" hint-placeholder-count="4">
+                      <div onClick="{{ s.onClick }}" onDragOver="{{ s.onDragOver }}" onDrop="{{ s.onDrop }}" draggable="{{ s.draggable }}" onDragStart="{{ s.onDragStart }}" style="width:96px;min-height:118px;border-radius:13px;border:{{ s.border }};background:{{ s.bg }};padding:8px 6px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;cursor:pointer;color:{{ s.ink }}" style-hover="filter:brightness(1.08)">
+                        <sc-if value="{{ s.lleno }}" hint-placeholder-val="{{ true }}">
+                          <div style="display:flex;flex-direction:column;align-items:center;gap:5px;width:100%">
+                            <span style="font-family:var(--fm);font-size:19px;font-weight:700;line-height:1">{{ s.pts }}</span>
+                            <div style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.22);border:1.5px solid rgba(255,255,255,.5);display:flex;align-items:center;justify-content:center;font-family:var(--fh);font-size:12px">{{ s.ini }}</div>
+                            <span style="font-size:11.5px;font-weight:700;text-align:center;line-height:1.15">{{ s.nombre }}</span>
+                            <span style="font-size:9px;letter-spacing:.12em;text-transform:uppercase;opacity:.8">{{ s.club }}</span>
+                          </div>
+                        </sc-if>
+                        <sc-if value="{{ s.vacio }}" hint-placeholder-val="{{ false }}">
+                          <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+                            <div style="width:34px;height:34px;border-radius:50%;border:1.5px dashed {{ row.color }};display:flex;align-items:center;justify-content:center;font-size:17px;color:var(--text2)">+</div>
+                            <span style="font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--text2);font-weight:700">{{ row.pos }}</span>
+                          </div>
+                        </sc-if>
+                      </div>
+                    </sc-for>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </section>
+
+          <aside style="flex:1 1 330px;min-width:310px;display:flex;flex-direction:column;gap:16px">
+
+            <div style="background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:15px">
+              <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:11px">
+                <h2 style="font-family:var(--fh);font-size:15px;text-transform:uppercase;letter-spacing:-.01em">Banquillo</h2>
+                <span style="font-size:11px;color:var(--text2)">{{ textoBanquillo }}</span>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:6px;max-height:430px;overflow:auto">
+                <sc-for list="{{ banquillo }}" as="p" hint-placeholder-count="8">
+                  <div draggable="true" onDragStart="{{ p.onDragStart }}" onClick="{{ p.onClick }}" style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:11px;background:{{ p.bg }};border:1px solid {{ p.bd }};cursor:grab" style-hover="border-color:var(--accent)">
+                    <div style="width:28px;height:28px;border-radius:8px;background:{{ p.posColor }};color:#fff;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;letter-spacing:.04em;flex:0 0 auto">{{ p.pos }}</div>
+                    <div style="display:flex;flex-direction:column;flex:1;min-width:0">
+                      <span style="font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ p.nombre }}</span>
+                      <span style="font-size:10px;color:var(--text2);letter-spacing:.1em;text-transform:uppercase">{{ p.club }}</span>
+                    </div>
+                    <sc-if value="{{ mostrarCobertura }}" hint-placeholder-val="{{ true }}">
+                      <div style="display:flex;gap:3px">
+                        <sc-for list="{{ p.cobertura }}" as="c" hint-placeholder-count="3">
+                          <button onClick="{{ c.go }}" style="width:28px;padding:4px 0;border-radius:6px;border:1px solid {{ c.bd }};background:{{ c.bg }};color:{{ c.fg }};font-size:9px;font-weight:700;cursor:pointer">{{ c.label }}</button>
+                        </sc-for>
+                      </div>
+                    </sc-if>
+                    <span style="font-family:var(--fm);font-size:14px;font-weight:700;min-width:26px;text-align:right">{{ p.media }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+
+            <div style="background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:15px">
+              <h2 style="font-family:var(--fh);font-size:15px;text-transform:uppercase;margin-bottom:12px">Tu duelo · J5</h2>
+              <div style="display:flex;align-items:center;gap:12px">
+                <div style="flex:1;display:flex;flex-direction:column;gap:2px">
+                  <span style="font-size:13px;font-weight:700">Golden Boys</span>
+                  <span style="font-size:11px;color:var(--text2)">3V 1E 0D · 2º</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span style="font-family:var(--fh);font-size:26px;color:var(--accent)">{{ marcadorPropio }}</span>
+                  <span style="font-size:10px;color:var(--text2);letter-spacing:.1em">VS</span>
+                  <span style="font-family:var(--fh);font-size:26px">41.5</span>
+                </div>
+                <div style="flex:1;display:flex;flex-direction:column;gap:2px;text-align:right">
+                  <span style="font-size:13px;font-weight:700">Chanatiborg</span>
+                  <span style="font-size:11px;color:var(--text2)">2V 0E 2D · 6º</span>
+                </div>
+              </div>
+              <div style="height:6px;border-radius:99px;background:var(--surface2);margin-top:13px;overflow:hidden;display:flex">
+                <div style="height:100%;width:{{ barraDuelo }};background:var(--accent)"></div>
+              </div>
+              <p style="margin:10px 0 0;font-size:11.5px;color:var(--text2)">Diferencia ≥3 pts reparte 3-0 · entre 0,5 y 2,9 reparte 2-1 · empate 1,5-1,5.</p>
+            </div>
+
+            <div style="background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:15px">
+              <h2 style="font-family:var(--fh);font-size:15px;text-transform:uppercase;margin-bottom:11px">Resto de la jornada</h2>
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <sc-for list="{{ enfrentamientos }}" as="m" hint-placeholder-count="5">
+                  <div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--line)">
+                    <span style="font-size:12.5px;font-weight:600">{{ m.local }}</span>
+                    <span style="font-family:var(--fm);font-size:12.5px;font-weight:700;color:var(--text2)">{{ m.marcador }}</span>
+                    <span style="font-size:12.5px;font-weight:600;text-align:right">{{ m.visitante }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ── PLANTILLA ── -->
+    <sc-if value="{{ esPlantilla }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Mi plantilla">
+        <h1 style="font-family:var(--fh);font-size:34px;text-transform:uppercase;letter-spacing:-.02em">Mi plantilla</h1>
+        <p style="margin:5px 0 20px;color:var(--text2);font-size:13.5px">{{ resumenPlantilla }}</p>
+        <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:22px">
+          <sc-for list="{{ kpisPlantilla }}" as="k" hint-placeholder-count="4">
+            <div style="flex:1 1 190px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:15px 17px">
+              <span style="font-size:9px;color:var(--text2);letter-spacing:.16em;text-transform:uppercase">{{ k.label }}</span>
+              <div style="font-family:var(--fh);font-size:27px;margin-top:5px">{{ k.value }}</div>
+              <span style="font-size:11.5px;color:{{ k.color }};font-weight:600">{{ k.delta }}</span>
+            </div>
+          </sc-for>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--line);border-radius:18px;overflow:hidden">
+          <div style="display:grid;grid-template-columns:46px 1.7fr 88px 84px 74px 74px 88px;gap:10px;padding:12px 18px;border-bottom:1px solid var(--line);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--text2);font-weight:700">
+            <span>Pos</span><span>Jugador</span><span>Club</span><span>Estado</span><span>Pts</span><span>Media</span><span>Precio</span>
+          </div>
+          <sc-for list="{{ plantilla }}" as="p" hint-placeholder-count="12">
+            <div onClick="{{ p.onClick }}" style="display:grid;grid-template-columns:46px 1.7fr 88px 84px 74px 74px 88px;gap:10px;padding:11px 18px;border-bottom:1px solid var(--line);align-items:center;cursor:pointer;font-size:13px" style-hover="background:var(--surface2)">
+              <span style="display:inline-flex;align-items:center;justify-content:center;padding:3px 0;border-radius:6px;background:{{ p.posColor }};color:#fff;font-size:9px;font-weight:700;letter-spacing:.05em">{{ p.pos }}</span>
+              <span style="font-weight:700">{{ p.nombre }}</span>
+              <span style="color:var(--text2);font-size:12px;letter-spacing:.06em;text-transform:uppercase">{{ p.club }}</span>
+              <span style="font-size:11.5px;font-weight:600;color:{{ p.estadoColor }}">{{ p.estado }}</span>
+              <span style="font-family:var(--fm);font-weight:700">{{ p.pts }}</span>
+              <span style="font-family:var(--fm);color:var(--text2)">{{ p.media }}</span>
+              <span style="font-family:var(--fm);font-weight:700;color:var(--accent)">{{ p.precio }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ── MERCADO ── -->
+    <sc-if value="{{ esMercado }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Mercado">
+        <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:18px">
+          <div>
+            <h1 style="font-family:var(--fh);font-size:34px;text-transform:uppercase;letter-spacing:-.02em">Mercado y fichajes</h1>
+            <p style="margin:5px 0 0;color:var(--text2);font-size:13.5px">Pide hasta dos jugadores por prioridad. Si otro equipo pide al mismo, decide: no fichó la semana pasada → peor clasificado → menos puntos totales.</p>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;padding:11px 17px;border:1px solid var(--accent);border-radius:13px;background:var(--surface)">
+            <span style="font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--text2)">Cierre de peticiones</span>
+            <span style="font-family:var(--fm);font-size:16px;font-weight:700;color:var(--accent)">martes 23:59</span>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap">
+          <section style="flex:1 1 640px;min-width:520px;background:var(--surface);border:1px solid var(--line);border-radius:18px;overflow:hidden">
+            <div style="display:flex;gap:8px;padding:14px 18px;border-bottom:1px solid var(--line);flex-wrap:wrap;align-items:center">
+              <span style="font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--text2);font-weight:700;margin-right:4px">Libres</span>
+              <sc-for list="{{ filtrosPos }}" as="f" hint-placeholder-count="5">
+                <button onClick="{{ f.go }}" style="background:{{ f.bg }};color:{{ f.fg }};border:1px solid {{ f.bd }};padding:6px 13px;border-radius:999px;font-size:12px;font-weight:600;cursor:pointer">{{ f.label }}</button>
+              </sc-for>
+            </div>
+            <div style="display:grid;grid-template-columns:46px 1.7fr 88px 74px 74px 96px;gap:10px;padding:11px 18px;border-bottom:1px solid var(--line);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--text2);font-weight:700">
+              <span>Pos</span><span>Jugador</span><span>Club</span><span>Media</span><span>Precio</span><span></span>
+            </div>
+            <sc-for list="{{ mercado }}" as="p" hint-placeholder-count="8">
+              <div style="display:grid;grid-template-columns:46px 1.7fr 88px 74px 74px 96px;gap:10px;padding:10px 18px;border-bottom:1px solid var(--line);align-items:center;font-size:13px" style-hover="background:var(--surface2)">
+                <span style="display:inline-flex;align-items:center;justify-content:center;padding:3px 0;border-radius:6px;background:{{ p.posColor }};color:#fff;font-size:9px;font-weight:700;letter-spacing:.05em">{{ p.pos }}</span>
+                <span onClick="{{ p.onClick }}" style="font-weight:700;cursor:pointer">{{ p.nombre }}</span>
+                <span style="color:var(--text2);font-size:12px;letter-spacing:.06em;text-transform:uppercase">{{ p.club }}</span>
+                <span style="font-family:var(--fm)">{{ p.media }}</span>
+                <span style="font-family:var(--fm);font-weight:700;color:var(--accent)">{{ p.precio }}</span>
+                <button onClick="{{ p.onPedir }}" style="background:{{ p.btnBg }};color:{{ p.btnFg }};border:1px solid {{ p.btnBd }};padding:6px 0;border-radius:8px;font-size:11.5px;font-weight:700;cursor:pointer">{{ p.btnLabel }}</button>
+              </div>
+            </sc-for>
+          </section>
+
+          <aside style="flex:1 1 320px;min-width:300px;display:flex;flex-direction:column;gap:16px">
+            <div style="background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:15px">
+              <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px">
+                <h2 style="font-family:var(--fh);font-size:15px;text-transform:uppercase">Mis peticiones</h2>
+                <span style="font-family:var(--fm);font-size:12px;color:var(--text2)">{{ textoPeticiones }}</span>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <sc-for list="{{ peticiones }}" as="q" hint-placeholder-count="2">
+                  <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface2)">
+                    <span style="width:22px;height:22px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex:0 0 auto">{{ q.prio }}</span>
+                    <div style="display:flex;flex-direction:column;flex:1;min-width:0">
+                      <span style="font-size:13px;font-weight:700">{{ q.nombre }}</span>
+                      <span style="font-size:10.5px;color:var(--text2)">{{ q.meta }}</span>
+                    </div>
+                    <button onClick="{{ q.onQuitar }}" style="background:transparent;border:1px solid var(--line);color:var(--bad);width:26px;height:26px;border-radius:7px;cursor:pointer;font-size:12px">✕</button>
+                  </div>
+                </sc-for>
+                <sc-if value="{{ sinPeticiones }}" hint-placeholder-val="{{ false }}">
+                  <p style="margin:0;font-size:12.5px;color:var(--text2);padding:8px 0">Todavía no has pedido a nadie esta semana.</p>
+                </sc-if>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding-top:13px;border-top:1px solid var(--line)">
+                <div style="display:flex;flex-direction:column">
+                  <span style="font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--text2)">Presupuesto tras fichar</span>
+                  <span style="font-family:var(--fm);font-size:17px;font-weight:700;color:{{ colorPresupuesto }}">{{ presupuesto }}</span>
+                </div>
+                <button onClick="{{ enviarPeticiones }}" style="background:var(--accent);color:var(--accent-ink);border:none;padding:10px 18px;border-radius:11px;font-size:13px;font-weight:700;cursor:pointer">Enviar</button>
+              </div>
+            </div>
+
+            <div style="background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:15px">
+              <h2 style="font-family:var(--fh);font-size:15px;text-transform:uppercase;margin-bottom:11px">Quién pide a quién</h2>
+              <p style="margin:0 0 11px;font-size:11.5px;color:var(--text2)">Presiones visibles esta semana. Si empatáis, gana quien no fichó la semana pasada.</p>
+              <div style="display:flex;flex-direction:column;gap:7px">
+                <sc-for list="{{ presiones }}" as="c" hint-placeholder-count="4">
+                  <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)">
+                    <span style="flex:1;font-size:12.5px;font-weight:600">{{ c.jugador }}</span>
+                    <span style="font-size:11px;color:var(--text2)">{{ c.equipos }}</span>
+                    <span style="font-family:var(--fm);font-size:12px;font-weight:700;color:{{ c.color }}">{{ c.n }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ── CLASIFICACIÓN ── -->
+    <sc-if value="{{ esClasificacion }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Clasificación">
+        <h1 style="font-family:var(--fh);font-size:34px;text-transform:uppercase;letter-spacing:-.02em">Clasificación</h1>
+        <p style="margin:5px 0 20px;color:var(--text2);font-size:13.5px">Liga · tras la jornada 4. Premios de liga: 160 / 110 / 50 € al 1º, 2º y 3º.</p>
+        <div style="background:var(--surface);border:1px solid var(--line);border-radius:18px;overflow:hidden">
+          <div style="display:grid;grid-template-columns:44px 1.9fr 62px 62px 62px 78px 90px 88px;gap:10px;padding:12px 18px;border-bottom:1px solid var(--line);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--text2);font-weight:700">
+            <span>#</span><span>Equipo</span><span>V</span><span>E</span><span>D</span><span>Puntos</span><span>Fantasy</span><span>Beneficio</span>
+          </div>
+          <sc-for list="{{ clasificacion }}" as="t" hint-placeholder-count="12">
+            <div style="display:grid;grid-template-columns:44px 1.9fr 62px 62px 62px 78px 90px 88px;gap:10px;padding:12px 18px;border-bottom:1px solid var(--line);align-items:center;font-size:13.5px;background:{{ t.bg }}">
+              <span style="display:flex;align-items:center;gap:6px"><span style="width:3px;height:20px;border-radius:2px;background:{{ t.marca }}"></span><span style="font-family:var(--fm);font-weight:700">{{ t.pos }}</span></span>
+              <span style="font-weight:700">{{ t.nombre }}</span>
+              <span style="font-family:var(--fm);color:var(--text2)">{{ t.v }}</span>
+              <span style="font-family:var(--fm);color:var(--text2)">{{ t.e }}</span>
+              <span style="font-family:var(--fm);color:var(--text2)">{{ t.d }}</span>
+              <span style="font-family:var(--fm);font-weight:700">{{ t.puntos }}</span>
+              <span style="font-family:var(--fm);color:var(--text2)">{{ t.fantasy }}</span>
+              <span style="font-family:var(--fm);font-weight:700;color:{{ t.colorBenef }}">{{ t.beneficio }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ── ESTADÍSTICAS ── -->
+    <sc-if value="{{ esEstadisticas }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Estadísticas">
+        <h1 style="font-family:var(--fh);font-size:34px;text-transform:uppercase;letter-spacing:-.02em">Estadísticas de la liga</h1>
+        <p style="margin:5px 0 20px;color:var(--text2);font-size:13.5px">Jornadas 1 a 4 · 12 equipos · 264 jugadores en juego.</p>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px">
+          <section style="background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px">
+            <h2 style="font-family:var(--fh);font-size:15px;text-transform:uppercase;margin-bottom:13px">Más puntuados de la liga</h2>
+            <div style="display:flex;flex-direction:column;gap:9px">
+              <sc-for list="{{ topJugadores }}" as="p" hint-placeholder-count="6">
+                <div onClick="{{ p.onClick }}" style="display:flex;align-items:center;gap:11px;cursor:pointer">
+                  <span style="display:inline-flex;align-items:center;justify-content:center;width:34px;padding:3px 0;border-radius:6px;background:{{ p.posColor }};color:#fff;font-size:9px;font-weight:700">{{ p.pos }}</span>
+                  <span style="flex:0 0 128px;font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ p.nombre }}</span>
+                  <div style="flex:1;height:9px;border-radius:99px;background:var(--surface2);overflow:hidden">
+                    <div style="height:100%;width:{{ p.barra }};background:var(--accent)"></div>
+                  </div>
+                  <span style="font-family:var(--fm);font-size:13px;font-weight:700;min-width:34px;text-align:right">{{ p.pts }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </section>
+
+          <section style="background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px">
+            <h2 style="font-family:var(--fh);font-size:15px;text-transform:uppercase;margin-bottom:13px">Puntos por jornada</h2>
+            <div style="display:flex;align-items:flex-end;gap:14px;height:200px;padding-top:8px">
+              <sc-for list="{{ serieJornadas }}" as="j" hint-placeholder-count="4">
+                <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:7px;height:100%;justify-content:flex-end">
+                  <span style="font-family:var(--fm);font-size:12px;font-weight:700">{{ j.pts }}</span>
+                  <div style="width:100%;border-radius:8px 8px 0 0;background:{{ j.color }};height:{{ j.alto }}"></div>
+                  <span style="font-size:10.5px;color:var(--text2);font-weight:600">{{ j.label }}</span>
+                </div>
+              </sc-for>
+            </div>
+            <p style="margin:12px 0 0;font-size:11.5px;color:var(--text2)">Tu media: 43,1 pts · media de la liga: 39,4 pts.</p>
+          </section>
+
+          <section style="background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px">
+            <h2 style="font-family:var(--fh);font-size:15px;text-transform:uppercase;margin-bottom:13px">Récords</h2>
+            <div style="display:flex;flex-direction:column;gap:11px">
+              <sc-for list="{{ records }}" as="r" hint-placeholder-count="5">
+                <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding-bottom:10px;border-bottom:1px solid var(--line)">
+                  <div style="display:flex;flex-direction:column">
+                    <span style="font-size:12.5px;font-weight:700">{{ r.label }}</span>
+                    <span style="font-size:10.5px;color:var(--text2)">{{ r.meta }}</span>
+                  </div>
+                  <span style="font-family:var(--fm);font-size:16px;font-weight:700;color:var(--accent)">{{ r.value }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </section>
+
+          <section style="background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px">
+            <h2 style="font-family:var(--fh);font-size:15px;text-transform:uppercase;margin-bottom:13px">Cómo se puntúa</h2>
+            <div style="display:grid;grid-template-columns:1fr auto;gap:8px 16px;font-size:12.5px">
+              <sc-for list="{{ reglas }}" as="g" hint-placeholder-count="8">
+                <span style="color:var(--text2)">{{ g.label }}</span>
+                <span style="font-family:var(--fm);font-weight:700;color:{{ g.color }};text-align:right">{{ g.value }}</span>
+              </sc-for>
+            </div>
+          </section>
+        </div>
+      </div>
+    </sc-if>
+  </main>
+
+  <!-- ── FICHA DE JUGADOR ── -->
+  <sc-if value="{{ hayFicha }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ cerrarFicha }}" style="position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.55);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:24px">
+      <div onClick="{{ stop }}" style="width:100%;max-width:520px;background:var(--surface);border:1px solid var(--line);border-radius:20px;overflow:hidden;animation:rise .28s cubic-bezier(.2,.7,.2,1) both">
+        <div style="padding:20px 22px;background:{{ ficha.headerBg }};color:{{ ficha.headerInk }};display:flex;align-items:center;gap:16px">
+          <div style="width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,.24);border:2px solid rgba(255,255,255,.5);display:flex;align-items:center;justify-content:center;font-family:var(--fh);font-size:18px">{{ ficha.ini }}</div>
+          <div style="display:flex;flex-direction:column;gap:3px;flex:1">
+            <span style="font-family:var(--fh);font-size:22px;letter-spacing:-.01em">{{ ficha.nombre }}</span>
+            <span style="font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;opacity:.9">{{ ficha.meta }}</span>
+          </div>
+          <button onClick="{{ cerrarFicha }}" style="background:rgba(255,255,255,.2);border:none;color:inherit;width:30px;height:30px;border-radius:9px;cursor:pointer;font-size:13px">✕</button>
+        </div>
+        <div style="padding:18px 22px 22px">
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px">
+            <sc-for list="{{ ficha.kpis }}" as="k" hint-placeholder-count="4">
+              <div style="background:var(--surface2);border:1px solid var(--line);border-radius:12px;padding:10px 11px;display:flex;flex-direction:column;gap:3px">
+                <span style="font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--text2)">{{ k.label }}</span>
+                <span style="font-family:var(--fm);font-size:17px;font-weight:700">{{ k.value }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <h3 style="font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--text2);margin-bottom:10px">Últimas jornadas</h3>
+          <div style="display:flex;align-items:flex-end;gap:9px;height:96px;margin-bottom:18px">
+            <sc-for list="{{ ficha.serie }}" as="s" hint-placeholder-count="5">
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;height:100%;justify-content:flex-end">
+                <span style="font-family:var(--fm);font-size:11px;font-weight:700">{{ s.pts }}</span>
+                <div style="width:100%;border-radius:6px 6px 0 0;background:{{ s.color }};height:{{ s.alto }}"></div>
+                <span style="font-size:9.5px;color:var(--text2)">{{ s.label }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr auto;gap:7px 14px;font-size:12.5px;padding-top:14px;border-top:1px solid var(--line)">
+            <sc-for list="{{ ficha.detalle }}" as="d" hint-placeholder-count="5">
+              <span style="color:var(--text2)">{{ d.label }}</span>
+              <span style="font-family:var(--fm);font-weight:700;text-align:right">{{ d.value }}</span>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;tema&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;prensa&quot;,&quot;nocturno&quot;,&quot;carbon&quot;],&quot;default&quot;:&quot;prensa&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Aspecto&quot;},&quot;tipografia&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;condensada&quot;,&quot;editorial&quot;,&quot;tecnica&quot;],&quot;default&quot;:&quot;condensada&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Aspecto&quot;},&quot;nombreLiga&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;FALM&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Aspecto&quot;},&quot;mostrarCobertura&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Alineación&quot;}}">
+const POS = ['POR', 'DEF', 'MED', 'DEL'];
+const CLUBS = {
+  ATH: ['Athletic', '#e2231a', '#9c0f12', '#fff'],
+  ATM: ['Atlético', '#cb3524', '#1c2b6b', '#fff'],
+  BAR: ['Barcelona', '#a50044', '#004d98', '#fff'],
+  BET: ['Betis', '#00954c', '#066b38', '#fff'],
+  RMA: ['Real Madrid', '#f5f6f8', '#dde3ec', '#16213b'],
+  RSO: ['Real Sociedad', '#0067b1', '#b4151f', '#fff'],
+  VIL: ['Villarreal', '#ffd83c', '#e8b800', '#5a4500'],
+  SEV: ['Sevilla', '#d7141a', '#8c0d11', '#fff'],
+  OSA: ['Osasuna', '#0a2e6d', '#b4173b', '#fff'],
+  VAL: ['Valencia', '#f18e00', '#1a1a1a', '#fff'],
+  CEL: ['Celta', '#8ec9ee', '#4a90c2', '#0a2436'],
+  RAY: ['Rayo', '#e53027', '#9c1d18', '#fff'],
+  GIR: ['Girona', '#c8102e', '#7a0a1d', '#fff'],
+  MLL: ['Mallorca', '#e30613', '#1a1a1a', '#fff'],
+};
+
+const SQUAD = [
+  { id: 'p1', n: 'Unai Simón', pos: 'POR', club: 'ATH', pts: 21, med: 5.3, pr: 8.5, est: 'OK' },
+  { id: 'p2', n: 'Portería Betis', pos: 'POR', club: 'BET', pts: 12, med: 3.0, pr: 1.5, est: 'Virtual' },
+  { id: 'p3', n: 'Carvajal', pos: 'DEF', club: 'RMA', pts: 18, med: 4.5, pr: 9.0, est: 'OK' },
+  { id: 'p4', n: 'Cubarsí', pos: 'DEF', club: 'BAR', pts: 20, med: 5.0, pr: 10.5, est: 'OK' },
+  { id: 'p5', n: 'Vivian', pos: 'DEF', club: 'ATH', pts: 14, med: 3.5, pr: 6.0, est: 'OK' },
+  { id: 'p6', n: 'Le Normand', pos: 'DEF', club: 'ATM', pts: 15, med: 3.8, pr: 7.5, est: 'OK' },
+  { id: 'p7', n: 'Balde', pos: 'DEF', club: 'BAR', pts: 11, med: 2.8, pr: 7.0, est: 'Duda' },
+  { id: 'p8', n: 'Pedri', pos: 'MED', club: 'BAR', pts: 26, med: 6.5, pr: 13.0, est: 'OK' },
+  { id: 'p9', n: 'Zubimendi', pos: 'MED', club: 'RSO', pts: 17, med: 4.3, pr: 8.0, est: 'OK' },
+  { id: 'p10', n: 'Isco', pos: 'MED', club: 'BET', pts: 22, med: 5.5, pr: 9.5, est: 'OK' },
+  { id: 'p11', n: 'Baena', pos: 'MED', club: 'VIL', pts: 19, med: 4.8, pr: 8.5, est: 'OK' },
+  { id: 'p12', n: 'Fermín', pos: 'MED', club: 'BAR', pts: 13, med: 3.3, pr: 6.5, est: 'OK' },
+  { id: 'p13', n: 'Lewandowski', pos: 'DEL', club: 'BAR', pts: 28, med: 7.0, pr: 14.0, est: 'OK' },
+  { id: 'p14', n: 'J. Álvarez', pos: 'DEL', club: 'ATM', pts: 24, med: 6.0, pr: 12.5, est: 'OK' },
+  { id: 'p15', n: 'Oyarzabal', pos: 'DEL', club: 'RSO', pts: 16, med: 4.0, pr: 9.0, est: 'OK' },
+  { id: 'p16', n: 'Budimir', pos: 'DEL', club: 'OSA', pts: 10, med: 2.5, pr: 5.5, est: 'Lesión' },
+];
+
+const MERCADO = [
+  { id: 'm1', n: 'Rulli', pos: 'POR', club: 'MLL', med: 4.1, pr: 5.0 },
+  { id: 'm2', n: 'Portería Girona', pos: 'POR', club: 'GIR', med: 2.6, pr: 1.5 },
+  { id: 'm3', n: 'Mouriño', pos: 'DEF', club: 'CEL', med: 3.4, pr: 4.5 },
+  { id: 'm4', n: 'Chust', pos: 'DEF', club: 'RAY', med: 2.9, pr: 3.0 },
+  { id: 'm5', n: 'Pepelu', pos: 'MED', club: 'VAL', med: 4.4, pr: 6.5 },
+  { id: 'm6', n: 'Sow', pos: 'MED', club: 'SEV', med: 3.6, pr: 5.0 },
+  { id: 'm7', n: 'Iglesias', pos: 'DEL', club: 'BET', med: 5.2, pr: 8.0 },
+  { id: 'm8', n: 'Guiu', pos: 'DEL', club: 'CEL', med: 3.1, pr: 4.0 },
+];
+
+const CLASIF = [
+  ['Tobago', 4, 0, 0, 11.5, 178.5, 45],
+  ['Golden Boys', 3, 1, 0, 10.0, 172.5, 30],
+  ['Manchester', 3, 0, 1, 9.0, 165.0, 20],
+  ['Chanatiborg', 2, 0, 2, 6.5, 158.0, 10],
+  ['Los Cafeteros', 2, 0, 2, 6.0, 154.5, 5],
+  ['Peña Bética', 2, 0, 2, 6.0, 149.0, 0],
+  ['Rácano FC', 1, 2, 1, 5.5, 145.5, -5],
+  ['Dinamita', 1, 1, 2, 4.5, 141.0, -5],
+  ['Cazafichajes', 1, 1, 2, 4.5, 138.5, -10],
+  ['El Bombazo', 1, 0, 3, 3.0, 132.0, -15],
+  ['Sofá y Manta', 0, 1, 3, 1.5, 124.5, -20],
+  ['Los Descartes', 0, 0, 4, 0.0, 118.0, -25],
+];
+
+const TEMAS = {
+  prensa: {
+    label: 'Prensa (claro)', sw: '#a32b3f',
+    v: { bg: '#f2efe8', surface: '#fffdf9', surface2: '#eae5da', line: '#d9d2c3', text: '#16130f', text2: '#6d6353', accent: '#a32b3f', 'accent-ink': '#fff8f2', por: '#b8791a', def: '#1f6fa8', med: '#5c8a1f', del: '#b83248', good: '#2f7d4f', bad: '#b83248', pitch: 'repeating-linear-gradient(0deg,#e6e1d4 0 46px,#dfd9ca 46px 92px)' },
+  },
+  nocturno: {
+    label: 'Nocturno (azul)', sw: '#f0b429',
+    v: { bg: '#0d1120', surface: '#151b30', surface2: '#1e2540', line: '#2c3455', text: '#e8ecf7', text2: '#8b95b8', accent: '#f0b429', 'accent-ink': '#1a1405', por: '#f0b429', def: '#5aa9e6', med: '#9fd356', del: '#ef6f6c', good: '#5fd39a', bad: '#ef6f6c', pitch: 'repeating-linear-gradient(0deg,#131a2e 0 46px,#171f36 46px 92px)' },
+  },
+  carbon: {
+    label: 'Carbón (coral)', sw: '#ff5a3c',
+    v: { bg: '#0c0c0d', surface: '#16161a', surface2: '#202027', line: '#2e2e38', text: '#f2f2f4', text2: '#8e8e99', accent: '#ff5a3c', 'accent-ink': '#1a0703', por: '#e0a52e', def: '#5f9ed6', med: '#a8c34a', del: '#ff5a3c', good: '#63c68a', bad: '#ff5a3c', pitch: 'repeating-linear-gradient(0deg,#141418 0 46px,#18181d 46px 92px)' },
+  },
+};
+
+const TIPOS = {
+  condensada: { label: 'Aa', title: 'Condensada · Oswald + Source Sans', fh: "'Oswald',Helvetica,sans-serif", fb: "'Source Sans 3',Helvetica,sans-serif", fm: "'IBM Plex Mono',monospace" },
+  editorial: { label: 'Aa', title: 'Editorial · Instrument Serif + Archivo', fh: "'Instrument Serif',Georgia,serif", fb: "Archivo,Helvetica,sans-serif", fm: "'JetBrains Mono',monospace" },
+  tecnica: { label: 'Aa', title: 'Técnica · Space Grotesk + IBM Plex', fh: "'Space Grotesk',Helvetica,sans-serif", fb: "'IBM Plex Sans',Helvetica,sans-serif", fm: "'IBM Plex Mono',monospace" },
+};
+
+const PANTALLAS = [
+  ['alineacion', 'Alineación'],
+  ['plantilla', 'Mi plantilla'],
+  ['mercado', 'Mercado'],
+  ['clasificacion', 'Clasificación'],
+  ['estadisticas', 'Estadísticas'],
+];
+
+const FORMS = ['4-4-2', '4-3-3', '3-5-2', '5-3-2'];
+
+class Component extends DCLogic {
+  state = {
+    tema: null,
+    tipografia: null,
+    pantalla: 'alineacion',
+    formacion: '4-4-2',
+    once: ['p1', 'p3', 'p4', 'p5', 'p6', 'p8', 'p9', 'p10', 'p11', 'p13', 'p14'],
+    cobertura: { p12: ['MED'], p15: ['DEL'], p7: ['DEF'] },
+    seleccionado: null,
+    aviso: '',
+    guardado: false,
+    ficha: null,
+    filtroPos: 'Todos',
+    peticiones: ['m7'],
+  };
+
+  get tema() { return this.state.tema || this.props.tema || 'prensa'; }
+  get tipo() { return this.state.tipografia || this.props.tipografia || 'condensada'; }
+  get cupos() {
+    const p = this.state.formacion.split('-').map(Number);
+    return { POR: 1, DEF: p[0], MED: p[1], DEL: p[2] };
+  }
+  jug(id) { return SQUAD.find((p) => p.id === id) || MERCADO.find((p) => p.id === id); }
+  ini(n) { const w = n.split(' '); return (w[w.length - 1] || n).slice(0, 3).toUpperCase(); }
+  posColor(pos) { return 'var(--' + pos.toLowerCase() + ')'; }
+  clubGrad(club) { const c = CLUBS[club]; return 'linear-gradient(155deg,' + c[1] + ',' + c[2] + ' 74%,' + c[2] + ')'; }
+  clubInk(club) { return CLUBS[club][3]; }
+  enLinea(pos) { return this.state.once.map((id) => this.jug(id)).filter((p) => p && p.pos === pos); }
+
+  setTema = (t) => this.setState({ tema: t });
+  ir = (p) => this.setState({ pantalla: p, aviso: '' });
+  abrirFicha = (id) => this.setState({ ficha: id });
+  cerrarFicha = () => this.setState({ ficha: null });
+
+  cambiarFormacion = (f) => {
+    const p = f.split('-').map(Number);
+    const cupos = { POR: 1, DEF: p[0], MED: p[1], DEL: p[2] };
+    const keep = [];
+    POS.forEach((pos) => {
+      this.enLinea(pos).sort((a, b) => b.med - a.med).slice(0, cupos[pos]).forEach((j) => keep.push(j.id));
+    });
+    this.setState({ formacion: f, once: keep, guardado: false, aviso: '' });
+  };
+
+  poner = (id, pos, slotIdx) => {
+    const j = this.jug(id);
+    if (!j || j.pos !== pos) {
+      this.setState({ aviso: 'Ese hueco es de ' + pos + ' y ' + (j ? j.n : 'el jugador') + ' no lo cubre.', seleccionado: null });
+      return;
+    }
+    const linea = this.enLinea(pos);
+    const sale = linea[slotIdx];
+    let once = this.state.once.filter((x) => x !== id);
+    if (sale) once = once.filter((x) => x !== sale.id);
+    this.setState({ once: [...once, id], seleccionado: null, guardado: false, aviso: '' });
+  };
+
+  quitar = (id) => this.setState({ once: this.state.once.filter((x) => x !== id), guardado: false, aviso: '' });
+
+  toggleCobertura = (id, linea) => {
+    const cur = this.state.cobertura[id] || [];
+    const next = cur.includes(linea) ? cur.filter((x) => x !== linea) : [...cur, linea];
+    if (next.length === 0) return;
+    this.setState({ cobertura: { ...this.state.cobertura, [id]: next } });
+  };
+
+  autoOnce = () => {
+    const cupos = this.cupos;
+    const keep = [];
+    POS.forEach((pos) => {
+      SQUAD.filter((p) => p.pos === pos && p.est !== 'Lesión').sort((a, b) => b.med - a.med).slice(0, cupos[pos]).forEach((j) => keep.push(j.id));
+    });
+    this.setState({ once: keep, guardado: false, aviso: 'Once por media, saltando lesionados. Revisa y guarda.' });
+  };
+
+  repetirUltima = () => this.setState({
+    once: ['p1', 'p3', 'p4', 'p5', 'p6', 'p8', 'p9', 'p10', 'p11', 'p13', 'p14'],
+    formacion: '4-4-2', guardado: false, aviso: '↩ Cargada tu alineación de la J4. Revisa y guarda.',
+  });
+
+  guardar = () => {
+    const falta = 11 - this.state.once.length;
+    if (falta > 0) { this.setState({ aviso: 'Te faltan ' + falta + ' titulares por colocar.' }); return; }
+    this.setState({ guardado: true, aviso: '✓ Alineación enviada. Puedes cambiarla hasta el sábado a las 14:00.' });
+  };
+
+  togglePeticion = (id) => {
+    const cur = this.state.peticiones;
+    if (cur.includes(id)) { this.setState({ peticiones: cur.filter((x) => x !== id) }); return; }
+    if (cur.length >= 2) return;
+    this.setState({ peticiones: [...cur, id] });
+  };
+
+  renderVals() {
+    const t = TEMAS[this.tema] || TEMAS.prensa;
+    const themeVars = Object.keys(t.v).reduce((o, k) => { o['--' + k] = t.v[k]; return o; }, {});
+    const ft = TIPOS[this.tipo] || TIPOS.condensada;
+    themeVars['--fh'] = ft.fh; themeVars['--fb'] = ft.fb; themeVars['--fm'] = ft.fm;
+    themeVars.fontFamily = ft.fb;
+
+    const cupos = this.cupos;
+    const puestos = this.state.once.length;
+    const proj = this.state.once.reduce((s, id) => s + (this.jug(id) ? this.jug(id).med : 0), 0);
+    const valor = this.state.once.reduce((s, id) => s + (this.jug(id) ? this.jug(id).pr : 0), 0);
+
+    const tintas = { POR: 'color-mix(in oklab, var(--por) 12%, transparent)', DEF: 'color-mix(in oklab, var(--def) 12%, transparent)', MED: 'color-mix(in oklab, var(--med) 12%, transparent)', DEL: 'color-mix(in oklab, var(--del) 12%, transparent)' };
+
+    const lineas = ['DEL', 'MED', 'DEF', 'POR'].map((pos) => {
+      const enL = this.enLinea(pos);
+      const slots = [];
+      for (let i = 0; i < cupos[pos]; i++) {
+        const j = enL[i];
+        if (j) {
+          slots.push({
+            lleno: true, vacio: false, draggable: true,
+            nombre: j.n, ini: this.ini(j.n), club: CLUBS[j.club][0], pts: j.med.toFixed(1),
+            bg: this.clubGrad(j.club), ink: this.clubInk(j.club), border: '1px solid rgba(255,255,255,.3)',
+            onClick: () => this.quitar(j.id),
+            onDragStart: (e) => { e.dataTransfer.setData('text/plain', j.id); },
+            onDragOver: (e) => e.preventDefault(),
+            onDrop: (e) => { e.preventDefault(); this.poner(e.dataTransfer.getData('text/plain'), pos, i); },
+          });
+        } else {
+          slots.push({
+            lleno: false, vacio: true, draggable: false, nombre: '', ini: '', club: '', pts: '',
+            bg: 'color-mix(in oklab, var(--surface) 55%, transparent)', ink: 'var(--text)',
+            border: '1.5px dashed var(--line)',
+            onClick: () => { if (this.state.seleccionado) this.poner(this.state.seleccionado, pos, i); else this.setState({ aviso: 'Toca primero un jugador del banquillo.' }); },
+            onDragStart: () => {},
+            onDragOver: (e) => e.preventDefault(),
+            onDrop: (e) => { e.preventDefault(); this.poner(e.dataTransfer.getData('text/plain', pos), pos, i); },
+          });
+        }
+      }
+      return { pos, color: this.posColor(pos), tint: tintas[pos], slots };
+    });
+
+    const banquillo = SQUAD.filter((p) => !this.state.once.includes(p.id)).map((p) => ({
+      nombre: p.n, club: CLUBS[p.club][0], pos: p.pos, media: p.med.toFixed(1),
+      posColor: this.posColor(p.pos),
+      bg: this.state.seleccionado === p.id ? 'color-mix(in oklab, var(--accent) 14%, var(--surface))' : 'var(--surface2)',
+      bd: this.state.seleccionado === p.id ? 'var(--accent)' : 'var(--line)',
+      onDragStart: (e) => { e.dataTransfer.setData('text/plain', p.id); },
+      onClick: () => this.setState({ seleccionado: this.state.seleccionado === p.id ? null : p.id, aviso: '' }),
+      cobertura: ['DEF', 'MED', 'DEL'].map((l) => {
+        const on = (this.state.cobertura[p.id] || []).includes(l);
+        return {
+          label: l, go: (e) => { e.stopPropagation(); this.toggleCobertura(p.id, l); },
+          bg: on ? this.posColor(l) : 'transparent', fg: on ? '#fff' : 'var(--text2)',
+          bd: on ? this.posColor(l) : 'var(--line)',
+        };
+      }),
+    }));
+
+    const plantilla = [...SQUAD].sort((a, b) => POS.indexOf(a.pos) - POS.indexOf(b.pos) || b.pts - a.pts).map((p) => ({
+      nombre: p.n, club: p.club, pos: p.pos, posColor: this.posColor(p.pos),
+      pts: p.pts, media: p.med.toFixed(1), precio: p.pr.toFixed(1) + ' M',
+      estado: p.est, estadoColor: p.est === 'OK' ? 'var(--text2)' : p.est === 'Virtual' ? 'var(--por)' : 'var(--bad)',
+      onClick: () => this.abrirFicha(p.id),
+    }));
+
+    const filtro = this.state.filtroPos;
+    const mercado = MERCADO.filter((p) => filtro === 'Todos' || p.pos === filtro).map((p) => {
+      const pedido = this.state.peticiones.includes(p.id);
+      return {
+        nombre: p.n, club: p.club, pos: p.pos, posColor: this.posColor(p.pos),
+        media: p.med.toFixed(1), precio: p.pr.toFixed(1) + ' M',
+        btnLabel: pedido ? 'Pedido' : 'Pedir',
+        btnBg: pedido ? 'var(--accent)' : 'transparent',
+        btnFg: pedido ? 'var(--accent-ink)' : 'var(--text)',
+        btnBd: pedido ? 'var(--accent)' : 'var(--line)',
+        onPedir: () => this.togglePeticion(p.id),
+        onClick: () => this.abrirFicha(p.id),
+      };
+    });
+
+    const gasto = this.state.peticiones.reduce((s, id) => s + (this.jug(id) ? this.jug(id).pr : 0), 0);
+    const restante = 24.5 - gasto;
+
+    const clasificacion = CLASIF.map((r, i) => ({
+      pos: i + 1, nombre: r[0], v: r[1], e: r[2], d: r[3],
+      puntos: r[4].toFixed(1), fantasy: r[5].toFixed(1),
+      beneficio: (r[6] > 0 ? '+' : '') + r[6] + ' €',
+      colorBenef: r[6] > 0 ? 'var(--good)' : r[6] < 0 ? 'var(--bad)' : 'var(--text2)',
+      marca: i < 3 ? 'var(--accent)' : 'transparent',
+      bg: r[0] === 'Golden Boys' ? 'color-mix(in oklab, var(--accent) 8%, var(--surface))' : 'transparent',
+    }));
+
+    const topPts = 31;
+    const topJugadores = [
+      { n: 'Lewandowski', pos: 'DEL', pts: 31 }, { n: 'Mbappé', pos: 'DEL', pts: 29 },
+      { n: 'Pedri', pos: 'MED', pts: 26 }, { n: 'J. Álvarez', pos: 'DEL', pts: 24 },
+      { n: 'Isco', pos: 'MED', pts: 22 }, { n: 'Unai Simón', pos: 'POR', pts: 21 },
+    ].map((p) => ({
+      nombre: p.n, pos: p.pos, pts: p.pts, posColor: this.posColor(p.pos),
+      barra: Math.round((p.pts / topPts) * 100) + '%',
+      onClick: () => this.abrirFicha('p13'),
+    }));
+
+    const serie = [['J1', 38], ['J2', 47], ['J3', 41], ['J4', 46.5]];
+    const maxS = 47;
+    const serieJornadas = serie.map((s) => ({
+      label: s[0], pts: s[1].toFixed(1),
+      alto: Math.round((s[1] / maxS) * 100) + '%',
+      color: s[1] >= 44 ? 'var(--accent)' : 'var(--surface2)',
+    }));
+
+    const fichaId = this.state.ficha;
+    const fj = fichaId ? this.jug(fichaId) : null;
+    const fserie = [['J1', 6], ['J2', 9], ['J3', 4], ['J4', 7], ['J5', 2]];
+    const ficha = fj ? {
+      nombre: fj.n, ini: this.ini(fj.n),
+      meta: fj.pos + ' · ' + CLUBS[fj.club][0] + ' · ' + fj.pr.toFixed(1) + ' M',
+      headerBg: this.clubGrad(fj.club), headerInk: this.clubInk(fj.club),
+      kpis: [
+        { label: 'Puntos', value: fj.pts || 0 },
+        { label: 'Media', value: (fj.med || 0).toFixed(1) },
+        { label: 'Titular', value: '4/4' },
+        { label: 'Precio', value: fj.pr.toFixed(1) },
+      ],
+      serie: fserie.map((s) => ({ label: s[0], pts: s[1], alto: Math.round((s[1] / 9) * 100) + '%', color: s[1] >= 7 ? 'var(--accent)' : 'var(--surface2)' })),
+      detalle: [
+        { label: 'Goles', value: 5 }, { label: 'Asistencias', value: 2 },
+        { label: 'Porterías a cero', value: fj.pos === 'POR' ? 2 : 0 },
+        { label: 'Tarjetas rojas', value: 0 },
+        { label: 'Propiedad', value: SQUAD.includes(fj) ? 'Golden Boys' : 'Libre' },
+      ],
+    } : { nombre: '', ini: '', meta: '', headerBg: 'var(--surface2)', headerInk: 'var(--text)', kpis: [], serie: [], detalle: [] };
+
+    return {
+      themeVars,
+      nombreLiga: this.props.nombreLiga ?? 'FALM',
+      mostrarCobertura: this.props.mostrarCobertura ?? true,
+
+      nav: PANTALLAS.map((p) => {
+        const on = this.state.pantalla === p[0];
+        return { label: p[1], go: () => this.ir(p[0]),
+          bg: on ? 'var(--accent)' : 'transparent', fg: on ? 'var(--accent-ink)' : 'var(--text2)',
+          bd: on ? 'var(--accent)' : 'var(--line)' };
+      }),
+      tipografias: Object.keys(TIPOS).map((k) => {
+        const on = this.tipo === k;
+        return { label: TIPOS[k].label, title: TIPOS[k].title, font: TIPOS[k].fh,
+          go: () => this.setState({ tipografia: k }),
+          bg: on ? 'var(--accent)' : 'transparent', fg: on ? 'var(--accent-ink)' : 'var(--text2)' };
+      }),
+      temas: Object.keys(TEMAS).map((k) => ({
+        label: TEMAS[k].label, sw: TEMAS[k].sw, go: () => this.setTema(k),
+        bd: this.tema === k ? 'var(--text)' : 'transparent',
+      })),
+
+      esAlineacion: this.state.pantalla === 'alineacion',
+      esPlantilla: this.state.pantalla === 'plantilla',
+      esMercado: this.state.pantalla === 'mercado',
+      esClasificacion: this.state.pantalla === 'clasificacion',
+      esEstadisticas: this.state.pantalla === 'estadisticas',
+
+      formacion: this.state.formacion,
+      formaciones: FORMS.map((f) => {
+        const on = this.state.formacion === f;
+        return { label: f, go: () => this.cambiarFormacion(f),
+          bg: on ? 'var(--accent)' : 'transparent', fg: on ? 'var(--accent-ink)' : 'var(--text2)' };
+      }),
+      lineas, banquillo,
+      textoBanquillo: banquillo.length + ' disponibles',
+      kpisOnce: [
+        { label: 'Titulares', value: puestos + '/11', color: puestos === 11 ? 'var(--good)' : 'var(--bad)' },
+        { label: 'Media prevista', value: proj.toFixed(1), color: 'var(--accent)' },
+        { label: 'Valor en campo', value: valor.toFixed(1) + ' M', color: 'var(--text)' },
+      ],
+      aviso: this.state.aviso, hayAviso: !!this.state.aviso,
+      etiquetaGuardar: this.state.guardado ? '✓ Enviada' : 'Enviar alineación',
+      autoOnce: this.autoOnce, repetirUltima: this.repetirUltima, guardar: this.guardar,
+      marcadorPropio: proj.toFixed(1),
+      barraDuelo: Math.round((proj / (proj + 41.5)) * 100) + '%',
+      enfrentamientos: [
+        { local: 'Tobago', marcador: '48.5 – 33.0', visitante: 'Sofá y Manta' },
+        { local: 'Manchester', marcador: '44.0 – 44.0', visitante: 'Rácano FC' },
+        { local: 'Los Cafeteros', marcador: '39.5 – 42.5', visitante: 'Dinamita' },
+        { local: 'Peña Bética', marcador: '36.0 – 30.5', visitante: 'El Bombazo' },
+        { local: 'Cazafichajes', marcador: '41.0 – 28.0', visitante: 'Los Descartes' },
+      ],
+
+      resumenPlantilla: SQUAD.length + ' jugadores · 2 porteros (uno virtual) · presupuesto libre 24,5 M',
+      kpisPlantilla: [
+        { label: 'Puntos totales', value: '172.5', delta: '+46.5 en la J4', color: 'var(--good)' },
+        { label: 'Media por jornada', value: '43.1', delta: 'liga: 39.4', color: 'var(--text2)' },
+        { label: 'Valor de plantilla', value: '141 M', delta: '+6.5 M desde el draft', color: 'var(--good)' },
+        { label: 'Bajas y dudas', value: '2', delta: 'Budimir, Balde', color: 'var(--bad)' },
+      ],
+      plantilla,
+
+      filtrosPos: ['Todos', 'POR', 'DEF', 'MED', 'DEL'].map((f) => {
+        const on = filtro === f;
+        return { label: f, go: () => this.setState({ filtroPos: f }),
+          bg: on ? 'var(--accent)' : 'transparent', fg: on ? 'var(--accent-ink)' : 'var(--text2)',
+          bd: on ? 'var(--accent)' : 'var(--line)' };
+      }),
+      mercado,
+      peticiones: this.state.peticiones.map((id, i) => {
+        const p = this.jug(id);
+        return { prio: i + 1, nombre: p.n, meta: p.pos + ' · ' + CLUBS[p.club][0] + ' · ' + p.pr.toFixed(1) + ' M',
+          onQuitar: () => this.togglePeticion(id) };
+      }),
+      sinPeticiones: this.state.peticiones.length === 0,
+      textoPeticiones: this.state.peticiones.length + '/2',
+      presupuesto: restante.toFixed(1) + ' M',
+      colorPresupuesto: restante < 0 ? 'var(--bad)' : 'var(--good)',
+      enviarPeticiones: () => this.setState({ aviso: '' }),
+      presiones: [
+        { jugador: 'Iglesias', equipos: 'Tobago, Dinamita, tú', n: 3, color: 'var(--bad)' },
+        { jugador: 'Pepelu', equipos: 'Manchester, El Bombazo', n: 2, color: 'var(--por)' },
+        { jugador: 'Rulli', equipos: 'Los Descartes', n: 1, color: 'var(--text2)' },
+        { jugador: 'Mouriño', equipos: 'nadie aún', n: 0, color: 'var(--text2)' },
+      ],
+
+      clasificacion,
+      topJugadores, serieJornadas,
+      records: [
+        { label: 'Mejor jornada', meta: 'Tobago · J2', value: '61.5' },
+        { label: 'Peor jornada', meta: 'Los Descartes · J3', value: '18.0' },
+        { label: 'Racha más larga', meta: 'Tobago · 4 victorias', value: '4' },
+        { label: 'Jugador más fichado', meta: 'Iglesias · 3 peticiones', value: '3' },
+        { label: 'Premios repartidos', meta: '4 jornadas · 15 € cada una', value: '60 €' },
+      ],
+      reglas: [
+        { label: 'Victoria de su equipo', value: '+2', color: 'var(--good)' },
+        { label: 'Empate', value: '+1', color: 'var(--good)' },
+        { label: 'Gol de portero', value: '+5', color: 'var(--good)' },
+        { label: 'Gol de defensa', value: '+4', color: 'var(--good)' },
+        { label: 'Gol de medio', value: '+3', color: 'var(--good)' },
+        { label: 'Gol de delantero', value: '+2', color: 'var(--good)' },
+        { label: 'Penalti marcado', value: '+2', color: 'var(--good)' },
+        { label: 'Portería a cero (POR / DEF)', value: '+2 / +1', color: 'var(--good)' },
+        { label: 'Tarjeta roja', value: '−3', color: 'var(--bad)' },
+        { label: 'Gol en contra (POR / DEF)', value: '−1', color: 'var(--bad)' },
+      ],
+
+      hayFicha: !!fichaId, ficha, cerrarFicha: this.cerrarFicha,
+      stop: (e) => e.stopPropagation(),
+    };
+  }
+}
+</script>
+</body>
+</html>
