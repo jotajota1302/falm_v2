@@ -20,18 +20,15 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
     } @else if (!equipo()) {
       <p class="muted">No tienes equipo en esta temporada.</p>
     } @else {
-      <header class="phead">
-        <h1>Manda tu alineación</h1>
-        @if (competiciones().length > 1) {
-          <div class="comps">
-            @for (c of competiciones(); track c.id) {
-              <button class="comp" [class.on]="c.id === competicionId()" (click)="seleccionarCompeticion(c.id)">
-                {{ etiqueta(c.tipo) }}
-              </button>
-            }
-          </div>
-        }
-      </header>
+      @if (competiciones().length > 1) {
+        <div class="comps">
+          @for (c of competiciones(); track c.id) {
+            <button class="comp" [class.on]="c.id === competicionId()" (click)="seleccionarCompeticion(c.id)">
+              {{ etiqueta(c.tipo) }}
+            </button>
+          }
+        </div>
+      }
 
       <!-- Jornada: se abre en la que toca y se pasa de una en una. -->
       @if (jornada(); as j) {
@@ -40,7 +37,7 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
             @if (jAnterior(); as a) { ‹ Jornada {{ a.numero }} } @else { ‹ }
           </button>
           <div class="jc">
-            <strong>Jornada {{ j.numero }}</strong>
+            <h1>Jornada {{ j.numero }}</h1>
             @if (j.fecha) { <span class="jf">{{ fechaCorta(j.fecha) }}</span> }
             @if (!esJornadaPorDefecto()) {
               <button class="jhoy" (click)="irAJornadaActual()">Ir a la actual</button>
@@ -176,7 +173,7 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
     /* Navegador de jornada: la abierta en el centro, y a los lados la de
        antes y la de después, con su número, para saber a dónde vas. */
     .jnav { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
-      gap: 12px; margin-bottom: 14px; }
+      gap: 12px; margin-bottom: 12px; }
     .jb { justify-self: end; padding: 9px 15px; border: 1px solid var(--line);
       background: var(--surface); color: var(--text2); border-radius: var(--pill); cursor: pointer;
       font-family: var(--fb); font-size: var(--t-sm); font-weight: 600; white-space: nowrap; }
@@ -187,17 +184,13 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
        altura al campo, que es lo que se quiere ver. */
     .jc { display: flex; align-items: baseline; justify-content: center;
       gap: 10px; flex-wrap: wrap; text-align: center; }
-    .jc strong { font-family: var(--fh); font-size: var(--t-xl); font-weight: 600; text-transform: uppercase; }
+    .jc h1 { font-size: var(--t-xl); }
     .jf { font-size: var(--t-sm); color: var(--text2); text-transform: capitalize; }
     .jhoy { background: none; border: none; cursor: pointer; padding: 0;
       font-family: var(--fb); font-size: var(--t-xs); font-weight: 700; letter-spacing: .1em;
       text-transform: uppercase; color: var(--accent); }
 
-    /* Toda la cabecera va al centro, en columna: el titular manda menos que
-       el campo, así que baja un escalón de tamaño. */
-    .phead { flex-direction: column; align-items: center; gap: 12px; }
-    .phead h1 { font-size: var(--t-xl); text-align: center; }
-    .comps { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+    .comps { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 12px; }
 
     /* Se compone arriba y se envía abajo: la barra se queda pegada al fondo
        mientras editas, para no tener que subir a buscar el botón. */
