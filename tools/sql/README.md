@@ -75,6 +75,7 @@ dentro del repo.
 | `liga_falm_calendario.sql` | `generar_liga_falm` (mantenimiento; revocada a los usuarios) |
 | `admin_operaciones.sql` | `estado_crons` y el cierre de escritura en `equipo_falm` |
 | `respaldos.sql` | Copias de `falm` a schemas `bk_falm_*`, purga y restauración |
+| `limpieza_supabase_2026-09.sql` | Qué se limpió del proyecto compartido y qué queda pendiente |
 | `funciones_admin_cerradas.sql` | `puede_gestionar` y guardias de las funciones de admin |
 | `revocar_funciones_internas.sql` | Revocación de funciones internas y RLS de las tablas de respaldo |
 | `precios_15m.sql` | Precios planos y presupuesto (histórico; el dinero ya no se usa) |

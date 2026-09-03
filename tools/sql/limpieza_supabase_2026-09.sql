@@ -1,0 +1,79 @@
+-- Limpieza del proyecto de Supabase (rgpzrbwpyaewughahpgo), 2026-09-03.
+--
+-- El proyecto se comparte con otras cosas de jotajota1302, y habia diez schemas
+-- de proyectos parados mas dos aplicaciones enteras dentro de public. Esto deja
+-- constancia de lo aplicado; NO hace falta volver a ejecutarlo.
+--
+-- Se queda: falm, cuentos, comic, public, y los del sistema (auth, storage,
+-- realtime, cron, vault, extensions, graphql, supabase_migrations, pgbouncer).
+
+-- ---------------------------------------------------------------------------
+-- 1. El agujero: 14 tablas en public con RLS APAGADO y anon con select/insert
+-- ---------------------------------------------------------------------------
+-- patients, doctors, appointments, messages, message_threads, documents,
+-- treatments, doctor_availability, subscriptions, users, audit_log, faqs,
+-- content, content_categories.
+--
+-- Tenian politicas escritas, pero sin "enable row level security" Postgres las
+-- ignora. Y public es el schema que PostgREST expone por defecto, con la clave
+-- anon publicada en el bundle de ligafalm.com. Cualquiera podia leerlas y
+-- escribir en ellas.
+--
+-- Eran de una aplicacion para un medico, en standby. Copiadas a
+-- bk_medico_20260903 y borradas de public (mas la vista faqs_view).
+
+-- ---------------------------------------------------------------------------
+-- 2. Las tablas optica_* de public
+-- ---------------------------------------------------------------------------
+-- Diez tablas de otro proyecto parado. Estas si tenian RLS. Copiadas a
+-- bk_optica_20260903 y borradas.
+-- public queda con 6 tablas, todas con RLS y politicas.
+
+-- ---------------------------------------------------------------------------
+-- 3. Schemas de proyectos antiguos: archivados, no borrados
+-- ---------------------------------------------------------------------------
+-- alter schema <x> rename to bk_<x>_20260903, y revoke a anon/authenticated:
+--   skills_registry (21 tablas)  teatro (18)      ai_agents (13)
+--   n8n_workflows (9)            mcp_shield (8)   taxes (4)
+--   university (4)               csv_ai (3)
+--
+-- Renombrar en vez de borrar porque es instantaneo, no pierde nada y se deshace
+-- con otro rename. El borrado definitivo espera a que exista un volcado fuera
+-- de Supabase: hoy la unica copia de esos datos es la propia base.
+--
+-- Cuando llegue el momento:
+--   drop schema bk_skills_registry_20260903 cascade;   -- etc.
+
+-- ---------------------------------------------------------------------------
+-- 4. PENDIENTE: dos triggers ajenos colgando de auth.users
+-- ---------------------------------------------------------------------------
+-- Cada alta de usuario en FALM disparaba estos dos, de otros proyectos, que
+-- escribian en sus tablas:
+--
+--   on_auth_user_created         -> ai_agents.handle_new_user
+--   on_auth_user_created_csv_ai  -> csv_ai.handle_new_user
+--
+-- Hay que quitarlos ANTES de borrar de verdad esos schemas. Ejecutar en el
+-- editor SQL de Supabase (tocar el schema auth desde fuera esta capado):
+--
+--   drop trigger if exists on_auth_user_created on auth.users;
+--   drop trigger if exists on_auth_user_created_csv_ai on auth.users;
+--
+-- Comprobacion despues:
+--
+--   select tgrelid::regclass, tgname from pg_trigger
+--    where not tgisinternal and tgrelid = 'auth.users'::regclass;
+
+-- ---------------------------------------------------------------------------
+-- 5. Lo que quedo en public, por decidir
+-- ---------------------------------------------------------------------------
+-- generated_chapters, runs, user_data, user_profiles, user_provider_keys,
+-- wallets. Todas con RLS y politicas, asi que no corren prisa, pero no se ha
+-- identificado de que proyecto son. Si son de cuentos o comic, su sitio es su
+-- schema; si no son de nada, fuera.
+--
+-- La funcion public.handle_new_user (inserta en user_profiles y user_data) NO
+-- esta enganchada a ningun trigger. Estas otras quedaron huerfanas al borrar
+-- las tablas del proyecto medico y se pueden borrar: get_my_patient_id,
+-- get_my_role, is_staff, handle_new_auth_user, auto_generate_slug,
+-- generate_slug.
