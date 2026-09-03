@@ -120,21 +120,21 @@ interface NavItem { path: string; label: string; corto: string; }
       .tlink { font-size: var(--t-xs); letter-spacing: .1em; }
       .temp { max-width: 104px; font-size: var(--t-xs); padding: 5px 6px; }
 
-      .content { padding: 16px 14px 96px; }
+      .content { padding: 16px 14px 116px; }
+      /* Rejilla fija, sin desplazamiento: en una barra que se desliza el
+         navegador cancela el toque en cuanto el dedo se mueve un pelo. */
       .nav {
-        position: fixed; bottom: 0; left: 0; right: 0; z-index: 30;
-        gap: 0; flex-wrap: nowrap;
-        padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
+        position: fixed; bottom: 0; left: 0; right: 0; z-index: 50;
+        display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px;
+        padding: 5px 5px calc(5px + env(safe-area-inset-bottom));
         border-top: 1px solid var(--line);
         background: var(--surface);
-        /* Ocho secciones no caben aplastadas: la barra se desliza. */
-        overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;
       }
-      .nav::-webkit-scrollbar { display: none; }
-      .nav a { flex: 0 0 auto; min-width: 62px; padding: 11px 8px; text-align: center; border-radius: 8px;
-        font-size: var(--t-xs); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
-      .nav a.active { background: transparent; border-color: transparent;
-        color: var(--accent); box-shadow: inset 0 2px 0 var(--accent); }
+      .nav a { padding: 9px 4px; text-align: center; border-radius: 8px;
+        font-size: var(--t-xs); font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+        touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+      .nav a:active { background: var(--surface2); }
+      .nav a.active { background: var(--accent-soft); border-color: transparent; color: var(--accent); }
       .nav .lg { display: none; } .nav .sm { display: inline; }
     }
   `],
