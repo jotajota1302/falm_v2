@@ -60,7 +60,7 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
       <div class="tira" [class.mio]="d.esMiTurno()">
         <span class="lb">{{ d.esMiTurno() ? 'Es tu turno' : 'Turno' }}</span>
         <strong>{{ nombreEquipo(d.turno()?.equipo_falm_id) }}</strong>
-        <span class="ronda num">Ronda {{ d.turno()?.ronda ?? '—' }}</span>
+        <span class="ronda">Ronda <b class="num">{{ d.turno()?.ronda ?? '—' }}</b></span>
         @if (!d.conectado()) { <span class="chip chip-warn">Reconectando…</span> }
       </div>
 
@@ -178,8 +178,8 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
             @if (colaVisible().length === 0) {
               <p class="muted mini">Marca jugadores con ★ para tenerlos aquí.</p>
             } @else {
-              <p class="muted num mini">
-                {{ colaFichados() }} de tus {{ d.cola().length }} ya fichados
+              <p class="muted mini">
+                <b class="num">{{ colaFichados() }}</b> de tus <b class="num">{{ d.cola().length }}</b> ya fichados
               </p>
               <ol class="cola">
                 @for (a of colaVisible(); track a.activo_id; let i = $index) {
@@ -200,9 +200,13 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
             <ol class="orden">
               @for (o of proximosTurnos(); track o.orden_global; let i = $index) {
                 <li [class.ahora]="i === 0" [class.yo]="o.equipo_falm_id === d.miEquipoId()">
-                  <span class="p num">{{ i === 0 ? '▸' : i }}</span>
+                  <span class="p num">{{ i === 0 ? '▶' : i }}</span>
                   <span class="nom">{{ nombreEquipo(o.equipo_falm_id) }}</span>
-                  <span class="r num">R{{ o.ronda }}</span>
+                  @if (i === 0) {
+                    <span class="ahora-tag">elige</span>
+                  } @else {
+                    <span class="r num">R{{ o.ronda }}</span>
+                  }
                 </li>
               }
             </ol>
@@ -210,9 +214,42 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
         </aside>
       </div>
 
+      @if (d.soyGestor()) {
+        <section class="tabla global">
+          <div class="barra">
+            <span class="lb">Vista general</span>
+            <span class="muted"><b class="num">{{ d.draft()!.picks_hechos }}/{{ d.draft()!.picks_totales }}</b> picks</span>
+            <button class="plegar" (click)="verGlobal.set(!verGlobal())">
+              {{ verGlobal() ? 'Ocultar' : 'Mostrar' }}
+            </button>
+          </div>
+          @if (verGlobal()) {
+            <div class="fila cab gl">
+              <span>Equipo</span><span class="der">Picks</span><span class="der">Port.</span>
+              <span class="der">PT</span><span class="der">DF</span><span class="der">MC</span>
+              <span class="der">DL</span><span>Último</span>
+            </div>
+            @for (e of resumenEquipos(); track e.id) {
+              <div class="fila gl" [class.turno-de]="e.id === d.turno()?.equipo_falm_id"
+                   [class.miequipo]="e.id === d.miEquipoId()">
+                <span class="nom">{{ e.nombre }}</span>
+                <span class="der num">{{ e.picks }}</span>
+                <span class="der num" [class.falta]="e.porterias < minPorterias">{{ e.porterias }}</span>
+                <span class="der num">{{ e.PT }}</span>
+                <span class="der num">{{ e.DF }}</span>
+                <span class="der num">{{ e.MC }}</span>
+                <span class="der num">{{ e.DL }}</span>
+                <span class="ult faint">{{ e.ultimo }}</span>
+              </div>
+            }
+          }
+        </section>
+      }
+
       <div class="pie">
-        <span class="muted num">
-          {{ visibles().length }} jugadores · {{ d.draft()!.picks_hechos }} fichados en total
+        <span class="muted">
+          <b class="num">{{ visibles().length }}</b> jugadores ·
+          <b class="num">{{ d.draft()!.picks_hechos }}</b> fichados en total
         </span>
         @if (visibles().length > limite()) {
           <button class="btn-sec" (click)="limite.set(limite() + 30)">Ver 30 más</button>
@@ -221,17 +258,21 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     }
   `,
   styles: [`
-    .phead .sub { max-width: 66ch; }
+    /* Cabecera y tira de turno centradas: es lo que todos miran a la vez. */
+    .phead { display: block; text-align: center; }
+    .phead .sub { max-width: 66ch; margin-left: auto; margin-right: auto; }
 
     .tira { position: sticky; top: 0; z-index: 6; display: flex; align-items: center; gap: 12px;
-      flex-wrap: wrap; padding: 12px 18px; margin-bottom: 16px;
+      flex-wrap: wrap; justify-content: center; padding: 12px 18px; margin-bottom: 16px;
       background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); }
     .tira strong { font-family: var(--fh); font-weight: 600; font-size: var(--t-xl);
       line-height: 1; text-transform: uppercase; }
-    .tira .ronda { margin-left: auto; font-size: var(--t-sm); color: var(--text2); }
+    .tira .ronda { font-size: var(--t-sm); color: var(--text2); font-family: var(--fb); }
+    .tira .lb, .tira .chip { font-family: var(--fb); }
     .tira.mio { background: var(--accent-soft); border-color: var(--accent-line); }
     .tira.mio strong { color: var(--accent); }
 
+    .kpis { justify-content: center; }
     .kpi .v.falta { color: var(--bad); }
 
     .nota { padding: 11px 16px; margin: 0 0 12px; font-size: var(--t-sm);
@@ -310,9 +351,28 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     .mv { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-xs);
       color: var(--text2); cursor: pointer; font-size: var(--t-xs); line-height: 1; padding: 3px 0; }
     .mv:hover { border-color: var(--accent); color: var(--accent); }
-    .orden li.ahora { box-shadow: inset 2px 0 0 var(--accent); }
-    .orden li.ahora .nom { font-weight: 700; }
+    .orden li.ahora { background: var(--accent-soft); border-radius: var(--r-xs);
+      box-shadow: inset 3px 0 0 var(--accent); padding-left: 7px; padding-right: 7px;
+      margin: 2px -7px; border-bottom-color: transparent; }
+    .orden li.ahora .nom { font-weight: 800; color: var(--accent); }
+    .orden li.ahora .p { color: var(--accent); }
+    .ahora-tag { font-size: 9px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
+      color: var(--accent-ink); background: var(--accent); border-radius: var(--pill);
+      padding: 2px 7px; }
     .orden li.yo .nom { color: var(--accent); }
+    .orden li.yo:not(.ahora) .nom { font-style: italic; }
+
+    .global { margin-top: 16px; }
+    .global .plegar { margin-left: auto; background: var(--surface); border: 1px solid var(--line);
+      color: var(--text2); border-radius: var(--pill); padding: 5px 12px; cursor: pointer;
+      font-size: var(--t-xs); font-weight: 700; font-family: var(--fb); }
+    .fila.gl { grid-template-columns: 1.4fr 54px 54px 40px 40px 40px 40px 1.3fr; }
+    .fila.gl .num.falta { color: var(--bad); font-weight: 700; }
+    .fila.gl.turno-de { background: var(--accent-soft); }
+    .fila.gl.turno-de .nom { color: var(--accent); }
+    .fila.gl.miequipo .nom { text-decoration: underline; text-underline-offset: 3px; }
+    .fila.gl .ult { font-size: var(--t-xs); white-space: nowrap; overflow: hidden;
+      text-overflow: ellipsis; }
     .orden .r { text-align: right; color: var(--text2); font-size: var(--t-xs); }
 
     @media (max-width: 900px) {
@@ -337,6 +397,7 @@ export class DraftComponent implements OnInit, OnDestroy {
   prePick = signal(false);
   /** Solo para admins: fichar por el equipo al que le toca. Apagado por defecto. */
   modoAdmin = signal(false);
+  verGlobal = signal(true);
 
   private eraMiTurno = false;
   private tituloBase = document.title;
@@ -515,6 +576,35 @@ export class DraftComponent implements OnInit, OnDestroy {
   readonly colaFichados = computed(() => {
     const tom = this.d.tomadoPor();
     return this.d.cola().filter((c) => tom.has(c.activo_id)).length;
+  });
+
+  /**
+   * Estado de los diez equipos, en el orden del sorteo. Solo lo ve el admin:
+   * durante la quedada hace falta una foto del conjunto, no solo tu plantilla.
+   */
+  readonly resumenEquipos = computed(() => {
+    const cat = new Map(this.d.catalogo().map((a) => [a.activo_id, a]));
+    // El orden de la primera ronda es el del sorteo: seguir el draft por ahí.
+    const orden = this.d.orden()
+      .filter((o) => o.ronda === 1)
+      .sort((a, b) => a.posicion_en_ronda - b.posicion_en_ronda)
+      .map((o) => o.equipo_falm_id);
+
+    return orden.map((id) => {
+      const suyos = this.d.picks().filter((p) => p.equipo_falm_id === id);
+      const act = suyos.map((p) => cat.get(p.activo_id)).filter((a): a is ActivoLibre => !!a);
+      const cuenta = (pos: string) =>
+        act.filter((a) => a.tipo !== 'DEFENSA' && this.abr(a.posicion) === pos).length;
+      const ultimo = act.length ? act[act.length - 1].nombre : '—';
+      return {
+        id,
+        nombre: this.nombreEquipo(id),
+        picks: suyos.length,
+        porterias: act.filter((a) => a.tipo === 'DEFENSA').length,
+        PT: cuenta('POR'), DF: cuenta('DEF'), MC: cuenta('MED'), DL: cuenta('DEL'),
+        ultimo,
+      };
+    });
   });
 
   /** Los 12 próximos turnos, para el panel lateral. */
