@@ -2,6 +2,7 @@ import { Component, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { AdminService, AdminTemporada } from './admin.service';
+import { AdminDraftSorteoComponent, EquipoSorteo } from './draft-sorteo.component';
 
 const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'MED', DELANTERO: 'DEL' };
 
@@ -9,7 +10,7 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
 @Component({
   selector: 'app-admin-pretemporada',
   standalone: true,
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, AdminDraftSorteoComponent],
   template: `
     @if (aviso()) { <p class="aviso">{{ aviso() }}</p> }
     @if (error()) { <p class="err">{{ error() }}</p> }
@@ -52,8 +53,12 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
       @if (cargando()) {
         <p class="hint">Cargando…</p>
       } @else if (!draft()) {
-        <p class="hint">No hay draft activo en la temporada.</p>
-        <button class="btn" (click)="crearDraft()">Crear draft (23 rondas)</button>
+        <p class="hint">No hay draft activo en la temporada. 23 rondas, orden en serpiente.</p>
+        <admin-draft-sorteo
+          [equipos]="equipos()"
+          etiqueta="Crear draft con este orden"
+          (confirmado)="crearDraftConOrden($event)" />
+        <button class="btn ghost" (click)="crearDraft()">O crear con orden aleatorio</button>
       } @else {
         <div class="draft">
           <div class="dhead">
@@ -64,6 +69,19 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
             <div class="bar"><span [style.width.%]="pct()"></span></div>
             <span class="pcttxt">{{ draft().picks_hechos }} / {{ draft().picks_totales }} picks</span>
           </div>
+          @if (draft().picks_hechos === 0) {
+            @if (sorteoAbierto()) {
+              <admin-draft-sorteo
+                [equipos]="equipos()"
+                etiqueta="Guardar este orden"
+                (confirmado)="rehacerOrden($event)" />
+              <button class="btn ghost" (click)="sorteoAbierto.set(false)">Cancelar</button>
+            } @else {
+              <button class="btn ghost" (click)="sorteoAbierto.set(true)">
+                🎲 Rehacer el orden del sorteo
+              </button>
+            }
+          }
           @if (draft().turno; as t) {
             <div class="turno">
               <span class="tl">Turno</span>
@@ -91,35 +109,35 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
   `,
   styles: [`
     section.card { padding: 16px; margin-bottom: 14px; }
-    h3 { margin: 0 0 12px; font-size: 1rem; }
-    h4 { margin: 14px 0 8px; font-size: .85rem; color: var(--muted); }
-    .hint { color: var(--muted); font-size: .84rem; margin: 0 0 10px; }
+    h3 { margin: 0 0 12px; font-size: 15px; }
+    h4 { margin: 14px 0 8px; font-size: 13.5px; color: var(--text2); }
+    .hint { color: var(--text2); font-size: 13.5px; margin: 0 0 10px; }
     .form { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
-    .form input { background: var(--surface); border: 1px solid var(--border); border-radius: 9px; padding: 8px 10px; }
-    .form label { font-size: .8rem; color: var(--muted); display: flex; gap: 6px; align-items: center; }
-    .btn.ghost { background: var(--surface-2); color: var(--ink); border: 1px solid var(--border); }
+    .form input { background: var(--surface); border: 1px solid var(--line); border-radius: 9px; padding: 8px 10px; }
+    .form label { font-size: 13px; color: var(--text2); display: flex; gap: 6px; align-items: center; }
+    .btn.ghost { background: var(--surface2); color: var(--text); border: 1px solid var(--line); }
     .lista { display: flex; flex-direction: column; gap: 6px; }
-    .row { display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 9px; }
-    .nm { font-weight: 700; } .anio { font-size: .8rem; } .row .badge { margin-left: auto; }
-    .badge { font-size: .64rem; font-weight: 800; padding: 2px 8px; border-radius: 999px; background: var(--surface-2); color: var(--muted); }
-    .badge.on, .badge[data-e=EN_CURSO] { background: var(--accent-soft); color: var(--primary); }
-    .badge[data-e=COMPLETADO] { background: rgba(255,194,75,.15); color: var(--gold); }
-    .mini { background: var(--surface-2); border: 1px solid var(--border); color: var(--ink); border-radius: 8px; padding: 5px 11px; cursor: pointer; font-weight: 700; font-size: .76rem; }
-    .aviso { background: rgba(255,194,75,.08); border: 1px solid rgba(255,194,75,.22); color: var(--gold); padding: 10px 14px; border-radius: 10px; margin-bottom: 12px; }
+    .row { display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: var(--surface2); border: 1px solid var(--line); border-radius: 9px; }
+    .nm { font-weight: 700; } .anio { font-size: 13px; } .row .badge { margin-left: auto; }
+    .badge { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--surface2); color: var(--text2); }
+    .badge.on, .badge[data-e=EN_CURSO] { background: var(--accent-soft); color: var(--accent); }
+    .badge[data-e=COMPLETADO] { background: color-mix(in oklab, var(--por) 13%, var(--surface)); color: var(--por); }
+    .mini { background: var(--surface2); border: 1px solid var(--line); color: var(--text); border-radius: 8px; padding: 5px 11px; cursor: pointer; font-weight: 700; font-size: 12px; }
+    .aviso { background: color-mix(in oklab, var(--por) 8%, var(--surface)); border: 1px solid color-mix(in oklab, var(--por) 32%, var(--line)); color: var(--por); padding: 10px 14px; border-radius: 10px; margin-bottom: 12px; }
     .err { color: var(--bad); }
     .dhead { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-    .dnombre { font-weight: 800; }
+    .dnombre { font-weight: 700; }
     .prog { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
-    .bar { flex: 1; height: 8px; background: var(--surface-2); border-radius: 999px; overflow: hidden; }
-    .bar span { display: block; height: 100%; background: var(--primary); border-radius: 999px; }
-    .pcttxt { font-size: .76rem; color: var(--muted); font-weight: 700; white-space: nowrap; }
-    .turno { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: var(--accent-soft); border: 1px solid var(--accent-line); border-radius: 10px; font-size: .88rem; }
-    .turno .tl { font-size: .66rem; text-transform: uppercase; letter-spacing: .05em; color: var(--faint); font-weight: 800; }
+    .bar { flex: 1; height: 8px; background: var(--surface2); border-radius: 999px; overflow: hidden; }
+    .bar span { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
+    .pcttxt { font-size: 12px; color: var(--text2); font-weight: 700; white-space: nowrap; }
+    .turno { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: var(--accent-soft); border: 1px solid var(--accent-line); border-radius: 10px; font-size: 14px; }
+    .turno .tl { font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--text2); font-weight: 700; }
     .picks { display: flex; flex-direction: column; gap: 5px; }
-    .pk { display: flex; align-items: center; gap: 9px; padding: 6px 9px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; font-size: .82rem; }
-    .pos { flex: 0 0 auto; width: 32px; text-align: center; padding: 2px 0; border-radius: 5px; font-size: .62rem; font-weight: 800; color: var(--accent-ink); }
-    .pos.POR { background: var(--pos-POR); } .pos.DEF { background: var(--pos-DEF); }
-    .pos.MED { background: var(--pos-MED); } .pos.DEL { background: var(--pos-DEL); }
+    .pk { display: flex; align-items: center; gap: 9px; padding: 6px 9px; background: var(--surface2); border: 1px solid var(--line); border-radius: 8px; font-size: 13px; }
+    .pos { flex: 0 0 auto; width: 32px; text-align: center; padding: 2px 0; border-radius: 5px; font-size: 10px; font-weight: 700; color: var(--accent-ink); }
+    .pos.POR { background: var(--por); } .pos.DEF { background: var(--def); }
+    .pos.MED { background: var(--med); } .pos.DEL { background: var(--del); }
     .turno a.mini { margin-left: auto; text-decoration: none; display: inline-block; }
     .pj { font-weight: 700; } .o { width: 34px; }
   `],
@@ -128,6 +146,8 @@ export class AdminPretemporadaComponent implements OnInit {
   temporadas = signal<AdminTemporada[]>([]);
   draft = signal<any | null>(null);
   picks = signal<{ orden: number; ronda: number; equipo: string; jugador: string; posicion: string }[]>([]);
+  equipos = signal<EquipoSorteo[]>([]);
+  sorteoAbierto = signal(false);
   cargando = signal(true);
   aviso = signal('');
   error = signal('');
@@ -145,6 +165,7 @@ export class AdminPretemporadaComponent implements OnInit {
   private async cargar() {
     try {
       this.temporadas.set(await this.admin.temporadas());
+      this.equipos.set((await this.admin.equipos()).map((e) => ({ id: e.id, nombre: e.nombre })));
       const d = await this.admin.draftActivo();
       this.draft.set(d);
       if (d?.id) this.picks.set(await this.admin.draftPicks(d.id)); else this.picks.set([]);
@@ -161,33 +182,55 @@ export class AdminPretemporadaComponent implements OnInit {
   async crearTemporada() {
     if (!this.nombreTemp || !this.anioTemp) { this.error.set('Pon nombre y año.'); return; }
     await this.accion(() => this.admin.ejecutar('crear_temporada', { p_nombre: this.nombreTemp, p_anio: this.anioTemp }),
-      '✅ Temporada creada con sus 3 competiciones.');
+      'Temporada creada con sus 3 competiciones.');
     this.nombreTemp = ''; this.anioTemp = null;
   }
   async activar(t: AdminTemporada) {
-    await this.accion(() => this.admin.ejecutar('activar_temporada', { p_temporada: t.id }), `✅ ${t.nombre} activada.`);
+    await this.accion(() => this.admin.ejecutar('activar_temporada', { p_temporada: t.id }), `${t.nombre} activada.`);
   }
   async generarJornadas() {
     const t = this.temporadas().find((x) => x.activa);
     if (!t) { this.error.set('No hay temporada activa.'); return; }
     await this.accion(() => this.admin.ejecutar('generar_jornadas_liga', { p_temporada: t.id, p_lfp_desde: this.lfpDesde, p_lfp_hasta: this.lfpHasta }),
-      '✅ Jornadas y mapeo generados.');
+      'Jornadas y mapeo generados.');
   }
   async generarCalendario() {
     const t = this.temporadas().find((x) => x.activa);
     if (!t) { this.error.set('No hay temporada activa.'); return; }
-    await this.accion(() => this.admin.ejecutar('generar_calendario_liga', { p_temporada: t.id }), '✅ Calendario generado.');
+    await this.accion(() => this.admin.ejecutar('generar_calendario_liga', { p_temporada: t.id }), 'Calendario generado.');
   }
   async crearDraft() {
     const t = this.temporadas().find((x) => x.activa);
     if (!t) { this.error.set('No hay temporada activa.'); return; }
     await this.accion(() => this.admin.ejecutar('draft_crear', { p_temporada: t.id, p_nombre: 'Draft ' + t.nombre, p_rondas: 23 }),
-      '✅ Draft creado.');
+      'Draft creado.');
   }
+  /** Crea el draft con el orden cantado en el sorteo físico. */
+  async crearDraftConOrden(orden: string[]) {
+    const t = this.temporadas().find((x) => x.activa);
+    if (!t) { this.error.set('No hay temporada activa.'); return; }
+    await this.accion(
+      () => this.admin.ejecutar('draft_crear',
+        { p_temporada: t.id, p_nombre: 'Draft ' + t.nombre, p_rondas: 23, p_orden: orden }),
+      '✅ Draft creado con el orden del sorteo.'
+    );
+  }
+
+  /** Rehacer el orden de un draft ya creado. La función lo rechaza si ya hay picks. */
+  async rehacerOrden(orden: string[]) {
+    const d = this.draft();
+    if (!d?.id) return;
+    await this.accion(
+      () => this.admin.ejecutar('draft_reordenar', { p_draft: d.id, p_orden: orden }),
+      '✅ Orden del draft actualizado.'
+    );
+    this.sorteoAbierto.set(false);
+  }
+
   consolidar() {
     const d = this.draft();
     if (!d?.id) return;
-    this.accion(() => this.admin.ejecutar('draft_consolidar', { p_draft: d.id }), '✅ Draft consolidado: plantillas creadas.');
+    this.accion(() => this.admin.ejecutar('draft_consolidar', { p_draft: d.id }), 'Draft consolidado: plantillas creadas.');
   }
   /**
    * Deshacer el último pick. En la quedada presencial alguien dicta mal un
@@ -197,6 +240,6 @@ export class AdminPretemporadaComponent implements OnInit {
     const d = this.draft();
     if (!d?.id) return;
     if (!confirm('¿Deshacer el último pick?')) return;
-    await this.accion(() => this.admin.draftDeshacer(d.id), '✅ Pick deshecho.');
+    await this.accion(() => this.admin.draftDeshacer(d.id), 'Pick deshecho.');
   }
 }

@@ -70,3 +70,15 @@ este draft: ambos correctos, y quedó a 0 picks.
 Para cambiarlo por el draft definitivo: `update falm.draft set estado='CANCELADO'
 where nombre='Draft de prueba';` y luego "Crear draft" en `/admin/pretemporada`
 (`draft_crear` rechaza crear uno si ya hay otro sin consolidar).
+
+## 6. Orden del draft elegido a mano (2026-09-03) — ✅
+
+El sorteo se hace físicamente en directo, así que el admin necesita meter el
+orden en que salen los equipos en vez de que lo sortee la BD.
+
+| | |
+|---|---|
+| **Antes** | `draft_crear(p_temporada, p_nombre, p_rondas)` sorteaba siempre con `array_agg(id order by random())`. No había forma de imponer un orden. |
+| **Ahora** | `draft_crear` acepta un cuarto parámetro opcional `p_orden uuid[]`: si es null sortea al azar (comportamiento anterior intacto), y si viene lo valida y lo usa. Nuevas `draft_validar_orden` (permutación exacta de los equipos de la temporada), `draft_generar_orden` (serpiente, compartida) y `draft_reordenar(p_draft, p_orden)` para corregir el orden mientras no haya ningún pick. En el admin, componente `admin-draft-sorteo`: se pulsan los equipos en el orden en que se cantan (un clic por equipo), con "quitar el último" y "empezar de nuevo". |
+| **Test real** | `tools/sql/draft_orden_manual_test.sql`, 4 casos: orden incompleto rechazado, orden con repetidos rechazado, orden válido genera ronda 1 en ese orden y ronda 2 invertida con el total de turnos correcto, y reordenar bloqueado en cuanto hay un pick. Resultado: **TEST OK: los 4 casos pasaron**, revertido al terminar. |
+| **Nota** | Se sustituyó la firma de 3 argumentos de `draft_crear` por la de 4 (con default) en vez de añadir una sobrecarga, para que las llamadas de 3 argumentos sigan resolviendo a la versión nueva. |
