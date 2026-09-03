@@ -73,12 +73,17 @@ end $function$;
 -- ---------------------------------------------------------------------------
 -- ingestar_jornada_ff: casa primero por slug, y si no, por nombre.
 --
--- El club tiene que coincidir en los dos casos. Se probo a casar solo por slug,
--- pensando que al ser unico bastaba, y salio mal: el catalogo tiene slugs con el
--- club equivocado (sergio-martinez figura en el Real Madrid y en la jornada 1
--- jugo en el Racing), asi que un gol acabo en la ficha de otro jugador. Con el
--- club exigido ese caso se queda sin casar, que es lo que se quiere: mejor que
--- falte un gol a que se le atribuya a quien no es.
+-- El emparejamiento por slug NO exige que el club coincida, y esto importa: el
+-- slug identifica al futbolista, no al club. En el mercado de agosto de 2026,
+-- Pablo Garcia jugo las tres jornadas con el Betis y el 1 de septiembre se fue al
+-- Racing, y Sergio Martinez jugo la primera con el Racing y a finales de agosto
+-- pago su clausula el Real Madrid. En los dos casos el catalogo tiene el club
+-- nuevo y la jornada el viejo, y son la misma persona: exigir el club los dejaba
+-- fuera. El club de la web se usa solo para el resultado del partido (goles a
+-- favor y en contra), que es el del equipo con el que jugo ese dia.
+--
+-- Por nombre si se exige el club, porque ahi la unica defensa contra un homonimo
+-- es que jueguen en el mismo sitio.
 -- ---------------------------------------------------------------------------
 create or replace function falm.ingestar_jornada_ff(
   p_anio integer, p_jornada integer,
@@ -123,9 +128,8 @@ begin
            length(coalesce(jl.nombre_busqueda, jl.nombre)) len
     from pf
     join falm.jugador_lfp jl
-      on jl.equipo_lfp_id = pf.eq
-     and ((pf.slug is not null and jl.slug_ff = pf.slug)
-       or falm._casa_nombre(jl.nombre, jl.nombre_busqueda, pf.jugador))
+      on (pf.slug is not null and jl.slug_ff = pf.slug)
+      or (jl.equipo_lfp_id = pf.eq and falm._casa_nombre(jl.nombre, jl.nombre_busqueda, pf.jugador))
     join falm.activo a on a.jugador_lfp_id = jl.id and a.tipo = 'JUGADOR'
   ),
   matched as (
@@ -154,9 +158,8 @@ begin
   matched as (
     select distinct pf.equipo, pf.jugador from pf
     join falm.jugador_lfp jl
-      on jl.equipo_lfp_id = pf.eq
-     and ((pf.slug is not null and jl.slug_ff = pf.slug)
-       or falm._casa_nombre(jl.nombre, jl.nombre_busqueda, pf.jugador))
+      on (pf.slug is not null and jl.slug_ff = pf.slug)
+      or (jl.equipo_lfp_id = pf.eq and falm._casa_nombre(jl.nombre, jl.nombre_busqueda, pf.jugador))
     join falm.activo a on a.jugador_lfp_id = jl.id and a.tipo = 'JUGADOR'
   )
   select coalesce(jsonb_agg(jsonb_build_object(
