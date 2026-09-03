@@ -31,11 +31,7 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
       }
 
       <header class="phead">
-        <div>
-          <h1>Manda tu alineación</h1>
-          <p class="sub">Toca un hueco del campo y elige jugador. Once titulares, más los suplentes
-            que quieras con la línea que cubre cada uno.</p>
-        </div>
+        <h1>Manda tu alineación</h1>
         <div class="acciones">
           <button class="btn-sec" (click)="repetirUltima()">Repetir última</button>
           <button class="btn" (click)="guardar()" [disabled]="guardando()">{{ guardando() ? 'Enviando…' : 'Enviar alineación' }}</button>
@@ -45,15 +41,19 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
       <!-- Jornada: se abre en la que toca y se pasa de una en una. -->
       @if (jornada(); as j) {
         <div class="jnav">
-          <button class="jb" (click)="irJornada(-1)" [disabled]="idxJornada() <= 0" aria-label="Jornada anterior">‹</button>
+          <button class="jb" (click)="irJornada(-1)" [disabled]="!jAnterior()">
+            @if (jAnterior(); as a) { ‹ Jornada {{ a.numero }} } @else { ‹ }
+          </button>
           <div class="jc">
             <strong>Jornada {{ j.numero }}</strong>
             @if (j.fecha) { <span class="jf">Cierra {{ fechaCorta(j.fecha) }}</span> }
+            @if (!esJornadaPorDefecto()) {
+              <button class="jhoy" (click)="irAJornadaActual()">Ir a la actual</button>
+            }
           </div>
-          <button class="jb" (click)="irJornada(1)" [disabled]="idxJornada() >= jornadasComp().length - 1" aria-label="Jornada siguiente">›</button>
-          @if (!esJornadaPorDefecto()) {
-            <button class="jhoy" (click)="irAJornadaActual()">Ir a la actual</button>
-          }
+          <button class="jb" (click)="irJornada(1)" [disabled]="!jSiguiente()">
+            @if (jSiguiente(); as b) { Jornada {{ b.numero }} › } @else { › }
+          </button>
         </div>
       }
 
@@ -152,17 +152,20 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
       background: var(--surface); color: var(--text2); cursor: pointer; font-family: var(--fb);
       font-weight: 600; font-size: var(--t-sm); white-space: nowrap; }
     .comp.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
-    /* Navegador de jornada: la que toca, y las demás de una en una. */
-    .jnav { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
-    .jb { width: 34px; height: 34px; flex: 0 0 auto; border: 1px solid var(--line);
-      background: var(--surface); color: var(--text); border-radius: 10px; cursor: pointer;
-      font-family: var(--fb); font-size: var(--t-lg); line-height: 1; }
+    /* Navegador de jornada: la abierta en el centro, y a los lados la de
+       antes y la de después, con su número, para saber a dónde vas. */
+    .jnav { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
+      gap: 12px; margin-bottom: 18px; }
+    .jb { justify-self: end; padding: 9px 15px; border: 1px solid var(--line);
+      background: var(--surface); color: var(--text2); border-radius: var(--pill); cursor: pointer;
+      font-family: var(--fb); font-size: var(--t-sm); font-weight: 600; white-space: nowrap; }
+    .jnav .jb:last-child { justify-self: start; }
     .jb:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
-    .jb:disabled { opacity: .35; cursor: not-allowed; }
-    .jc { display: flex; align-items: baseline; gap: 10px; }
-    .jc strong { font-family: var(--fh); font-size: var(--t-lg); font-weight: 600; text-transform: uppercase; }
+    .jb:disabled { opacity: .3; cursor: not-allowed; }
+    .jc { display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; }
+    .jc strong { font-family: var(--fh); font-size: var(--t-xl); font-weight: 600; text-transform: uppercase; }
     .jf { font-size: var(--t-sm); color: var(--text2); text-transform: capitalize; }
-    .jhoy { margin-left: auto; background: none; border: none; cursor: pointer; padding: 0;
+    .jhoy { margin-top: 3px; background: none; border: none; cursor: pointer; padding: 0;
       font-family: var(--fb); font-size: var(--t-xs); font-weight: 700; letter-spacing: .1em;
       text-transform: uppercase; color: var(--accent); }
 
@@ -329,6 +332,10 @@ export class AlineacionComponent implements OnInit {
     const def = js.find((j) => j.fecha && new Date(j.fecha).getTime() > ahora) ?? js[js.length - 1];
     return def?.id === this.jornada()?.id;
   });
+
+  /** Las jornadas vecinas, para enseñar a dónde lleva cada flecha. */
+  jAnterior = computed(() => this.jornadasComp()[this.idxJornada() - 1] ?? null);
+  jSiguiente = computed(() => this.jornadasComp()[this.idxJornada() + 1] ?? null);
 
   async irJornada(paso: number) {
     const js = this.jornadasComp();
