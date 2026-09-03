@@ -82,15 +82,16 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
               <button class="slot vacio" (click)="abrirLinea(pos)" [attr.data-pos]="abr(pos)">
                 <span class="hueco">
                   <span class="mas">+</span>
-                  <span class="fig">
-                    <svg viewBox="0 0 24 28" aria-hidden="true">
-                      <circle cx="12" cy="6" r="4.4" />
-                      <path d="M12 12.4c-4.3 0-7.8 3-7.8 6.7V26h15.6v-6.9c0-3.7-3.5-6.7-7.8-6.7z" />
-                    </svg>
-                    <span class="q">?</span>
+                  <span class="col">
+                    <span class="fig">
+                      <svg viewBox="0 0 24 23" aria-hidden="true">
+                        <path d="M9.1 1 3 4.2l1.7 4.6 2.1-.8V22h10.4V8l2.1.8L21 4.2 14.9 1a3 3 0 0 1-5.8 0z" />
+                      </svg>
+                      <span class="q">?</span>
+                    </span>
+                    <span class="lb">{{ abr(pos) }}</span>
                   </span>
                 </span>
-                <span class="lb">{{ abr(pos) }}</span>
               </button>
             }
           </div>
@@ -243,13 +244,14 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
     .slot.vacio:hover { background: rgba(255,255,255,.5); }
     /* Un hueco se lee de un vistazo: el signo de añadir y la silueta de quien
        falta, con la posición debajo. */
-    .hueco { display: flex; align-items: center; justify-content: center; gap: 7px; }
+    .hueco { display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .col { display: flex; flex-direction: column; align-items: center; gap: 1px; }
     .slot.vacio .mas { display: flex; align-items: center; justify-content: center;
       width: 28px; height: 28px; border-radius: 50%; font-size: var(--t-md); line-height: 1;
       background: var(--surface); color: var(--c); }
     .fig { position: relative; display: flex; align-items: center; justify-content: center; }
-    .fig svg { width: 26px; height: 30px; fill: var(--c); opacity: .38; }
-    .fig .q { position: absolute; top: 46%; left: 50%; transform: translate(-50%, -50%);
+    .fig svg { width: 30px; height: 29px; fill: var(--c); opacity: .42; }
+    .fig .q { position: absolute; top: 56%; left: 50%; transform: translate(-50%, -50%);
       font-family: var(--fb); font-size: var(--t-sm); font-weight: 700; color: var(--surface); }
     /* El color de la posición vive aquí, en el hueco, no en franjas de fondo. */
     .slot.vacio { --c: var(--text2); }
