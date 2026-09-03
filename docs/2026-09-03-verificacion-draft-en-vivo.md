@@ -42,3 +42,31 @@ Con `npm start` y dos navegadores con dos mánagers distintos, uno de ellos el d
 6. **Móvil**: layout en una columna y aviso de turno.
 
 Para probar hace falta crear el draft desde `/admin/pretemporada` ("Crear draft"). Ahora mismo la temporada **no tiene ningún draft** (`draft`, `draft_orden` y `draft_pick` a 0 filas), así que `/draft` muestra "No hay ningún draft activo".
+
+## 5. Reseteo previo al draft y draft de prueba (2026-09-03) — ✅
+
+**Puesto a cero** (eran datos de la simulación de pretemporada):
+
+- `equipo_falm`: `puntos_clasif`, `puntos_totales`, `puntos_contra`, `victorias`,
+  `victorias_min`, `empates`, `derrotas_min`, `derrotas` y `beneficio` en los 10 equipos.
+  Presupuesto en 100 en todos.
+- `enfrentamiento`: `puntos_local` / `puntos_visitante` a null (ya estaban).
+
+**Ya estaba vacío**: `puntuacion`, `plantilla`, `alineacion`, `alineacion_activo`,
+`premio`, `peticion_fichaje`, `oferta_intercambio`, `fichaje_extra`.
+
+**NO se tocó**, porque son datos reales del scraper y no de prueba:
+
+- `partido_lfp`: 380 partidos, de los que 30 tienen resultado — jornadas 1, 2 y 3
+  de LaLiga (15 al 31 de agosto de 2026), estado FINISHED.
+- `enfrentamiento`: los 180 cruces del calendario FALM.
+- `jornada_lfp` / `jornada_falm`: el calendario. Todas las jornadas LFP en PENDIENTE.
+
+**Draft de prueba creado**: `Draft de prueba`, id `e1f48b7a-4267-4e27-b084-ad64cffadca6`,
+23 rondas, 230 picks, estado CREADO, primer turno PUSSYFISH. Serpiente verificada
+(ronda 1 en un orden, ronda 2 invertida). Se probó un pick real y su deshacer sobre
+este draft: ambos correctos, y quedó a 0 picks.
+
+Para cambiarlo por el draft definitivo: `update falm.draft set estado='CANCELADO'
+where nombre='Draft de prueba';` y luego "Crear draft" en `/admin/pretemporada`
+(`draft_crear` rechaza crear uno si ya hay otro sin consolidar).
