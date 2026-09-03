@@ -23,3 +23,11 @@ revoke execute on function falm.importar_puntuaciones_pro(integer) from public, 
 revoke execute on function falm.generar_alineacion_defecto(uuid, uuid) from public, authenticated, anon;
 revoke execute on function falm.draft_generar_orden(uuid, uuid[], integer) from public;
 revoke execute on function falm.draft_validar_orden(uuid, uuid[]) from public;
+
+-- Las tablas de respaldo se crearon con "create table as", que no hereda RLS ni
+-- revoca los grants por defecto del schema: quedaron legibles y escribibles por
+-- cualquier usuario autenticado.
+alter table falm._backup_precios_20260903 enable row level security;
+alter table falm._backup_presupuestos_20260903 enable row level security;
+revoke all on falm._backup_precios_20260903 from public, authenticated, anon;
+revoke all on falm._backup_presupuestos_20260903 from public, authenticated, anon;
