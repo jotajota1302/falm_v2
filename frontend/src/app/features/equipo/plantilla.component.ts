@@ -1,5 +1,5 @@
 import { Component, OnInit, computed, signal } from '@angular/core';
-import { Equipo, FalmService, ItemPlantilla } from '../../core/falm.service';
+import { Equipo, FalmService, ItemPlantilla, PorteroClub } from '../../core/falm.service';
 import { FichaService } from '../../shared/ficha.service';
 
 const ORDEN: Record<string, number> = { PORTERO: 0, DEFENSA: 1, MEDIO: 2, DELANTERO: 3 };
@@ -31,31 +31,34 @@ const ETI: Record<string, string> = { PORTERO: 'Porteros', DEFENSA: 'Defensas', 
           <span class="lb">Jugadores</span>
           <span class="v num">{{ items().length }}</span>
         </div>
-        <div class="kpi">
-          <span class="lb">Valor de plantilla</span>
-          <span class="v num">{{ valorPlantilla() }}<small> M</small></span>
-        </div>
-        <div class="kpi">
-          <span class="lb">Presupuesto libre</span>
-          <span class="v num" [class.neg]="equipo()!.presupuesto < 0">{{ equipo()!.presupuesto }}<small> M</small></span>
-        </div>
       </div>
 
       <div class="tabla">
         <div class="fila cab">
           <span>Pos</span><span>Jugador</span><span>Club</span>
-          <span class="der">Pts</span><span class="der">Media</span><span class="der">Precio</span>
+          <span class="der">Pts</span><span class="der">Media</span>
         </div>
         @for (j of filas(); track j.activo_id) {
           <button class="fila" (click)="abrir(j)">
             <span class="pos" [class]="abr(j.posicion)">{{ abr(j.posicion) }}</span>
             <span class="quien">
-              <span class="av">
-                @if (j.escudo) { <img class="wm" [src]="j.escudo" alt="" loading="lazy" /> }
-                @if (j.foto) { <img class="pl" [src]="j.foto" alt="" loading="lazy" (error)="j.foto = ''" /> }
-                @else { <span class="ini">{{ j.nombre.charAt(0) }}</span> }
+              <span class="av" [class.esc]="j.tipo === 'DEFENSA'">
+                @if (j.tipo === 'DEFENSA') {
+                  @if (j.escudo) { <img class="pl" [src]="j.escudo" alt="" loading="lazy" /> }
+                } @else {
+                  @if (j.escudo) { <img class="wm" [src]="j.escudo" alt="" loading="lazy" /> }
+                  @if (j.foto) { <img class="pl" [src]="j.foto" alt="" loading="lazy" (error)="j.foto = ''" /> }
+                  @else { <span class="ini">{{ j.nombre.charAt(0) }}</span> }
+                }
               </span>
               <span class="nom">{{ j.nombre }}</span>
+              @if (porterosDe(j); as ps) {
+                <span class="caras" [title]="nombresPorteros(ps)">
+                  @for (g of ps; track g.nombre) {
+                    @if (g.foto) { <img [src]="g.foto" alt="" loading="lazy" /> }
+                  }
+                </span>
+              }
             </span>
             <span class="club">
               @if (j.escudo) { <img [src]="j.escudo" alt="" loading="lazy" /> }
@@ -63,7 +66,6 @@ const ETI: Record<string, string> = { PORTERO: 'Porteros', DEFENSA: 'Defensas', 
             </span>
             <span class="der num">{{ puntosDe(j) }}</span>
             <span class="der num media">{{ mediaDe(j) }}</span>
-            <span class="der num precio">{{ j.precio }}</span>
           </button>
         }
       </div>
@@ -85,7 +87,7 @@ const ETI: Record<string, string> = { PORTERO: 'Porteros', DEFENSA: 'Defensas', 
     /* La plantilla se lee como una clasificación: una fila por jugador. */
     .tabla { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; }
     .fila { width: 100%; display: grid; align-items: center; gap: 10px;
-      grid-template-columns: 46px 1.9fr 120px 90px 66px 70px;
+      grid-template-columns: 46px 2fr 150px 74px 78px;
       padding: 11px 18px; border: none; border-bottom: 1px solid var(--line);
       background: transparent; text-align: left; font-size: var(--t-sm); color: var(--text);
       font-family: var(--fb); cursor: pointer; }
@@ -103,6 +105,14 @@ const ETI: Record<string, string> = { PORTERO: 'Porteros', DEFENSA: 'Defensas', 
       transform: translate(-50%,-50%); opacity: .16; object-fit: contain; }
     .av .pl { position: relative; z-index: 1; width: 100%; height: 100%; object-fit: contain; }
     .av .ini { position: relative; z-index: 1; font-weight: 700; color: var(--text2); padding-bottom: 4px; }
+    /* La portería no tiene cara: lleva el escudo del club, entero. */
+    .av.esc { align-items: center; }
+    .av.esc .pl { width: 74%; height: 74%; object-fit: contain; }
+    /* A su derecha, quiénes paran de verdad en ese club. */
+    .caras { display: flex; align-items: center; flex: 0 0 auto; }
+    .caras img { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; object-position: top;
+      background: var(--surface2); border: 1.5px solid var(--surface); margin-left: -8px; }
+    .caras img:first-child { margin-left: 2px; }
     .nom { font-weight: 700; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .club { display: flex; align-items: center; gap: 6px; color: var(--text2); font-size: var(--t-sm);
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -123,6 +133,8 @@ export class PlantillaComponent implements OnInit {
   equipo = signal<Equipo | null>(null);
   items = signal<ItemPlantilla[]>([]);
   statsEq = signal<Record<string, any>>({});
+  /** Porteros reales de cada club del que tienes la portería. */
+  porteros = signal<Record<string, PorteroClub[]>>({});
   cargando = signal(true);
   error = signal('');
 
@@ -152,6 +164,16 @@ export class PlantillaComponent implements OnInit {
 
   constructor(private falm: FalmService, public ficha: FichaService) {}
   abr(p: string) { return ({ PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'MED', DELANTERO: 'DEL' } as Record<string, string>)[p] ?? p; }
+  /** Las caras que van al lado de una portería; nada para el resto. */
+  porterosDe(j: ItemPlantilla): PorteroClub[] | null {
+    if (j.tipo !== 'DEFENSA' || !j.club_id) return null;
+    const ps = this.porteros()[j.club_id];
+    return ps?.length ? ps.slice(0, 3) : null;
+  }
+
+  /** Para el tooltip: quiénes son esas caras. */
+  nombresPorteros(ps: PorteroClub[]) { return ps.map((p) => p.nombre).join(' · '); }
+
   puntosDe(j: ItemPlantilla) { return Number(this.statsEq()[j.activo_id]?.puntos ?? 0); }
   /** Media por jornada disputada; un guion mientras no haya ninguna. */
   mediaDe(j: ItemPlantilla): string {
@@ -179,6 +201,10 @@ export class PlantillaComponent implements OnInit {
         ]);
         this.items.set(items);
         this.statsEq.set(stats);
+        const clubes = items.filter((j) => j.tipo === 'DEFENSA').map((j) => j.club_id!);
+        if (clubes.length) {
+          this.porteros.set(await this.falm.porterosDeClubes(clubes).catch(() => ({})));
+        }
       }
     } catch (e: any) {
       this.error.set(e?.message ?? 'Error cargando la plantilla');

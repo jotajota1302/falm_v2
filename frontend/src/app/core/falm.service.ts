@@ -37,6 +37,8 @@ export interface Equipo {
 export interface AgendaItem { numero: number; fecha: string; comp: 'LIGA' | 'CHAMPIONS' | 'CLAUSURA'; rival: string; es_local: boolean; mis_puntos: number | null; rival_puntos: number | null; }
 export interface Agenda { proximo: AgendaItem | null; en_juego: AgendaItem | null; ultimo: AgendaItem | null; }
 
+export interface PorteroClub { id: number | null; nombre: string; foto: string | null; }
+
 export interface ItemPlantilla {
   activo_id: string;
   tipo: 'JUGADOR' | 'DEFENSA';
@@ -44,6 +46,7 @@ export interface ItemPlantilla {
   nombre: string;       // jugador real o "Portería <Club>" para porteros virtuales
   club: string;         // equipo LFP
   precio: number;
+  club_id?: string;
   foto?: string | null;
   escudo?: string | null;
   ext_id?: number | null;
@@ -300,8 +303,8 @@ export class FalmService {
       .from('plantilla')
       .select(
         'precio, activo:activo_id (id, tipo, ' +
-          'jugador_lfp:jugador_lfp_id (nombre, apellido, posicion, foto, ext_id, equipo_lfp:equipo_lfp_id (nombre, tla, escudo)), ' +
-          'equipo_lfp:equipo_lfp_id (nombre, tla, escudo))'
+          'jugador_lfp:jugador_lfp_id (nombre, apellido, posicion, foto, ext_id, equipo_lfp:equipo_lfp_id (id, nombre, tla, escudo)), ' +
+          'equipo_lfp:equipo_lfp_id (id, nombre, tla, escudo))'
       )
       .eq('equipo_falm_id', equipoId)
       .is('fecha_baja', null);
@@ -321,8 +324,35 @@ export class FalmService {
         foto: esDefensa ? null : a.jugador_lfp?.foto,
         escudo: esDefensa ? a.equipo_lfp?.escudo : a.jugador_lfp?.equipo_lfp?.escudo,
         ext_id: esDefensa ? null : a.jugador_lfp?.ext_id,
+        club_id: esDefensa ? a.equipo_lfp?.id : a.jugador_lfp?.equipo_lfp?.id,
       } as ItemPlantilla;
     });
+  }
+
+  /**
+   * Porteros de unos clubes, para poner cara a las porterías: al fichar una
+   * portería fichas a quien pare ese día, no a un jugador concreto.
+   */
+  async porterosDeClubes(clubIds: string[]): Promise<Record<string, PorteroClub[]>> {
+    const ids = [...new Set(clubIds.filter(Boolean))];
+    if (!ids.length) return {};
+    const { data, error } = await this.sb.client
+      .from('jugador_lfp')
+      .select('ext_id, nombre, apellido, foto, dorsal, equipo_lfp_id')
+      .in('equipo_lfp_id', ids)
+      .eq('posicion', 'PORTERO')
+      .eq('primer_equipo', true)
+      .order('dorsal', { ascending: true });
+    if (error) throw error;
+    const out: Record<string, PorteroClub[]> = {};
+    for (const p of (data ?? []) as any[]) {
+      (out[p.equipo_lfp_id] ??= []).push({
+        id: p.ext_id ?? null,
+        nombre: `${p.nombre ?? ''} ${p.apellido ?? ''}`.trim(),
+        foto: p.foto ?? null,
+      });
+    }
+    return out;
   }
 
   /** Jornadas de una competición. */
