@@ -183,8 +183,11 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
       font-family: var(--fb); font-size: var(--t-xs); font-weight: 700; letter-spacing: .1em;
       text-transform: uppercase; color: var(--accent); }
 
-    .phead .sub { max-width: 62ch; }
-    .comps { display: flex; gap: 8px; flex-wrap: wrap; }
+    /* Toda la cabecera va al centro, en columna: el titular manda menos que
+       el campo, así que baja un escalón de tamaño. */
+    .phead { flex-direction: column; align-items: center; gap: 12px; }
+    .phead h1 { font-size: var(--t-xl); text-align: center; }
+    .comps { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
 
     /* Se compone arriba y se envía abajo: la barra se queda pegada al fondo
        mientras editas, para no tener que subir a buscar el botón. */
