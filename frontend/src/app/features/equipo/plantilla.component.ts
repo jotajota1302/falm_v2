@@ -31,6 +31,14 @@ const ETI: Record<string, string> = { PORTERO: 'Porteros', DEFENSA: 'Defensas', 
           <span class="lb">Jugadores</span>
           <span class="v num">{{ items().length }}</span>
         </div>
+        <div class="kpi">
+          <span class="lb">Valor de plantilla</span>
+          <span class="v num">{{ valorPlantilla() }}<small> M</small></span>
+        </div>
+        <div class="kpi">
+          <span class="lb">Presupuesto libre</span>
+          <span class="v num" [class.neg]="equipo()!.presupuesto < 0">{{ equipo()!.presupuesto }}<small> M</small></span>
+        </div>
       </div>
 
       <div class="tabla">
@@ -131,13 +139,11 @@ export class PlantillaComponent implements OnInit {
     [...this.items()].sort((a, b) =>
       (ORDEN[a.posicion] - ORDEN[b.posicion]) || (this.puntosDe(b) - this.puntosDe(a))));
 
+  /** Cuántos hay de cada línea: lo que se mira antes de fichar. */
   resumen = computed(() => {
-    const n = this.items().length;
-    const virtuales = this.items().filter((j) => j.tipo === 'DEFENSA').length;
-    const porteros = this.items().filter((j) => j.posicion === 'PORTERO').length;
-    const partes = [`${n} jugadores`, `${porteros} porteros`];
-    if (virtuales) partes.push(`${virtuales} de portería virtual`);
-    return partes.join(' · ');
+    const por = (p: string) => this.items().filter((j) => j.posicion === p).length;
+    return [`${por('PORTERO')} porterías`, `${por('DEFENSA')} defensas`,
+            `${por('MEDIO')} medios`, `${por('DELANTERO')} delanteros`].join(' · ');
   });
 
   constructor(private falm: FalmService, public ficha: FichaService) {}
