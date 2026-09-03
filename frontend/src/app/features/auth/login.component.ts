@@ -11,7 +11,7 @@ import { AuthService } from '../../core/auth.service';
   template: `
     <div class="wrap">
       <form class="caja rise" (ngSubmit)="submit()">
-        <span class="cab">Liga Fantasy</span>
+        <span class="cab">Liga FALM</span>
         <h1>FALM</h1>
         <p class="sub">Entra con el nombre de tu equipo.</p>
 
