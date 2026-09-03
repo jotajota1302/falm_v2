@@ -1,4 +1,4 @@
-import { Component, computed } from '@angular/core';
+import { Component, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from './core/auth.service';
@@ -27,10 +27,11 @@ interface NavItem { path: string; label: string; corto: string; }
 
         <nav class="nav">
           @for (item of items; track item.path) {
-            <a [routerLink]="item.path" routerLinkActive="active">
+            <a class="ni" [routerLink]="item.path" routerLinkActive="active" (click)="mas.set(false)">
               <span class="lg">{{ item.label }}</span><span class="sm">{{ item.corto }}</span>
             </a>
           }
+          <button class="masb" [class.on]="mas()" (click)="mas.set(!mas())">Más</button>
         </nav>
 
         <div class="right">
@@ -53,6 +54,19 @@ interface NavItem { path: string; label: string; corto: string; }
       </header>
 
       <main class="content"><router-outlet /></main>
+
+      <!-- Secciones que no caben en la barra del pulgar, más la cuenta. -->
+      @if (mas()) {
+        <div class="masback" (click)="mas.set(false)"></div>
+        <div class="maspanel">
+          @for (item of items.slice(4); track item.path) {
+            <a [routerLink]="item.path" routerLinkActive="on" (click)="mas.set(false)">{{ item.label }}</a>
+          }
+          <div class="massep"></div>
+          <a routerLink="/admin" (click)="mas.set(false)">Administración</a>
+          <button (click)="logout()">Salir</button>
+        </div>
+      }
     } @else {
       <router-outlet />
     }
@@ -85,6 +99,7 @@ interface NavItem { path: string; label: string; corto: string; }
     .nav a:hover { color: var(--text); background: var(--surface2); }
     .nav a.active { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
     .nav .sm { display: none; }
+    .nav .masb { display: none; }
 
     .right { display: flex; align-items: center; gap: 14px; margin-left: auto; flex: 0 0 auto; }
     .temp { background: var(--surface2); border: 1px solid var(--line); color: var(--text);
@@ -120,26 +135,52 @@ interface NavItem { path: string; label: string; corto: string; }
       .tlink { font-size: var(--t-xs); letter-spacing: .1em; }
       .temp { max-width: 104px; font-size: var(--t-xs); padding: 5px 6px; }
 
-      .content { padding: 16px 14px 116px; }
-      /* Rejilla fija, sin desplazamiento: en una barra que se desliza el
-         navegador cancela el toque en cuanto el dedo se mueve un pelo. */
+      /* Admin y Salir se van al panel "Más": la cabecera se queda con la
+         marca y el equipo, sin mezclar navegación con cuenta. */
+      .acc { display: none; }
+
+      .content { padding: 16px 14px 92px; }
+
+      /* Una sola fila: cuatro destinos y el resto detrás de "Más". Nada de
+         scroll horizontal, que hacía que el navegador cancelara el toque. */
       .nav {
         position: fixed; bottom: 0; left: 0; right: 0; z-index: 50;
-        display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px;
+        display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px;
         padding: 5px 5px calc(5px + env(safe-area-inset-bottom));
         border-top: 1px solid var(--line);
         background: var(--surface);
       }
-      .nav a { padding: 9px 4px; text-align: center; border-radius: 8px;
-        font-size: var(--t-xs); font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+      .nav .ni:nth-child(n+5) { display: none; }
+      .nav a, .nav .masb { padding: 10px 4px; text-align: center; border-radius: 8px;
+        border: none; background: none; cursor: pointer; color: var(--text2);
+        font-family: var(--fb); font-size: var(--t-xs); font-weight: 700;
+        letter-spacing: .04em; text-transform: uppercase;
         touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
-      .nav a:active { background: var(--surface2); }
-      .nav a.active { background: var(--accent-soft); border-color: transparent; color: var(--accent); }
+      .nav a:active, .nav .masb:active { background: var(--surface2); }
+      .nav a.active, .nav .masb.on { background: var(--accent-soft); color: var(--accent); }
+      .nav .masb { display: block; }
       .nav .lg { display: none; } .nav .sm { display: inline; }
+
+      .masback { position: fixed; inset: 0; z-index: 49; background: rgba(22,19,15,.42); }
+      .maspanel { position: fixed; z-index: 51; left: 0; right: 0;
+        bottom: calc(48px + env(safe-area-inset-bottom));
+        display: flex; flex-direction: column;
+        background: var(--surface); border-top: 1px solid var(--line);
+        box-shadow: 0 -1px 0 var(--line); }
+      .maspanel a, .maspanel button { padding: 15px 18px; text-align: left;
+        border: none; background: none; cursor: pointer; color: var(--text);
+        font-family: var(--fb); font-size: var(--t-md); font-weight: 600;
+        border-bottom: 1px solid var(--line); touch-action: manipulation; }
+      .maspanel a.on { color: var(--accent); }
+      .maspanel button { color: var(--text2); }
+      .massep { height: 7px; background: var(--surface2); border-bottom: 1px solid var(--line); }
     }
   `],
 })
 export class AppComponent {
+  /** Panel con las secciones que no caben en la barra inferior (solo móvil). */
+  mas = signal(false);
+
   get team() {
     return environment.devEquipoNombre || localStorage.getItem('falm_equipo') ||
       (this.auth.user()?.user_metadata?.['equipo'] as string) || '';
