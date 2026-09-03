@@ -22,6 +22,7 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
         <p class="sub">
           El turno no avanza hasta que el equipo al que le toca elige. Marca con ★ a quien
           quieras vigilar: si otro se te adelanta, lo verás tacharse al instante.
+          Máximo 2 jugadores del Madrid, Barcelona o Atlético, y 3 de cualquier otro club.
         </p>
       </div>
     </header>
@@ -119,7 +120,7 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
 
           <div class="fila cab">
             <span></span><span>Pos</span><span>Jugador</span><span>Club</span>
-            <span class="der">Precio</span><span></span>
+            <span class="der">Cupo</span><span></span>
           </div>
 
           @if (visibles().length === 0) {
@@ -137,7 +138,10 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
                   @if (a.escudo) { <img [src]="a.escudo" alt="" loading="lazy" /> }
                   {{ a.club }}
                 </span>
-                <span class="der num precio">{{ a.precio_mercado }}</span>
+                <span class="der num cupo" [class.lleno]="clubLleno(a)"
+                      [title]="'Máximo ' + (a.limite_club ?? 3) + ' de ' + a.club">
+                  {{ cupoUsado(a) }}/{{ a.limite_club ?? 3 }}
+                </span>
                 @if (tomado(a)) {
                   <span class="chip">{{ nombreEquipo(tomado(a)) }}</span>
                 } @else {
@@ -251,7 +255,8 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
       font-size: var(--t-xs); letter-spacing: .06em; text-transform: uppercase;
       min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .club img { width: 16px; height: 16px; object-fit: contain; flex: 0 0 auto; }
-    .precio { color: var(--accent); font-weight: 700; }
+    .cupo { color: var(--text2); font-size: var(--t-xs); }
+    .cupo.lleno { color: var(--bad); font-weight: 700; }
     .fila .btn { padding: 6px 12px; font-size: var(--t-sm); }
     .fila .chip { justify-self: start; min-width: 0; overflow: hidden;
       text-overflow: ellipsis; white-space: nowrap; }
@@ -390,8 +395,27 @@ export class DraftComponent implements OnInit, OnDestroy {
    * quien dicta su elección en voz alta. El cupo de porterías solo se comprueba
    * en cliente para mi propio equipo; para el resto lo valida el servidor.
    */
+  /** El equipo que se llevaría el pick: el mío, o el del turno si soy admin. */
+  equipoObjetivo(): string | null {
+    if (this.d.esMiTurno()) return this.d.miEquipoId();
+    if (this.d.soyGestor()) return this.d.turno()?.equipo_falm_id ?? null;
+    return this.d.miEquipoId();
+  }
+
+  /** Cuántos de ese club lleva ya el equipo que va a fichar. */
+  cupoUsado(a: ActivoLibre): number {
+    const eq = this.equipoObjetivo();
+    if (!eq || !a.club_id) return 0;
+    return this.d.cupoPorEquipo().get(eq)?.get(a.club_id) ?? 0;
+  }
+
+  clubLleno(a: ActivoLibre): boolean {
+    return this.cupoUsado(a) >= (a.limite_club ?? 3);
+  }
+
   puedeFichar(a: ActivoLibre) {
     if (this.tomado(a) || !this.d.turno()) return false;
+    if (this.clubLleno(a)) return false;
     if (this.d.esMiTurno()) return !this.d.debeElegirPorteria() || a.tipo === 'DEFENSA';
     return this.d.soyGestor();
   }
@@ -440,6 +464,7 @@ export class DraftComponent implements OnInit, OnDestroy {
       const a = cat.get(c.activo_id);
       if (!a || tom.has(a.activo_id)) continue;
       if (soloPorteria && a.tipo !== 'DEFENSA') continue;
+      if (this.clubLleno(a)) continue;   // el cupo del club también manda en el pre-pick
       return a;
     }
     return null;

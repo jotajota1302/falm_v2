@@ -118,6 +118,24 @@ export class DraftService {
     return faltan > 0 && this.misTurnosRestantes() <= faltan;
   });
 
+  /**
+   * Cuántos jugadores tiene cada equipo de cada club de LaLiga, para poder
+   * avisar del tope antes de que el servidor rechace el pick.
+   * equipo_falm_id -> (club_id -> nº)
+   */
+  readonly cupoPorEquipo = computed(() => {
+    const cat = new Map(this.catalogo().map((a) => [a.activo_id, a]));
+    const m = new Map<string, Map<string, number>>();
+    for (const p of this.picks()) {
+      const club = cat.get(p.activo_id)?.club_id;
+      if (!club) continue;
+      let porClub = m.get(p.equipo_falm_id);
+      if (!porClub) { porClub = new Map(); m.set(p.equipo_falm_id, porClub); }
+      porClub.set(club, (porClub.get(club) ?? 0) + 1);
+    }
+    return m;
+  });
+
   /** Picks ajenos que faltan hasta que me toque. 0 = es mi turno, -1 = ya no tengo turnos. */
   readonly picksHastaMiTurno = computed(() => {
     const yo = this.miEquipoId();

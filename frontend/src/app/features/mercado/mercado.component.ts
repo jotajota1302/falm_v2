@@ -42,7 +42,6 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
         <div class="fila cab">
           <span>Pos</span><span>Jugador</span><span>Club</span>
           <button class="ord der" [class.on]="orden() === 'pts'" (click)="ordenar('pts')">Pts</button>
-          <button class="ord der" [class.on]="orden() === 'precio'" (click)="ordenar('precio')">Precio</button>
         </div>
 
         @if (visibles().length === 0) {
@@ -57,7 +56,6 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
                 {{ a.club }}
               </span>
               <span class="der num">{{ ptsDe(a) }}</span>
-              <span class="der num precio">{{ a.precio_mercado }}</span>
             </button>
           }
         }
@@ -95,7 +93,7 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
     .barra .buscar { margin-left: auto; flex: 0 1 250px; padding: 7px 13px; font-size: var(--t-sm); border-radius: var(--pill); }
 
     .fila { width: 100%; display: grid; align-items: center; gap: 10px;
-      grid-template-columns: 46px 1.7fr 150px 74px 82px;
+      grid-template-columns: 46px 1.9fr 170px 74px;
       padding: 10px 18px; border: none; border-bottom: 1px solid var(--line);
       background: transparent; text-align: left; font-size: var(--t-sm); color: var(--text);
       font-family: var(--fb); cursor: pointer; }
@@ -132,7 +130,7 @@ export class MercadoComponent implements OnInit {
   acum = signal<Record<number, PuntosJugador>>({});
   texto = signal('');
   posFiltro = signal('');
-  orden = signal<'pts' | 'precio'>('precio');
+  orden = signal<'pts'>('pts');
   limite = signal(30);
   cargando = signal(true);
   error = signal('');
@@ -145,11 +143,9 @@ export class MercadoComponent implements OnInit {
       .filter((a) =>
         (!p || a.posicion === p) &&
         (!f || a.nombre.toLowerCase().includes(f) || a.club.toLowerCase().includes(f)))
-      // Con precios o puntos empatados (pretemporada) manda el alfabético,
-      // que si no la lista sale agrupada por posición sin querer.
-      .sort((a, b) => (o === 'pts'
-        ? this.ptsDe(b) - this.ptsDe(a)
-        : Number(b.precio_mercado ?? 0) - Number(a.precio_mercado ?? 0))
+      // Con los puntos empatados (pretemporada) manda el alfabético, que si no
+      // la lista sale agrupada por posición sin querer.
+      .sort((a, b) => (this.ptsDe(b) - this.ptsDe(a))
         || a.nombre.localeCompare(b.nombre, 'es'));
   });
 
@@ -161,7 +157,7 @@ export class MercadoComponent implements OnInit {
     if (a.ext_id) this.ficha.open({ id: a.ext_id, nombre: a.nombre, equipo: a.club, escudo: a.escudo ?? '', foto: a.foto ?? '', posicion: a.posicion });
   }
   togglePos(p: string) { this.posFiltro.set(this.posFiltro() === p ? '' : p); this.limite.set(30); }
-  ordenar(o: 'pts' | 'precio') { this.orden.set(o); this.limite.set(30); }
+  ordenar(o: 'pts') { this.orden.set(o); this.limite.set(30); }
 
   ptsDe(a: ActivoLibre) { return a.ext_id != null ? Number(this.acum()[a.ext_id]?.puntosTotales ?? 0) : 0; }
 

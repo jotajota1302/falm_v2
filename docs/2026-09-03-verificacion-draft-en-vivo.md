@@ -237,3 +237,44 @@ que quedaba como camino sin guardia.
 **Verificación**: las 15 funciones administrativas comprueban rol, y los dos
 bloques de test anteriores (7 casos del draft y 11 de la pretemporada) siguen
 pasando sin cambios.
+
+## 11. Sin dinero y con tope por club (2026-09-03) — ✅
+
+Esta temporada no se juega con dinero: lo que limita una plantilla es el número
+de jugadores y de qué clubes son.
+
+### Fuera el dinero
+
+| | |
+|---|---|
+| **Antes** | Precios por jugador, presupuesto por equipo, `procesar_fichajes` daba el jugador "al primero que pudiera pagarlo" y descontaba del presupuesto. |
+| **Ahora** | El presupuesto ya no se valida ni se descuenta (la columna sigue en la base, sin usar). `procesar_fichajes` da el jugador al primer solicitante **que tenga hueco**: menos de 23 en plantilla y cupo libre en ese club. `draft_consolidar` ya no descuenta. |
+| **UI** | Fuera el precio del mercado, del tablero de draft, de la plantilla y de la petición de fichaje; fuera el presupuesto de la plantilla, de fichajes y del panel de equipos; fuera el precio del editor de jugadores. También las ordenaciones internas por precio, que con todos a 15M no ordenaban nada. |
+| **Se queda** | Los premios en euros y el beneficio por equipo: eso es dinero real que os repartís, no el presupuesto ficticio de fichajes. |
+
+### Tope de jugadores por club
+
+Regla que existía en la liga y **no estaba implementada ni recogida en las specs**:
+se perdió en la reescritura V2. Nada impedía llevarse 5 del Madrid en el draft.
+
+- **2 jugadores** como máximo del Real Madrid, Barcelona o Atlético.
+- **3** de cualquier otro club.
+- La **portería** de un club cuenta como uno de los suyos.
+
+Modelado como `equipo_lfp.limite_plantilla` (3 por defecto, 2 en los tres
+grandes), no como una lista de excepciones en el código: se ajusta con un
+`update`. La comprobación vive en `draft_pick` y en `procesar_fichajes`, más
+`falm.club_de_activo()` que resuelve el club tanto de un jugador como de una
+portería.
+
+Comprobación de viabilidad: 3 clubes × 2 + 17 × 3 = 57 plazas posibles para una
+plantilla de 23.
+
+**En el tablero**: la columna que antes era Precio ahora es **Cupo**, y muestra
+`n/máximo` de ese club, en rojo cuando está lleno. El botón Fichar se apaga y el
+pre-pick salta a los jugadores cuyo club esté completo, así que el tope se ve
+antes de intentar el pick, no como un error después.
+
+**Test real**: sobre un draft de prueba, entran 2 del Real Madrid y el tercero se
+rechaza; entran 3 de un club normal y el cuarto se rechaza. **TEST OK**,
+revertido al terminar.

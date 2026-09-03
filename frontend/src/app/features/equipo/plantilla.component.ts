@@ -31,20 +31,12 @@ const ETI: Record<string, string> = { PORTERO: 'Porteros', DEFENSA: 'Defensas', 
           <span class="lb">Jugadores</span>
           <span class="v num">{{ items().length }}</span>
         </div>
-        <div class="kpi">
-          <span class="lb">Valor de plantilla</span>
-          <span class="v num">{{ valorPlantilla() }}<small> M</small></span>
-        </div>
-        <div class="kpi">
-          <span class="lb">Presupuesto libre</span>
-          <span class="v num" [class.neg]="equipo()!.presupuesto < 0">{{ equipo()!.presupuesto }}<small> M</small></span>
-        </div>
       </div>
 
       <div class="tabla">
         <div class="fila cab">
           <span>Pos</span><span>Jugador</span><span>Club</span><span>Estado</span>
-          <span class="der">Pts</span><span class="der">Media</span><span class="der">Precio</span>
+          <span class="der">Pts</span><span class="der">Media</span>
         </div>
         @for (j of filas(); track j.activo_id) {
           <button class="fila" (click)="abrir(j)">
@@ -57,7 +49,6 @@ const ETI: Record<string, string> = { PORTERO: 'Porteros', DEFENSA: 'Defensas', 
             <span class="estado" [class.virtual]="j.tipo === 'DEFENSA'">{{ j.tipo === 'DEFENSA' ? 'Virtual' : 'OK' }}</span>
             <span class="der num">{{ puntosDe(j) }}</span>
             <span class="der num media">{{ mediaDe(j) }}</span>
-            <span class="der num precio">{{ j.precio }}</span>
           </button>
         }
       </div>
@@ -79,7 +70,7 @@ const ETI: Record<string, string> = { PORTERO: 'Porteros', DEFENSA: 'Defensas', 
     /* La plantilla se lee como una clasificación: una fila por jugador. */
     .tabla { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; }
     .fila { width: 100%; display: grid; align-items: center; gap: 10px;
-      grid-template-columns: 46px 1.7fr 108px 84px 62px 66px 78px;
+      grid-template-columns: 46px 1.9fr 120px 90px 66px 70px;
       padding: 11px 18px; border: none; border-bottom: 1px solid var(--line);
       background: transparent; text-align: left; font-size: var(--t-sm); color: var(--text);
       font-family: var(--fb); cursor: pointer; }
@@ -123,9 +114,6 @@ export class PlantillaComponent implements OnInit {
   filas = computed(() =>
     [...this.items()].sort((a, b) =>
       (ORDEN[a.posicion] - ORDEN[b.posicion]) || (this.puntosDe(b) - this.puntosDe(a))));
-
-  valorPlantilla = computed(() =>
-    +this.items().reduce((s, j) => s + Number(j.precio ?? 0), 0).toFixed(1));
 
   resumen = computed(() => {
     const n = this.items().length;

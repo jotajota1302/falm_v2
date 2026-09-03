@@ -37,13 +37,10 @@ export class AdminService {
 
   /**
    * Edición completa del jugador. Ojo: nombre, apellido, club y dorsal los
-   * sobrescribe el scraper en la siguiente ingesta del catálogo; posición,
-   * precio y primer_equipo son nuestros y se respetan.
+   * sobrescribe el scraper en la siguiente ingesta del catálogo; posición y
+   * primer_equipo son nuestros y se respetan.
    */
   async actualizarJugador(j: EdicionJugador): Promise<void> {
-    const { error: e1 } = await this.sb.client
-      .from('activo').update({ precio_mercado: j.precio }).eq('id', j.activoId);
-    if (e1) throw e1;
     const { error: e2 } = await this.sb.client.from('jugador_lfp').update({
       nombre: j.pila,
       apellido: j.apellido,
@@ -90,10 +87,10 @@ export class AdminService {
     return (Array.isArray(d) ? d : []) as CronAdmin[];
   }
 
-  /** Renombrar un equipo FALM o ajustarle el presupuesto. */
-  async actualizarEquipo(id: string, nombre: string, presupuesto: number): Promise<void> {
+  /** Renombrar un equipo FALM. El presupuesto ya no se usa: se juega por número de jugadores. */
+  async actualizarEquipo(id: string, nombre: string): Promise<void> {
     const { error } = await this.sb.client
-      .from('equipo_falm').update({ nombre: nombre.trim(), presupuesto }).eq('id', id);
+      .from('equipo_falm').update({ nombre: nombre.trim() }).eq('id', id);
     if (error) throw error;
   }
 
@@ -264,7 +261,7 @@ export interface AdminJugador {
 export interface EdicionJugador {
   activoId: string; jugadorLfpId: string;
   pila: string; apellido: string; posicion: string;
-  clubId: string; dorsal: number | null; primerEquipo: boolean; precio: number;
+  clubId: string; dorsal: number | null; primerEquipo: boolean;
 }
 
 export interface JornadaAdmin {

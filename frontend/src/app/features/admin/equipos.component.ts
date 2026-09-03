@@ -23,15 +23,13 @@ const COLORES = ['#00e676', '#38bdf8', '#fb7185', '#a3e635', '#ffc24b', '#c084fc
             <span class="av" [style.background]="color(e.nombre)">{{ ini(e.nombre) }}</span>
             <div class="info">
               <strong>{{ e.nombre }}</strong>
-              <span class="meta">{{ e.jugadores }} jugadores · {{ e.presupuesto }}M libre</span>
+              <span class="meta">{{ e.jugadores }} jugadores</span>
               <span class="own" [class.sin]="!e.usuarioId">{{ e.usuarioId ? 'Dueño asignado' : 'Sin dueño' }}</span>
             </div>
             <div class="der">
               @if (editId() === e.id) {
                 <input [ngModel]="edNombre()" (ngModelChange)="edNombre.set($event)"
                        placeholder="Nombre" style="width:150px" />
-                <input type="number" step="0.5" [ngModel]="edPres()" (ngModelChange)="edPres.set($event)"
-                       placeholder="Presupuesto" style="width:90px" />
                 <button class="bn ok" (click)="guardar(e)">✓</button>
                 <button class="bn no" (click)="editId.set('')">✕</button>
               } @else {
@@ -70,7 +68,6 @@ export class AdminEquiposComponent implements OnInit {
   equipos = signal<AdminEquipo[]>([]);
   editId = signal('');
   edNombre = signal('');
-  edPres = signal(0);
   cargando = signal(true);
   aviso = signal('');
   error = signal('');
@@ -88,7 +85,6 @@ export class AdminEquiposComponent implements OnInit {
   editar(e: AdminEquipo) {
     this.editId.set(e.id);
     this.edNombre.set(e.nombre);
-    this.edPres.set(e.presupuesto);
     this.aviso.set('');
   }
 
@@ -97,7 +93,7 @@ export class AdminEquiposComponent implements OnInit {
     if (!nombre) { this.error.set('El nombre no puede quedar vacío.'); return; }
     this.error.set('');
     try {
-      await this.admin.actualizarEquipo(e.id, nombre, Number(this.edPres()));
+      await this.admin.actualizarEquipo(e.id, nombre);
       this.equipos.set(await this.admin.equipos());
       this.editId.set('');
       this.aviso.set('Equipo actualizado.');

@@ -90,6 +90,9 @@ export interface ActivoLibre {
   posicion: string;
   nombre: string;
   club: string;
+  /** Club de LaLiga y cuántos suyos caben en una plantilla (2 en los grandes, 3 en el resto). */
+  club_id?: string | null;
+  limite_club?: number | null;
   precio_mercado: number;
   foto?: string | null;
   escudo?: string | null;

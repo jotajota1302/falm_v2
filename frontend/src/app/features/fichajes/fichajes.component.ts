@@ -58,7 +58,6 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
                   {{ a.club }}
                 </span>
                 <span class="der num">{{ ptsDe(a) }}</span>
-                <span class="der num precio">{{ a.precio_mercado }}</span>
                 <button class="pedir" [class.on]="prioridadDe(a)" (click)="toggle(a)">
                   {{ prioridadDe(a) ? prioridadDe(a) + 'ª opción' : 'Pedir' }}
                 </button>
@@ -79,7 +78,7 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
                   <span class="prio num">{{ s }}</span>
                   <div class="sw">
                     <span class="sn">{{ a.nombre }}</span>
-                    <span class="smeta">{{ abr(a.posicion) }} · {{ a.club }} · {{ a.precio_mercado }} M</span>
+                    <span class="smeta">{{ abr(a.posicion) }} · {{ a.club }}</span>
                   </div>
                   <button class="rm" (click)="quitar(s)" aria-label="Quitar">✕</button>
                 </div>
@@ -91,10 +90,7 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
               }
             }
             <div class="pieCaja">
-              <div>
-                <span class="lb">Presupuesto tras fichar</span>
-                <strong class="num" [class.neg]="presupuestoFinal() < 0">{{ presupuestoFinal() }}<small> M</small></strong>
-              </div>
+              <span class="lb">La plantilla no puede pasar de 23 jugadores</span>
               <button class="btn" [disabled]="!p1() || enviando()" (click)="enviar()">
                 {{ enviando() ? 'Enviando…' : 'Enviar' }}
               </button>
@@ -147,7 +143,7 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
     .lado { flex: 1 1 300px; min-width: 280px; display: flex; flex-direction: column; gap: 14px; }
 
     .barra .buscar { margin-left: auto; flex: 0 1 220px; padding: 7px 13px; font-size: var(--t-sm); border-radius: var(--pill); }
-    .fila { grid-template-columns: 46px 1.6fr 110px 56px 62px 92px; }
+    .fila { grid-template-columns: 46px 1.8fr 130px 62px 92px; }
     /* Lo pedido se marca en el papel, para no perderlo al desplazar la lista. */
     .fila.pedido { background: var(--accent-soft); }
     .nom { background: none; border: none; padding: 0; text-align: left; cursor: pointer;
@@ -245,15 +241,7 @@ export class FichajesComponent implements OnInit {
       .filter((a) =>
         (!p || a.posicion === p) &&
         (!f || a.nombre.toLowerCase().includes(f) || a.club.toLowerCase().includes(f)))
-      .sort((a, b) => (Number(b.precio_mercado ?? 0) - Number(a.precio_mercado ?? 0))
-        || a.nombre.localeCompare(b.nombre, 'es'));
-  });
-
-  /** Lo que quedaría en caja si te concedieran las dos peticiones. */
-  presupuestoFinal = computed(() => {
-    const base = Number(this.equipo()?.presupuesto ?? 0);
-    const gasto = [this.p1(), this.p2()].reduce((s, a) => s + Number(a?.precio_mercado ?? 0), 0);
-    return Math.round((base - gasto) * 10) / 10;
+      .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
   });
 
   constructor(private falm: FalmService, public ficha: FichaService) {}
