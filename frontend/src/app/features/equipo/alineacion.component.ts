@@ -87,7 +87,7 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
                       <svg viewBox="0 0 24 23" aria-hidden="true">
                         <path d="M9.1 1 3 4.2l1.7 4.6 2.1-.8V22h10.4V8l2.1.8L21 4.2 14.9 1a3 3 0 0 1-5.8 0z" />
                       </svg>
-                      <span class="q">?</span>
+                      <span class="q">{{ iniciales() }}</span>
                     </span>
                     <span class="lb">{{ abr(pos) }}</span>
                   </span>
@@ -250,9 +250,10 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
       width: 28px; height: 28px; border-radius: 50%; font-size: var(--t-md); line-height: 1;
       background: var(--surface); color: var(--c); }
     .fig { position: relative; display: flex; align-items: center; justify-content: center; }
-    .fig svg { width: 30px; height: 29px; fill: var(--c); opacity: .42; }
-    .fig .q { position: absolute; top: 56%; left: 50%; transform: translate(-50%, -50%);
-      font-family: var(--fb); font-size: var(--t-sm); font-weight: 700; color: var(--surface); }
+    .fig svg { width: 32px; height: 31px; fill: var(--c); opacity: .5; }
+    .fig .q { position: absolute; top: 57%; left: 50%; transform: translate(-50%, -50%);
+      font-family: var(--fb); font-size: var(--t-xs); font-weight: 700; letter-spacing: .02em;
+      color: var(--surface); }
     /* El color de la posición vive aquí, en el hueco, no en franjas de fondo. */
     .slot.vacio { --c: var(--text2); }
     .slot.vacio[data-pos=POR] { --c: var(--por); }
@@ -354,6 +355,13 @@ export class AlineacionComponent implements OnInit {
   cargando = signal(true);
   guardando = signal(false);
   aviso = signal('');
+
+  /** El dorsal de la camiseta del hueco: las iniciales de tu equipo. */
+  iniciales = computed(() => {
+    const p = (this.equipo()?.nombre ?? '').trim().split(/\s+/).filter(Boolean);
+    if (!p.length) return '?';
+    return ((p[0][0] ?? '') + (p[1]?.[0] ?? '')).toUpperCase();
+  });
 
   compTipo = computed(() => this.competiciones().find((c) => c.id === this.competicionId())?.tipo ?? 'LIGA');
   esLiga = computed(() => this.compTipo() === 'LIGA');
