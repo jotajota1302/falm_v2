@@ -41,10 +41,14 @@ export class AuthService {
 
   /** Login por NOMBRE DE EQUIPO: resuelve el email del usuario y entra con la contraseña. */
   async loginEquipo(nombre: string, password: string) {
-    const { data, error } = await this.sb.client.rpc('email_de_equipo', { p_nombre: nombre.trim() });
+    const eq = nombre.trim();
+    const { data, error } = await this.sb.client.rpc('email_de_equipo', { p_nombre: eq });
     if (error) throw error;
-    if (!data) throw new Error('No existe ningún equipo con ese nombre.');
+    // Mismo mensaje que una contraseña mala: no confirmamos qué equipos existen.
+    if (!data) throw new Error('Invalid login credentials');
     await this.signIn(data as string, password);
+    // El nombre solo alimenta la cabecera; el equipo de verdad se resuelve por usuario_id.
+    localStorage.setItem('falm_equipo', eq);
   }
 
   /**

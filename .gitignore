@@ -39,3 +39,11 @@ Thumbs.db
 # Testing / coverage
 coverage/
 .nyc_output/
+
+# Exports de datos (Excel/PDF/CSV generados)
+exports/
+
+# Cache de descargas del generador de carga
+tools/.cache/
+__pycache__/
+*.pyc

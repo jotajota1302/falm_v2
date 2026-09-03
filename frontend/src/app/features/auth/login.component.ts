@@ -15,14 +15,19 @@ import { AuthService } from '../../core/auth.service';
         <p class="sub">Inicia sesión con tu equipo</p>
 
         <label>Equipo
-          <input type="text" [(ngModel)]="equipo" name="equipo" autocomplete="off"
+          <input type="text" [(ngModel)]="equipo" name="equipo" autocomplete="username"
                  placeholder="GOLDEN BOYS" required />
+        </label>
+
+        <label>Contraseña
+          <input type="password" [(ngModel)]="password" name="password"
+                 autocomplete="current-password" required />
         </label>
 
         @if (error()) { <p class="err">{{ error() }}</p> }
 
         <button type="submit" [disabled]="cargando()">{{ cargando() ? '…' : 'Entrar' }}</button>
-        <p class="hint">Provisional: entra con el nombre de tu equipo (sin contraseña).</p>
+        <p class="hint">Provisional: la contraseña es el nombre de tu equipo.</p>
       </form>
     </div>
   `,
@@ -55,12 +60,18 @@ export class LoginComponent {
   async submit() {
     this.error.set('');
     if (!this.equipo.trim()) { this.error.set('Pon el nombre de tu equipo.'); return; }
+    if (!this.password) { this.error.set('Pon la contraseña.'); return; }
     this.cargando.set(true);
     try {
-      await this.auth.loginNombre(this.equipo);
+      await this.auth.loginEquipo(this.equipo, this.password);
       this.router.navigateByUrl('/dashboard');
     } catch (e: any) {
-      this.error.set(e?.message ?? 'Error al entrar');
+      // Supabase responde 'Invalid login credentials'; en castellano y sin pistas de si
+      // lo que falla es el equipo o la contraseña.
+      const msg = String(e?.message ?? '');
+      this.error.set(/invalid login credentials/i.test(msg)
+        ? 'Equipo o contraseña incorrectos.'
+        : (msg || 'Error al entrar'));
     } finally {
       this.cargando.set(false);
     }
