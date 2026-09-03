@@ -126,3 +126,75 @@ resultados rechazado incluso forzando, edición de cruce jugado rechazada,
 inversión de localía válida aplicada, equipo duplicado en jornada rechazado,
 remapeo válido aplicado y remapeo a LFP inexistente rechazado. Resultado:
 **TEST OK: los 11 casos pasaron**, revertido al terminar.
+
+## 8. Auditoría del panel de admin (2026-09-03) — ✅
+
+Revisión opción a opción de qué servía y qué no.
+
+### Operaciones — estaba rota
+
+**Tres de los cuatro botones fallaban siempre.** El componente llamaba a las
+funciones sin argumentos (`ejecutar(op.rpc)`), pero `procesar_fichajes(p_jornada)`,
+`heredar_alineaciones(p_jornada)` y `calcular_premios_jornada(p_jornada, …)`
+exigen la jornada y no tienen default. Solo `expirar_ofertas()` funcionaba, y era
+redundante: hay un cron que la ejecuta cada hora.
+
+Además la pantalla anunciaba horarios falsos ("martes 22:59"): eso ya no existe.
+Los cron reales son tres, todos activos y en verde:
+
+| Cron | Horario | Qué hace |
+|---|---|---|
+| `falm-expirar-ofertas` | cada hora, minuto 0 | `expirar_ofertas()` |
+| `falm-tareas-jornada` | cada hora, minuto 10 | `tareas_previas_jornada()`, que es **quien llama a `procesar_fichajes` y `heredar_alineaciones`** con márgenes de 12 h y 1 h |
+| `falm-procesar-jornada` | cada hora, minuto 25 | `procesar_jornada_auto()` |
+
+**Ahora**: la pantalla muestra ese estado real (horario, última ejecución y
+resultado, vía la nueva `falm.estado_crons()`), y la ejecución manual pide la
+jornada sobre la que actuar. Los botones que la necesitan están apagados hasta
+elegirla, y el desplegable marca las jornadas cuyos fichajes o alineaciones ya
+se procesaron.
+
+### Jugadores — edición completa
+
+Antes solo precio y posición. Ahora nombre, apellido, posición, club, dorsal,
+precio y **`primer_equipo`**, que es la bandera que decide si un jugador aparece
+en mercado y draft (`v_activo_libre` filtra por ella): sin eso no había forma de
+hacer fichable a un canterano que sube. La ficha avisa de que el scraper
+sobrescribe nombre, apellido, club y dorsal en la siguiente ingesta, y que
+posición, precio y primer equipo se respetan.
+
+### Equipos — nombre y presupuesto editables
+
+Antes solo tenía un botón "Asignar dueño" que no hacía nada (mostraba un aviso
+de que se habilitaría con invitaciones). Se mantiene ese aviso, pero ya se puede
+renombrar un equipo y ajustar su presupuesto.
+
+### Agujero de RLS en `equipo_falm` — cerrado
+
+La política `wr_dueno` permitía a cada mánager hacer `UPDATE` sobre su propia
+fila. Como RLS no filtra por columna y el `GRANT` es de tabla completa, eso
+incluía `presupuesto`, `puntos_clasif`, `victorias` y `beneficio`: **cualquier
+mánager podía falsear su clasificación desde la consola del navegador**.
+
+Sustituida por `wr_equipo_admin` (solo `es_admin()`). No rompe nada: el único
+UPDATE del frontend es el del panel de admin, y las funciones que tocan la
+clasificación son `SECURITY DEFINER` y se saltan RLS.
+
+### Simulación — fuera del menú
+
+`montar_temporada_prueba` copia equipos y plantillas de la temporada activa para
+probar el motor de puntos. Hoy no sirve: las plantillas están vacías y
+`puntuacion` tiene 0 filas, así que monta diez equipos sin jugadores y da una
+clasificación de ceros. Se quita del menú pero **se conserva la ruta**
+(`/admin/simulacion`), porque después del draft y de la primera ingesta es la
+única herramienta para validar el motor con datos reales antes de la primera
+jornada oficial.
+
+Verificado de paso que el cambio de firma de `generar_calendario_liga` no la
+rompió: `montar_temporada_prueba` sigue montando sus 10 equipos, 3 jornadas y 30
+alineaciones.
+
+### Sin tocar
+
+`recalcular_clasificacion`, `draft_consolidar`, `editar_puntos` y `activar_temporada`:
+revisadas y correctas.
