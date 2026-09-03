@@ -193,11 +193,10 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
     /* Se compone arriba y se envía abajo: la barra se queda pegada al fondo
        mientras editas, para no tener que subir a buscar el botón. */
     .envio { position: sticky; bottom: 0; z-index: 6;
-      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+      display: flex; align-items: center; justify-content: center; gap: 14px; flex-wrap: wrap;
       margin: 14px auto 0; max-width: 1120px; padding: 12px 16px;
       background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); }
-    .envio .est { flex: 1 1 auto; min-width: 130px; font-size: var(--t-sm);
-      color: var(--bad); font-weight: 600; }
+    .envio .est { font-size: var(--t-sm); color: var(--bad); font-weight: 700; }
     .envio .est.ok { color: var(--good); }
     /* Las dos acciones, juntas y de la misma altura: la de verdad en granate. */
     .envio .btn-sec, .envio .btn { padding: 11px 20px; font-size: var(--t-sm); }
@@ -206,18 +205,18 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
 
     @media (max-width: 480px) {
       .envio { gap: 8px; padding: 11px 13px; }
-      .envio .est { flex: 1 1 100%; }
+      .envio .est { flex: 1 1 100%; text-align: center; }
       .envio .btn-sec, .envio .btn { flex: 1 1 0; padding: 12px 10px; text-align: center; }
     }
 
     /* Formación y recuento de titulares, pegados al campo que gobiernan. */
     /* La formación se queda en el campo, en la esquina que nadie usa: se
        cambia mirando el once, y en el móvil no hay que ir hasta el pie. */
-    .fsel { position: absolute; z-index: 2; top: 12px; left: 12px;
-      display: flex; flex-direction: column; gap: 3px;
+    .fsel { position: absolute; z-index: 2; top: 22px; left: 22px;
+      display: flex; flex-direction: column; gap: 2px;
       background: var(--surface); border: 1px solid var(--line);
-      border-radius: 10px; padding: 7px 9px; }
-    .fsel select { padding: 5px 6px; border: none; background: none;
+      border-radius: 9px; padding: 6px 8px; }
+    .fsel select { padding: 2px 4px; border: none; background: none;
       font-size: var(--t-sm); font-weight: 700; }
     .fsel select:focus { outline: none; }
 
