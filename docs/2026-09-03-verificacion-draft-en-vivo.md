@@ -198,3 +198,42 @@ alineaciones.
 
 `recalcular_clasificacion`, `draft_consolidar`, `editar_puntos` y `activar_temporada`:
 revisadas y correctas.
+
+## 9. Precios planos y presupuesto del draft (2026-09-03) — ✅
+
+| | |
+|---|---|
+| **Antes** | Jugadores entre 5 y 7M (media 5,71) y porterías a 1,50M. Presupuesto de 100M por equipo. `draft_consolidar` metía los picks en la plantilla **sin descontar nada**, así que el presupuesto quedaba intacto tras el draft y el límite no tenía ningún efecto real. |
+| **Ahora** | Todos los activos a **15M** (incluidas las porterías, para que la cuenta cuadre) y presupuesto de **345M** = 23 × 15. `draft_consolidar` descuenta lo que cuesta cada pick, así que al acabar el draft cada equipo queda **a cero** y los movimientos posteriores dependen de premios y ventas. |
+| **Test real** | Draft de prueba de 2 rondas: 20 picks, consolidación con 20 altas y 300M gastados, presupuesto de los 10 equipos 345 → 315, plantilla con 20 filas y draft en CONSOLIDADO. **TEST OK**, revertido al terminar. |
+| **Respaldo** | `falm._backup_precios_20260903` y `falm._backup_presupuestos_20260903` guardan los valores anteriores. La forma de revertir está en la cabecera de `tools/sql/precios_15m.sql`. |
+| **Nota** | Con precios planos, el mínimo de porterías hace imposible cualquier pick en drafts de menos de 2 rondas (te faltan 2 porterías y no te quedan turnos). Irrelevante para el draft real de 23, pero hay que tenerlo en cuenta al montar pruebas. |
+
+## 10. Guardias de rol en las funciones de admin (2026-09-03) — ✅
+
+Lo destapó la revisión automática de seguridad sobre `estado_crons`, y resultó ser
+un patrón repetido: **nueve funciones administrativas eran `SECURITY DEFINER`,
+con `grant execute to authenticated` y sin comprobar rol**. Cualquier mánager
+podía llamarlas desde la consola del navegador:
+
+| Función | Qué permitía |
+|---|---|
+| `activar_temporada` | Cambiar la temporada activa de toda la app |
+| `editar_puntos` | Falsear puntuaciones, y con ellas la clasificación |
+| `crear_temporada` | Crear temporadas |
+| `draft_crear` | Crear un draft |
+| `generar_jornadas_liga`, `generar_calendario_liga` | Regenerar jornadas y calendario (dentro de lo que permitan las protecciones) |
+| `montar_temporada_prueba` | Borrar y recrear la temporada de pruebas |
+| `estado_crons` | Leer los cron de toda la base, **incluido el comando**: hoy no hay secretos ahí, pero `refrescar_calendario_fd(p_token text, …)` existe y el día que se programe con el token dentro se filtraría |
+| `recalcular_clasificacion` | Recalcular la temporada activa |
+
+Todas llevan ya la misma guardia que `draft_pick`: `auth.uid()` nulo (mantenimiento
+por SQL o cron) pasa; un usuario autenticado tiene que ser `es_gestor()`.
+`recalcular_clasificacion` es el único caso con matiz: la app la llama al guardar
+alineación en temporadas de pruebas, así que solo exige rol si la temporada es la
+activa. Se eliminó además la sobrecarga `crear_temporada(text)` de un argumento,
+que quedaba como camino sin guardia.
+
+**Verificación**: las 15 funciones administrativas comprueban rol, y los dos
+bloques de test anteriores (7 casos del draft y 11 de la pretemporada) siguen
+pasando sin cambios.
