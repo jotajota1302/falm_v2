@@ -296,7 +296,10 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
     .fila { position: relative; z-index: 1; display: flex; justify-content: center;
       align-items: center; gap: 10px; flex-wrap: wrap; padding: 4px; }
 
-    .slot { background: none; border: none; cursor: pointer; width: 100px; padding: 0; }
+    /* Las cartas se reparten el ancho de su línea: con dos delanteros son
+       anchas y con cinco defensas estrechas, pero siempre aprovechan el campo. */
+    .slot { background: none; border: none; cursor: pointer; padding: 0;
+      flex: 1 1 0; min-width: 84px; max-width: 136px; }
     .slot.vacio { min-height: 112px; border-radius: 13px; display: flex;
       flex-direction: column; align-items: center; justify-content: center; gap: 6px;
       border: 1.5px dashed rgba(255,255,255,.9);

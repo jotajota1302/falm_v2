@@ -74,11 +74,13 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     .fut.campo .val { background: var(--surface2); border: 1px solid var(--line);
       padding: 1px 6px; border-radius: 6px; font-size: var(--t-sm); }
     .fut.campo .top { justify-content: center; align-items: stretch; }
-    .fut.campo .face { max-width: 88%; object-position: center bottom; }
-    .fut.campo .face.esc { max-width: 58%; max-height: 74%; object-position: center; }
+    .fut.campo .face { width: 100%; max-width: none; height: 100%;
+      object-fit: cover; object-position: center top; }
+    .fut.campo .face.esc { width: auto; max-width: 58%; height: auto; max-height: 74%;
+      object-fit: contain; object-position: center; }
     /* En una portería la cifra iba encima del escudo: le dejamos su sitio. */
     .fut.campo.solo-escudo .top { padding-top: 16%; }
-    .fut.campo.solo-escudo .face.esc { max-height: 84%; }
+    .fut.campo.solo-escudo .face.esc { max-height: 84%; align-self: center; }
     /* Dos líneas como mucho, y si una palabra no cabe se parte antes que
        comerse el resto del nombre. */
     .fut.campo .n1 { text-align: center; white-space: normal; overflow-wrap: anywhere;
