@@ -40,7 +40,11 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
               <div class="s"><b class="num">{{ acum().goles }}</b><span>Goles</span></div>
               <div class="s"><b class="num">{{ acum().asis }}</b><span>Asistencias</span></div>
               <div class="s"><b class="num">{{ acum().estrellas }}</b><span>Estrellas</span></div>
-              <div class="s"><b class="num">{{ acum().imbatidos }}</b><span>Imbatido</span></div>
+              @if (puntuaImbatido()) {
+                <div class="s"><b class="num">{{ acum().imbatidos }}</b><span>Imbatido</span></div>
+              } @else {
+                <div class="s"><b class="num">{{ acum().minutos }}</b><span>Minutos</span></div>
+              }
               <div class="s"><b class="num">{{ acum().jugadas }}</b><span>Jornadas</span></div>
             </div>
 
@@ -116,8 +120,18 @@ export class FichaJugadorComponent {
   fallo = signal(false);
   jornadas = signal<any[]>([]);
 
+  /**
+   * La portería a cero solo puntúa a porteros y defensas (+2 y +1), así que a un
+   * medio o un delantero no se le enseña: contarla ahí hacía pensar que sumaba.
+   */
+  puntuaImbatido = computed(() => {
+    const p = this.abr(this.ficha.abierto()?.posicion ?? '');
+    return p === 'POR' || p === 'DEF';
+  });
+
   acum = computed(() => {
     const h = this.jornadas();
+    const cero = this.puntuaImbatido();
     if (h.length) {
       const sum = (k: string) => h.reduce((s, x) => s + Number(x[k] ?? 0), 0);
       return {
@@ -125,12 +139,18 @@ export class FichaJugadorComponent {
         goles: sum('goles') + sum('golesPenalti'),
         asis: sum('asistencias'),
         estrellas: sum('estrellas'),
-        imbatidos: h.filter((x) => x.imbatido).length,
+        // Mismo criterio que stats_equipo: hay que pasar de 45 minutos.
+        imbatidos: cero
+          ? h.filter((x) => x.imbatido && Number(x.minutosJugados ?? 0) > 45).length
+          : 0,
+        minutos: sum('minutosJugados'),
         jugadas: h.filter((x) => Number(x.minutosJugados ?? 0) > 0).length,
       };
     }
     // respaldo: totales ya conocidos (Estadísticas/Equipo)
-    return this.ficha.abierto()?.tot ?? { puntos: 0, goles: 0, asis: 0, estrellas: 0, imbatidos: 0, jugadas: 0 };
+    const t = this.ficha.abierto()?.tot;
+    return { puntos: 0, goles: 0, asis: 0, estrellas: 0, imbatidos: 0, jugadas: 0,
+             ...(t ?? {}), minutos: 0 };
   });
 
   barras = computed(() => {
