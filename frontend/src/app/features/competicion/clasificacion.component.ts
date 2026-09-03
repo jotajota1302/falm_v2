@@ -58,8 +58,13 @@ import { colorEquipo } from '../../shared/equipo-colores';
       <div class="tabla">
         <div class="fila cab">
           <span>#</span><span>Equipo</span>
-          <span class="der">V</span><span class="der">E</span><span class="der">D</span>
-          <span class="der">Puntos</span><span class="der">Fantasy</span><span class="der">Beneficio</span>
+          <span class="der" title="Partidos jugados">PJ</span>
+          <span class="der" title="Victorias">V</span>
+          <span class="der" title="Empates">E</span>
+          <span class="der" title="Derrotas">D</span>
+          <span class="der">Puntos</span>
+          <span class="der" title="Puntos fantasy a favor">A favor</span>
+          <span class="der">Beneficio</span>
         </div>
         @for (f of filas(); track f.equipo_falm_id; let i = $index) {
           <div class="fila" [class.podio]="i < 3">
@@ -68,6 +73,7 @@ import { colorEquipo } from '../../shared/equipo-colores';
               <span class="num">{{ f.posicion || i + 1 }}</span>
             </span>
             <span class="nm">{{ f.equipo_nombre }}</span>
+            <span class="der num sec">{{ f.partidos_jugados }}</span>
             <span class="der num sec">{{ f.victorias }}</span>
             <span class="der num sec">{{ f.empates }}</span>
             <span class="der num sec">{{ f.derrotas }}</span>
@@ -92,16 +98,10 @@ import { colorEquipo } from '../../shared/equipo-colores';
       font-weight: 600; font-size: var(--t-sm); }
     .comps button.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
 
-    .tabla { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; }
-    .fila { display: grid; align-items: center; gap: 10px;
-      grid-template-columns: 52px 1.9fr 46px 46px 46px 74px 84px 96px;
-      padding: 11px 18px; border-bottom: 1px solid var(--line); font-size: var(--t-sm); }
-    .fila:last-child { border-bottom: none; }
-    .fila.cab { font-size: var(--t-xs); font-weight: 700; letter-spacing: .16em;
-      text-transform: uppercase; color: var(--text2); padding: 12px 18px; }
+    /* La caja y las filas salen de styles.css; aquí, las columnas y lo propio. */
+    .fila { grid-template-columns: 52px 1.9fr 42px 40px 40px 40px 66px 74px 92px; }
     /* Los tres primeros cobran el premio: el papel se tiñe, sin medallas. */
     .fila.podio { background: var(--accent-soft); }
-    .der { text-align: right; }
     .puesto { display: flex; align-items: center; gap: 8px; }
     .marca { width: 3px; height: 20px; border-radius: 2px; flex: 0 0 auto; }
     .nm { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -125,9 +125,11 @@ import { colorEquipo } from '../../shared/equipo-colores';
     .leg { font-size: var(--t-xs); color: var(--text2); }
     .muted { color: var(--text2); } .err { color: var(--bad); }
 
-    @media (max-width: 720px) {
-      .fila { grid-template-columns: 46px 1fr 60px 78px; }
-      .fila > :nth-child(3), .fila > :nth-child(4), .fila > :nth-child(5), .fila > :nth-child(7) { display: none; }
+    @media (max-width: 860px) {
+      /* En el móvil solo caben los datos que deciden la liga. */
+      .fila { grid-template-columns: 44px 1fr 56px 84px; }
+      .fila > :nth-child(3), .fila > :nth-child(4), .fila > :nth-child(5),
+      .fila > :nth-child(6), .fila > :nth-child(8) { display: none; }
     }
   `],
 })
@@ -158,10 +160,14 @@ export class ClasificacionComponent implements OnInit {
 
   async ngOnInit() {
     try {
-      const comps: Competicion[] = await this.falm.competiciones();
+      const todas: Competicion[] = await this.falm.competiciones();
       const orden = { LIGA: 0, CHAMPIONS: 1, CLAUSURA: 2 } as Record<string, number>;
-      comps.sort((a, b) => (orden[a.tipo] ?? 9) - (orden[b.tipo] ?? 9));
-      this.competiciones.set(comps);
+      todas.sort((a, b) => (orden[a.tipo] ?? 9) - (orden[b.tipo] ?? 9));
+      // Champions y Clausura existen desde el primer día pero aún no tienen
+      // calendario: hasta que lo tengan, no se enseñan y aquí solo hay Liga.
+      const calendarios = await Promise.all(todas.map((c) => this.falm.jornadas(c.id).catch(() => [])));
+      const comps = todas.filter((c, i) => calendarios[i].length > 0);
+      this.competiciones.set(comps.length ? comps : todas.slice(0, 1));
       const liga = comps.find((c) => c.tipo === 'LIGA') ?? comps[0];
       if (liga) { this.competicionId.set(liga.id); await this.cargar(liga); }
       else this.cargando.set(false);
