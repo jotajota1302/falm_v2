@@ -1,7 +1,6 @@
 import { Component, OnDestroy, OnInit, computed, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Agenda, AgendaItem, Alineado, FalmService, ItemPlantilla } from '../../core/falm.service';
-import { FutCardComponent } from '../../shared/fut-card.component';
 
 const ORDEN = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'] as const;
 const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'MED', DELANTERO: 'DEL' };
@@ -15,7 +14,7 @@ interface EnBanca { nombre: string; pos: string; cubre: string[]; }
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [RouterLink, FutCardComponent],
+  imports: [RouterLink],
   template: `
     @if (cargando()) {
       <p class="muted">Cargando…</p>
@@ -73,32 +72,39 @@ interface EnBanca { nombre: string; pos: string; cubre: string[]; }
             <span class="form">{{ formacion() }}</span>
           </header>
 
-          <div class="pitch">
-            <div class="lineas"></div>
+          <!-- Una línea por demarcación, como un parte de alineación: ocupa
+               poco y luego cabe al lado el once del rival. -->
+          <div class="once11">
             @for (f of filas(); track f.pos) {
               @if (f.js.length) {
-                <div class="fila">
-                  @for (j of f.js; track $index) {
-                    <div class="slot">
-                      <falm-fut-card [nombre]="j.nombre" [foto]="j.foto" [escudo]="j.escudo"
-                                     [posicion]="j.pos" [campo]="true" />
-                    </div>
-                  }
+                <div class="ln">
+                  <span class="lp" [class]="abr(f.pos)">{{ abr(f.pos) }}</span>
+                  <div class="js">
+                    @for (j of f.js; track $index) {
+                      <span class="j">
+                        @if (j.foto || j.escudo) {
+                          <img [src]="j.foto || j.escudo" alt="" loading="lazy"
+                               [class.esc]="!j.foto" (error)="j.foto = null" />
+                        }
+                        {{ corto(j.nombre) }}
+                      </span>
+                    }
+                  </div>
                 </div>
               }
             }
+            @if (banca().length) {
+              <div class="ln banq">
+                <span class="lp">Banq.</span>
+                <div class="js">
+                  @for (b of banca(); track $index) {
+                    <span class="j sup"><i>{{ $index + 1 }}</i>{{ corto(b.nombre) }}
+                      <em>{{ cubre(b) }}</em></span>
+                  }
+                </div>
+              </div>
+            }
           </div>
-
-          @if (banca().length) {
-            <div class="banca">
-              <span class="bl">Banquillo</span>
-              <ol>
-                @for (b of banca(); track $index) {
-                  <li><span class="bn">{{ b.nombre }}</span><span class="bc">{{ cubre(b) }}</span></li>
-                }
-              </ol>
-            </div>
-          }
 
           <a class="cambiar" routerLink="/alineacion">Cambiar alineación</a>
         </section>
@@ -168,37 +174,31 @@ interface EnBanca { nombre: string; pos: string; cubre: string[]; }
     .form { flex: 0 0 auto; font-family: var(--fm); font-weight: 700; font-size: var(--t-lg);
       padding: 3px 12px; border: 1px solid var(--line); border-radius: var(--pill); }
 
-    .pitch { position: relative; overflow: hidden; max-width: 640px; margin: 0 auto;
-      background: repeating-linear-gradient(180deg, #e3e9d8 0 44px, #dde4d0 44px 88px);
-      border: 1px solid var(--line); border-radius: 12px;
-      padding: 18px 12px; display: flex; flex-direction: column; gap: 6px;
-      min-height: 430px; justify-content: space-between; }
-    .lineas { position: absolute; inset: 12px; pointer-events: none; z-index: 0;
-      border: 2px solid rgba(255,255,255,.8); border-radius: 4px;
-      background:
-        linear-gradient(rgba(255,255,255,.8), rgba(255,255,255,.8)) center / 100% 2px no-repeat,
-        radial-gradient(circle at 50% 50%, transparent 40px, rgba(255,255,255,.8) 40px,
-                        rgba(255,255,255,.8) 42px, transparent 42px); }
-    .lineas::before, .lineas::after { content: ''; position: absolute; left: 50%;
-      transform: translateX(-50%); width: 54%; height: 52px;
-      border: 2px solid rgba(255,255,255,.8); }
-    .lineas::before { top: -2px; border-top: none; border-radius: 0 0 4px 4px; }
-    .lineas::after { bottom: -2px; border-bottom: none; border-radius: 4px 4px 0 0; }
-    .fila { position: relative; z-index: 1; display: flex; justify-content: center;
-      align-items: center; gap: 8px; padding: 2px; }
-    .slot { flex: 1 1 0; min-width: 62px; max-width: 104px; }
-
-    /* Quién espera en el banquillo, por orden de entrada. */
-    .banca { max-width: 640px; margin: 14px auto 0; }
-    .bl { display: block; font-size: var(--t-xs); font-weight: 700; letter-spacing: .16em;
-      text-transform: uppercase; color: var(--text2); margin-bottom: 8px; }
-    .banca ol { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 7px; counter-reset: b; }
-    .banca li { counter-increment: b; display: flex; align-items: baseline; gap: 7px;
-      padding: 4px 11px 4px 9px; border: 1px solid var(--line); border-radius: var(--pill);
-      font-size: var(--t-sm); }
-    .banca li::before { content: counter(b); font-family: var(--fm); font-size: var(--t-xs); color: var(--text2); }
-    .bc { font-size: var(--t-xs); color: var(--text2); letter-spacing: .06em; }
-    .cambiar { display: block; text-align: center; margin: 16px auto 0; max-width: 640px;
+    /* Una fila por línea, la etiqueta siempre en la misma columna: se lee de
+       arriba abajo como una alineación de periódico. */
+    .once11 { display: grid; gap: 1px; background: var(--line);
+      border: 1px solid var(--line); border-radius: var(--r-sm); overflow: hidden; }
+    .ln { display: grid; grid-template-columns: 54px 1fr; align-items: center; gap: 10px;
+      padding: 9px 12px; background: var(--surface); }
+    .lp { font-size: var(--t-xs); font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+      color: var(--text2); }
+    .lp.POR { color: var(--por); } .lp.DEF { color: var(--def); }
+    .lp.MED { color: var(--med); } .lp.DEL { color: var(--del); }
+    .js { display: flex; flex-wrap: wrap; gap: 6px; }
+    .j { display: inline-flex; align-items: center; gap: 6px; font-size: var(--t-sm);
+      font-weight: 600; padding: 3px 10px 3px 3px;
+      border: 1px solid var(--line); border-radius: var(--pill); background: var(--bg); }
+    .j img { width: 22px; height: 22px; border-radius: 50%; object-fit: cover;
+      object-position: top center; background: var(--surface2); }
+    .j img.esc { object-fit: contain; padding: 2px; }
+    .j:not(:has(img)) { padding-left: 10px; }
+    /* El banquillo entra por orden, así que lleva su número y qué línea cubre. */
+    .banq .lp { color: var(--text2); }
+    .j.sup { font-weight: 500; }
+    .j.sup i { font-family: var(--fm); font-style: normal; font-size: var(--t-xs);
+      color: var(--text2); margin-left: 7px; }
+    .j.sup em { font-style: normal; font-size: var(--t-xs); color: var(--text2); letter-spacing: .06em; }
+    .cambiar { display: block; text-align: center; margin: 14px 0 0;
       padding: 10px; border: 1px solid var(--line); border-radius: var(--r-sm);
       font-size: var(--t-sm); font-weight: 600; }
 
@@ -224,8 +224,7 @@ interface EnBanca { nombre: string; pos: string; cubre: string[]; }
     .muted { color: var(--text2); }
 
     @media (max-width: 620px) {
-      .pitch { min-height: 360px; padding: 14px 8px; gap: 4px; }
-      .slot { min-width: 54px; }
+      .ln { grid-template-columns: 42px 1fr; gap: 8px; padding: 8px 10px; }
       .oh { flex-wrap: wrap; }
     }
   `],
@@ -259,7 +258,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
   fmt(n: number | null) { return n == null ? '–' : (Math.round(n * 10) / 10).toString(); }
   gane(ac: AgendaItem) { return ac.mis_puntos != null && ac.rival_puntos != null && ac.mis_puntos > ac.rival_puntos; }
   perdi(ac: AgendaItem) { return ac.mis_puntos != null && ac.rival_puntos != null && ac.rival_puntos > ac.mis_puntos; }
-  cubre(b: EnBanca) { return (b.cubre.length ? b.cubre : [b.pos]).map((l) => ABR[l] ?? l).join(' · '); }
+  abr(pos: string) { return ABR[pos] ?? pos; }
+  cubre(b: EnBanca) { return (b.cubre.length ? b.cubre : [b.pos]).map((l) => ABR[l] ?? l).join('/'); }
+  /** En una línea de once cabe el apellido; una portería se nombra por su club. */
+  corto(nombre: string) {
+    if (nombre.startsWith('Porter')) return nombre.replace(/^Porter[íi]a\s*/, '');
+    const p = nombre.trim().split(/\s+/);
+    return p.length > 1 ? p[p.length - 1] : nombre;
+  }
 
   /** Del rival solo decimos si ha mandado, nunca a quién ha puesto. */
   estadoRival(): string {
