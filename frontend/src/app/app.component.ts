@@ -148,7 +148,8 @@ interface NavItem { path: string; label: string; corto: string; }
       .nav {
         position: fixed; bottom: 0; left: 0; right: 0; z-index: 50;
         display: flex; flex-wrap: nowrap; gap: 2px;
-        padding: 5px 0 calc(5px + env(safe-area-inset-bottom));
+        padding: 5px 22px calc(5px + env(safe-area-inset-bottom));
+        scroll-padding: 0 22px;
         border-top: 1px solid var(--line);
         overflow-x: auto; overscroll-behavior-x: contain;
         scroll-snap-type: x proximity; scrollbar-width: none;
@@ -172,15 +173,17 @@ interface NavItem { path: string; label: string; corto: string; }
       .nav .masb { display: block; margin-right: 4px; }
       .nav .lg { display: none; } .nav .sm { display: inline; }
 
+      /* Van en el carril que les reserva la barra, así que no se comen
+         ninguna sección: solo asoman en el margen. */
       .navf { display: flex; align-items: center; justify-content: center;
-        position: fixed; z-index: 52; width: 26px; height: 26px; padding: 0;
-        bottom: calc(15px + env(safe-area-inset-bottom));
-        border: 1px solid var(--line); border-radius: 50%;
-        background: var(--surface); color: var(--accent);
-        font-family: var(--fb); font-size: var(--t-md); line-height: 1; cursor: pointer;
+        position: fixed; z-index: 52; width: 22px; padding: 0;
+        bottom: calc(5px + env(safe-area-inset-bottom));
+        height: calc(var(--t-xs) * 1.5 + 20px);
+        border: none; background: var(--surface); color: var(--text2);
+        font-family: var(--fb); font-size: var(--t-lg); line-height: 1; cursor: pointer;
         touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
-      .navf:active { background: var(--surface2); }
-      .navf.izq { left: 4px; } .navf.der { right: 4px; }
+      .navf:active { color: var(--accent); }
+      .navf.izq { left: 0; } .navf.der { right: 0; }
 
       .masback { position: fixed; inset: 0; z-index: 49; background: rgba(22,19,15,.42); }
       .maspanel { position: fixed; z-index: 51; left: 0; right: 0;

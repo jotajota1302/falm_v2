@@ -15,7 +15,7 @@ export class AdminService {
   async jugadores(): Promise<AdminJugador[]> {
     const { data, error } = await this.sb.client
       .from('activo')
-      .select('id, precio_mercado, jugador_lfp:jugador_lfp_id!inner (id, nombre, apellido, posicion, ext_id, equipo_lfp:equipo_lfp_id (nombre, escudo))')
+      .select('id, precio_mercado, jugador_lfp:jugador_lfp_id!inner (id, nombre, apellido, posicion, ext_id, dorsal, primer_equipo, equipo_lfp_id, equipo_lfp:equipo_lfp_id (nombre, escudo))')
       .eq('tipo', 'JUGADOR')
       .order('precio_mercado', { ascending: false });
     if (error) throw error;
@@ -23,18 +23,78 @@ export class AdminService {
       activoId: a.id,
       jugadorLfpId: a.jugador_lfp.id,
       nombre: `${a.jugador_lfp.nombre ?? ''} ${a.jugador_lfp.apellido ?? ''}`.trim(),
+      pila: a.jugador_lfp.nombre ?? '',
+      apellido: a.jugador_lfp.apellido ?? '',
       posicion: a.jugador_lfp.posicion,
       club: a.jugador_lfp.equipo_lfp?.nombre ?? '',
+      clubId: a.jugador_lfp.equipo_lfp_id ?? '',
       escudo: a.jugador_lfp.equipo_lfp?.escudo ?? null,
+      dorsal: a.jugador_lfp.dorsal ?? null,
+      primerEquipo: a.jugador_lfp.primer_equipo === true,
       precio: Number(a.precio_mercado ?? 0),
     }));
   }
 
-  async actualizarJugador(activoId: string, jugadorLfpId: string, precio: number, posicion: string): Promise<void> {
-    const { error: e1 } = await this.sb.client.from('activo').update({ precio_mercado: precio }).eq('id', activoId);
+  /**
+   * Edición completa del jugador. Ojo: nombre, apellido, club y dorsal los
+   * sobrescribe el scraper en la siguiente ingesta del catálogo; posición,
+   * precio y primer_equipo son nuestros y se respetan.
+   */
+  async actualizarJugador(j: EdicionJugador): Promise<void> {
+    const { error: e1 } = await this.sb.client
+      .from('activo').update({ precio_mercado: j.precio }).eq('id', j.activoId);
     if (e1) throw e1;
-    const { error: e2 } = await this.sb.client.from('jugador_lfp').update({ posicion }).eq('id', jugadorLfpId);
+    const { error: e2 } = await this.sb.client.from('jugador_lfp').update({
+      nombre: j.pila,
+      apellido: j.apellido,
+      posicion: j.posicion,
+      equipo_lfp_id: j.clubId || null,
+      dorsal: j.dorsal,
+      primer_equipo: j.primerEquipo,
+    }).eq('id', j.jugadorLfpId);
     if (e2) throw e2;
+  }
+
+  /** Clubes de LaLiga, para el selector de club del jugador. */
+  async clubes(): Promise<{ id: string; nombre: string }[]> {
+    const { data, error } = await this.sb.client
+      .from('equipo_lfp').select('id, nombre').order('nombre', { ascending: true });
+    if (error) throw error;
+    return (data ?? []) as { id: string; nombre: string }[];
+  }
+
+  /** Jornadas FALM de la temporada activa, con lo ya procesado de cada una. */
+  async jornadasFalm(): Promise<JornadaAdmin[]> {
+    const { data, error } = await this.sb.client
+      .from('jornada_falm')
+      .select('id, numero, fecha_cierre, fichajes_procesados_en, alineaciones_heredadas_en, ' +
+        'competicion:competicion_id!inner (tipo, temporada:temporada_id!inner (activa))')
+      .eq('competicion.temporada.activa', true)
+      .order('numero', { ascending: true });
+    if (error) throw error;
+    return (data ?? []).map((j: any) => ({
+      id: j.id,
+      numero: j.numero,
+      competicion: j.competicion?.tipo ?? '',
+      fechaCierre: j.fecha_cierre,
+      fichajesProcesados: j.fichajes_procesados_en,
+      alineacionesHeredadas: j.alineaciones_heredadas_en,
+    }));
+  }
+
+  /** Tareas automáticas: horario, si están activas y cuándo corrieron. */
+  async estadoCrons(): Promise<CronAdmin[]> {
+    const { data, error } = await this.sb.client.rpc('estado_crons');
+    if (error) throw error;
+    const d = typeof data === 'string' ? JSON.parse(data) : data;
+    return (Array.isArray(d) ? d : []) as CronAdmin[];
+  }
+
+  /** Renombrar un equipo FALM o ajustarle el presupuesto. */
+  async actualizarEquipo(id: string, nombre: string, presupuesto: number): Promise<void> {
+    const { error } = await this.sb.client
+      .from('equipo_falm').update({ nombre: nombre.trim(), presupuesto }).eq('id', id);
+    if (error) throw error;
   }
 
   // ---- Equipos FALM ---------------------------------------------------------
@@ -194,6 +254,29 @@ export interface AdminTemporada { id: string; nombre: string; anio: number; acti
 export interface AdminJugador {
   activoId: string; jugadorLfpId: string; nombre: string; posicion: string;
   club: string; escudo: string | null; precio: number;
+  /** Nombre de pila y apellido por separado, para poder editarlos. */
+  pila: string; apellido: string;
+  clubId: string; dorsal: number | null;
+  /** Si no está en el primer equipo, no aparece en mercado ni en draft. */
+  primerEquipo: boolean;
+}
+
+export interface EdicionJugador {
+  activoId: string; jugadorLfpId: string;
+  pila: string; apellido: string; posicion: string;
+  clubId: string; dorsal: number | null; primerEquipo: boolean; precio: number;
+}
+
+export interface JornadaAdmin {
+  id: string; numero: number; competicion: string;
+  fechaCierre: string | null;
+  fichajesProcesados: string | null;
+  alineacionesHeredadas: string | null;
+}
+
+export interface CronAdmin {
+  id: number; nombre: string; horario: string; comando: string;
+  activo: boolean; ultima: string | null; estado: string | null; mensaje: string;
 }
 export interface CruceCalendario {
   id: string;
