@@ -41,3 +41,18 @@ $function$;
 
 grant execute on function falm.email_de_equipo(text) to anon, authenticated;
 grant execute on function falm.nombre_de_equipo(text) to anon, authenticated;
+
+-- Riesgo conocido y asumido
+-- --------------------------
+-- email_de_equipo es SECURITY DEFINER y la puede llamar un usuario anonimo (hace
+-- falta para el login), asi que devuelve el correo de un equipo a quien pregunte
+-- por su nombre. Eso permite enumerar equipos y ver sus correos.
+--
+-- Se asume porque en esta liga:
+--   * los nombres de los equipos son publicos (salen en la clasificacion),
+--   * los correos son sinteticos (<equipo>@falm.test), no direcciones reales, y
+--     ademas son derivables del nombre sin preguntar a nadie.
+--
+-- Lo que si es un riesgo real es que la contrasena de cada equipo sea su propio
+-- nombre, que es publico: cualquiera de los diez puede entrar como otro. Eso se
+-- arregla haciendo que cada uno ponga su clave, no ocultando estas funciones.

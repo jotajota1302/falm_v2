@@ -9,7 +9,8 @@ import { SupabaseService } from './supabase.service';
  * nombres. Explica el formato, que es lo que de verdad hacía falta.
  */
 const ERROR_LOGIN =
-  'No hemos podido entrar. El usuario y la contraseña son el nombre de tu equipo.';
+  'No hemos podido entrar. El usuario y la contraseña son el nombre de tu equipo, ' +
+  'tal y como aparece en la clasificación (en mayúsculas).';
 
 /** Autenticación contra Supabase Auth. Expone la sesión como signal. */
 @Injectable({ providedIn: 'root' })
@@ -62,18 +63,14 @@ export class AuthService {
     const { data: canonico } = await this.sb.client.rpc('nombre_de_equipo', { p_nombre: eq });
     const nombreReal = (canonico as string) ?? eq;
 
+    // Un solo intento con lo que escribió el usuario. Reintentar por nuestra
+    // cuenta con otra contraseña (el nombre del equipo) sería probar
+    // credenciales que nadie ha tecleado, y seguiría haciéndolo el día que cada
+    // uno tenga su propia clave.
     try {
       await this.signIn(data as string, password);
-    } catch (e: any) {
-      // La contraseña es el nombre del equipo, y Supabase distingue mayúsculas.
-      // Si escribió el nombre pero con otra caja, se reintenta con el canónico.
-      const quisoElNombre = password.trim().toLowerCase() === nombreReal.toLowerCase();
-      if (!quisoElNombre) throw new Error(ERROR_LOGIN);
-      try {
-        await this.signIn(data as string, nombreReal);
-      } catch {
-        throw new Error(ERROR_LOGIN);
-      }
+    } catch {
+      throw new Error(ERROR_LOGIN);
     }
 
     localStorage.setItem('falm_equipo', nombreReal);

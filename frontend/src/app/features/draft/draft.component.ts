@@ -233,6 +233,41 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
         </section>
       }
 
+      @if (confirmando(); as c) {
+        <div class="velo" (click)="confirmando.set(null)">
+          <div class="dialogo rise" role="dialog" aria-modal="true"
+               aria-labelledby="tit-fichar" (click)="$event.stopPropagation()">
+            <span class="lb" id="tit-fichar">Confirmar fichaje</span>
+            <div class="ficha">
+              @if (c.foto) {
+                <img class="cara" [src]="c.foto" alt="" />
+              } @else if (c.escudo) {
+                <img class="cara esc" [src]="c.escudo" alt="" />
+              } @else {
+                <span class="cara sin">{{ c.nombre.charAt(0) }}</span>
+              }
+              <div class="datos">
+                <strong>{{ c.nombre }}</strong>
+                <span class="meta">
+                  <span class="pos" [class]="abr(c.posicion)">{{ abr(c.posicion) }}</span>
+                  {{ c.club }}
+                </span>
+              </div>
+            </div>
+            <p class="aviso-mod">
+              Se añade a tu plantilla y el turno pasa al siguiente equipo. Esto no se puede
+              deshacer salvo por un administrador.
+            </p>
+            <div class="acciones">
+              <button class="btn-sec" (click)="confirmando.set(null)">Cancelar</button>
+              <button class="btn" [disabled]="fichando()" (click)="confirmarFichaje()">
+                {{ fichando() ? 'Fichando…' : 'Fichar' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+
       <div class="pie">
         <span class="muted">
           <b class="num">{{ visibles().length }}</b> jugadores ·
@@ -348,6 +383,29 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     .orden li.yo .nom { color: var(--accent); }
     .orden li.yo:not(.ahora) .nom { font-style: italic; }
 
+    /* Diálogo de confirmación: centrado y usable con el pulgar en el móvil. */
+    .velo { position: fixed; inset: 0; z-index: 50; background: rgba(22, 19, 15, .5);
+      display: grid; place-items: center; padding: 18px; }
+    .dialogo { width: 100%; max-width: 380px; background: var(--surface);
+      border: 1px solid var(--line); border-radius: var(--r); padding: 18px;
+      box-shadow: 0 18px 48px rgba(22, 19, 15, .22); }
+    .dialogo .lb { display: block; margin-bottom: 12px; }
+    .ficha { display: flex; align-items: center; gap: 13px; margin-bottom: 14px; }
+    .cara { width: 54px; height: 54px; border-radius: 50%; object-fit: cover; flex: 0 0 auto;
+      background: var(--surface2); border: 1px solid var(--line); }
+    .cara.esc { object-fit: contain; padding: 8px; background: var(--surface); }
+    .cara.sin { display: flex; align-items: center; justify-content: center;
+      font-family: var(--fh); font-size: 22px; color: var(--text2); }
+    .datos { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+    .datos strong { font-family: var(--fh); font-weight: 600; font-size: var(--t-lg);
+      line-height: 1.1; text-transform: uppercase; }
+    .datos .meta { display: flex; align-items: center; gap: 7px; font-size: var(--t-xs);
+      color: var(--text2); text-transform: uppercase; letter-spacing: .06em; }
+    .aviso-mod { margin: 0 0 16px; font-size: var(--t-xs); color: var(--text2); line-height: 1.45; }
+    .acciones { display: flex; gap: 9px; }
+    .acciones .btn, .acciones .btn-sec { flex: 1; padding: 12px; font-size: var(--t-sm); }
+    @media (max-width: 480px) { .acciones { flex-direction: column-reverse; } }
+
     .global { margin-top: 16px; }
     .global .plegar { margin-left: auto; background: var(--surface); border: 1px solid var(--line);
       color: var(--text2); border-radius: var(--pill); padding: 5px 12px; cursor: pointer;
@@ -388,6 +446,9 @@ export class DraftComponent implements OnInit, OnDestroy {
   msg = signal('');
   prePick = signal(false);
   verGlobal = signal(true);
+  /** Jugador pendiente de confirmar. El confirm() nativo no se puede maquetar. */
+  confirmando = signal<ActivoLibre | null>(null);
+  fichando = signal(false);
 
   private eraMiTurno = false;
   private tituloBase = document.title;
@@ -414,10 +475,12 @@ export class DraftComponent implements OnInit, OnDestroy {
     await this.d.cargar();
     this.d.suscribir();
     document.addEventListener('visibilitychange', this.alVolver);
+    document.addEventListener('keydown', this.alEscape);
   }
 
   ngOnDestroy() {
     document.removeEventListener('visibilitychange', this.alVolver);
+    document.removeEventListener('keydown', this.alEscape);
     this.pararAviso();
     this.d.desuscribir();
   }
@@ -425,6 +488,10 @@ export class DraftComponent implements OnInit, OnDestroy {
   /** Al volver a la pestaña puede haber picks que no llegaron: reconciliar. */
   private alVolver = () => {
     if (!document.hidden) this.d.refrescarPicks();
+  };
+
+  private alEscape = (e: KeyboardEvent) => {
+    if (e.key === 'Escape') this.confirmando.set(null);
   };
 
   private avisar() {
@@ -610,13 +677,23 @@ export class DraftComponent implements OnInit, OnDestroy {
     }
   }
 
-  async fichar(a: ActivoLibre) {
-    if (!confirm(`¿Fichar a ${a.nombre}?`)) return;
+  fichar(a: ActivoLibre) {
     this.msg.set('');
+    this.confirmando.set(a);
+  }
+
+  async confirmarFichaje() {
+    const a = this.confirmando();
+    if (!a || this.fichando()) return;
+    this.fichando.set(true);
     try {
       await this.d.fichar(a.activo_id);
+      this.confirmando.set(null);
     } catch (e: any) {
+      this.confirmando.set(null);
       this.msg.set(e?.message ?? 'No se pudo fichar.');
+    } finally {
+      this.fichando.set(false);
     }
   }
 }
