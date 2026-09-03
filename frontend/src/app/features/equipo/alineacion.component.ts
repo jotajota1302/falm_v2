@@ -98,28 +98,57 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
           </div>
         </div>
 
-        <!-- BANQUILLO -->
+        <!-- BANQUILLO: quién entra si falla alguien, por línea -->
         <div class="banco">
-        <div class="bh">
-          <h3>Banquillo</h3>
-          <button class="add" (click)="abrirBanca()">+ Añadir</button>
-        </div>
-        <p class="faint sm">Prioridad ↓ · marca qué líneas cubre cada suplente.</p>
-        @for (b of banca(); track b.id; let i = $index) {
-          <div class="bfila">
-            <span class="prio">{{ i + 1 }}</span>
-            <span class="bnm">{{ nombreDe(b.id) }}</span>
-            <div class="chips">
-              @for (l of lineas; track l) {
-                <button class="ch" [class.on]="b.lineas.includes(l)" [class]="abr(l)" (click)="toggleLinea(b, l)">{{ abr(l) }}</button>
+          <div class="bh">
+            <h3>Banquillo</h3>
+            <button class="add" (click)="abrirBanca()">+ Añadir</button>
+          </div>
+
+          @if (!banca().length) {
+            <p class="bvacio">Sin suplentes. Añade a quien deba entrar si alguno de tus
+              titulares no juega, y marca la línea que cubre.</p>
+          } @else {
+            @for (l of lineas; track l) {
+              <div class="bloque">
+                <span class="btit">Si falla un {{ etiquetaPos(l).toLowerCase() }}</span>
+                @if (colaDe(l); as cola) {
+                  @for (b of cola; track b.id; let i = $index) {
+                    <div class="bfila">
+                      <span class="prio num">{{ i + 1 }}</span>
+                      <span class="bav">
+                        @if (fotoDe(b.id); as f) { <img [src]="f" alt="" loading="lazy" /> }
+                        @else { <span class="bini">{{ nombreDe(b.id).charAt(0) }}</span> }
+                      </span>
+                      <span class="bnm">{{ nombreDe(b.id) }}</span>
+                      <button class="mv" (click)="subirEn(l, i)" [disabled]="i === 0" title="Que entre antes">▲</button>
+                      <button class="mv" (click)="bajarEn(l, i)" [disabled]="i === cola.length - 1" title="Que entre después">▼</button>
+                      <button class="rm" (click)="quitarLinea(b, l)" title="Que no cubra esta línea">✕</button>
+                    </div>
+                  }
+                } @else {
+                  <p class="bnadie">Nadie lo cubre.</p>
+                }
+              </div>
+            }
+
+            <div class="bloque otros">
+              <span class="btit">Quién está en el banquillo</span>
+              @for (b of banca(); track b.id) {
+                <div class="bfila">
+                  <span class="bnm">{{ nombreDe(b.id) }}</span>
+                  <div class="chips">
+                    @for (l of lineas; track l) {
+                      <button class="ch" [class.on]="b.lineas.includes(l)" [class]="abr(l)"
+                              (click)="toggleLinea(b, l)" [title]="'Cubre ' + etiquetaPos(l).toLowerCase()">{{ abr(l) }}</button>
+                    }
+                  </div>
+                  <button class="rm" (click)="fueraId(b.id)" title="Sacar del banquillo">✕</button>
+                </div>
               }
             </div>
-            <button class="mv" (click)="subir(i)" [disabled]="i===0">▲</button>
-            <button class="mv" (click)="bajar(i)" [disabled]="i===banca().length-1">▼</button>
-            <button class="rm" (click)="fueraId(b.id)">✕</button>
-          </div>
-        }
-      </div>
+          }
+        </div>
       </div>
 
       <!-- Barra de envío: lo último de la pantalla y siempre a la vista. -->
@@ -296,7 +325,24 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
     .banco { flex: 1 1 300px; min-width: 280px;
       background: var(--surface); border: 1px solid var(--line); border-radius: 18px;
       padding: 16px; margin: 0; }
-    .bh { display: flex; align-items: center; justify-content: space-between; }
+    .bh { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+    .bvacio { margin: 0; color: var(--text2); font-size: var(--t-sm); }
+
+    /* Un bloque por línea: la pregunta que se hace uno es "si me falla un
+       medio, ¿quién entra?", no "qué suplentes tengo". */
+    .bloque { margin-bottom: 14px; }
+    .bloque:last-child { margin-bottom: 0; }
+    .btit { display: block; margin-bottom: 6px; font-size: var(--t-xs); font-weight: 700;
+      letter-spacing: .1em; text-transform: uppercase; color: var(--text2); }
+    .bnadie { margin: 0; font-size: var(--t-sm); color: var(--bad); }
+    .bav { width: 28px; height: 28px; flex: 0 0 auto; border-radius: 50%; overflow: hidden;
+      background: var(--surface); border: 1px solid var(--line);
+      display: flex; align-items: center; justify-content: center; }
+    .bav img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
+    .bini { font-size: var(--t-xs); font-weight: 700; color: var(--text2); }
+    /* El último bloque es el que reparte: quién está y qué líneas cubre. */
+    .otros { padding-top: 12px; border-top: 1px solid var(--line); }
+    .otros .bfila { background: transparent; border-color: transparent; padding: 5px 0; }
     .add { background: var(--surface); border: 1px solid var(--line); color: var(--text); border-radius: 11px;
       padding: 8px 13px; cursor: pointer; font-weight: 600; font-size: var(--t-sm); }
     .add:hover { border-color: var(--accent); }
@@ -568,6 +614,35 @@ export class AlineacionComponent implements OnInit {
     this.titulares.update((t) => t.filter((x) => x !== id));
     this.banca.update((b) => b.filter((x) => x.id !== id));
   }
+  /** Quién cubre una línea, en el orden en que entrarían. */
+  colaDe(l: string) {
+    const c = this.banca().filter((b) => b.lineas.includes(l));
+    return c.length ? c : null;
+  }
+  fotoDe(id: string) { return this.plantilla().find((p) => p.activo_id === id)?.foto ?? null; }
+
+  /** Mover dentro de una línea mueve al suplente en la lista general, que es
+   *  donde vive el orden: basta con intercambiarlo con su vecino en esa cola. */
+  private moverEn(l: string, i: number, paso: number) {
+    const cola = this.banca().filter((b) => b.lineas.includes(l));
+    const a = cola[i], b = cola[i + paso];
+    if (!a || !b) return;
+    const lista = [...this.banca()];
+    const ia = lista.findIndex((x) => x.id === a.id);
+    const ib = lista.findIndex((x) => x.id === b.id);
+    [lista[ia], lista[ib]] = [lista[ib], lista[ia]];
+    this.banca.set(lista);
+  }
+  subirEn(l: string, i: number) { this.moverEn(l, i, -1); }
+  bajarEn(l: string, i: number) { this.moverEn(l, i, 1); }
+
+  /** Dejar de cubrir una línea; si no cubre ninguna, sale del banquillo. */
+  quitarLinea(b: { id: string; lineas: string[] }, l: string) {
+    this.toggleLinea(b, l);
+    const actual = this.banca().find((x) => x.id === b.id);
+    if (actual && !actual.lineas.length) this.fueraId(b.id);
+  }
+
   cubren(l: string) { return this.banca().filter((b) => b.lineas.includes(l)).length; }
   toggleLinea(b: { id: string; lineas: string[] }, l: string) {
     const adding = !b.lineas.includes(l);
