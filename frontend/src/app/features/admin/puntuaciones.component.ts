@@ -57,7 +57,7 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
     .tabla { overflow: hidden; }
     .fila { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-bottom: 1px solid var(--border); }
     .fila:last-child { border-bottom: none; }
-    .pos { flex: 0 0 auto; width: 34px; padding: 3px 0; text-align: center; border-radius: 6px; font-size: .66rem; font-weight: 800; color: #07120d; }
+    .pos { flex: 0 0 auto; width: 34px; padding: 3px 0; text-align: center; border-radius: 6px; font-size: .66rem; font-weight: 800; color: var(--accent-ink); }
     .pos.POR { background: var(--pos-POR); } .pos.DEF { background: var(--pos-DEF); }
     .pos.MED { background: var(--pos-MED); } .pos.DEL { background: var(--pos-DEL); }
     .info { flex: 1; min-width: 0; display: flex; flex-direction: column; }

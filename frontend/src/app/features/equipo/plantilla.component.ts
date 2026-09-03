@@ -53,7 +53,7 @@ const ETI: Record<string, string> = { PORTERO: 'Porteros', DEFENSA: 'Defensas', 
     .presu { text-align: right; }
     .presu .lbl { display: block; font-size: .7rem; color: var(--faint); text-transform: uppercase; letter-spacing: .05em; }
     .presu .val { font-size: 1.5rem; } .presu .pts { color: var(--primary); }
-    .ptsbadge { position: absolute; top: 8px; left: 8px; z-index: 2; background: rgba(0,230,118,.92); color: #07120d;
+    .ptsbadge { position: absolute; top: 8px; left: 8px; z-index: 2; background: var(--accent); color: var(--accent-ink);
       font-weight: 900; font-size: .82rem; padding: 2px 8px; border-radius: 999px; box-shadow: 0 2px 6px rgba(0,0,0,.4); }
     .ptsbadge small { font-size: .6rem; margin-left: 2px; font-weight: 800; }
     .linea { display: flex; align-items: center; gap: 10px; margin: 20px 0 12px; }

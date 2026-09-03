@@ -76,7 +76,7 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
     .modos { display: flex; gap: 8px; margin-bottom: 14px; }
     .modos button { flex: 1; background: var(--surface); border: 1px solid var(--border); color: var(--muted);
       border-radius: 11px; padding: 10px; cursor: pointer; font-weight: 800; font-size: .85rem; }
-    .modos button.on { background: rgba(0,230,118,.1); color: var(--primary); border-color: var(--primary); }
+    .modos button.on { background: var(--accent-soft); color: var(--primary); border-color: var(--primary); }
     .jchips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 12px; }
     .jchip { flex: 0 0 auto; min-width: 44px; height: 38px; border: 1px solid var(--border); background: var(--surface);
       color: var(--muted); border-radius: 10px; cursor: pointer; font-weight: 800; }

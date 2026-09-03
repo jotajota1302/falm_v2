@@ -89,9 +89,9 @@ import { Agenda, AgendaItem, FalmService } from '../../core/falm.service';
     .resumen .go { color: var(--primary); font-size: .8rem; font-weight: 800; flex: 0 0 auto; }
 
     .live { display: flex; align-items: center; gap: 12px; padding: 13px 16px; margin-bottom: 14px;
-      background: rgba(0,230,118,.08); border: 1px solid rgba(0,230,118,.28); border-radius: 14px; }
+      background: var(--accent-soft); border: 1px solid var(--accent-line); border-radius: 14px; }
     .live .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--primary); animation: pulse 1.6s infinite; flex: 0 0 auto; }
-    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(0,230,118,.5); } 70% { box-shadow: 0 0 0 9px rgba(0,230,118,0); } 100% { box-shadow: 0 0 0 0 rgba(0,230,118,0); } }
+    @keyframes pulse { 0% { box-shadow: none; } 70% { box-shadow: none; } 100% { box-shadow: none; } }
     .live .lt { flex: 1; } .live strong { display: block; color: var(--primary); }
     .live p { margin: 2px 0 0; font-size: .82rem; color: var(--muted); }
 
@@ -106,7 +106,7 @@ import { Agenda, AgendaItem, FalmService } from '../../core/falm.service';
       border: 1px solid var(--border); border-radius: 8px; }
     .cd { text-align: center; color: var(--muted); font-size: .82rem; margin: 16px 0 14px; }
     .btn { display: block; text-align: center; background: var(--primary); color: var(--primary-ink); font-weight: 800;
-      padding: 13px; border-radius: 12px; box-shadow: 0 6px 16px rgba(0,230,118,.22); }
+      padding: 13px; border-radius: 12px; box-shadow: none; }
     .btn.ghost { background: transparent; border: 1px solid var(--primary); color: var(--primary); padding: 8px 16px; box-shadow: none; flex: 0 0 auto; }
 
     .actual { display: block; padding: 14px 16px; margin-bottom: 14px; }

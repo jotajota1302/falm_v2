@@ -138,7 +138,7 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
     .comps { display: flex; gap: 8px; margin-bottom: 12px; overflow-x: auto; padding-bottom: 4px; }
     .comp { flex: 0 0 auto; padding: 8px 14px; border-radius: 11px; border: 1px solid var(--border); background: var(--surface);
       color: var(--muted); cursor: pointer; font-weight: 800; font-size: .82rem; white-space: nowrap; }
-    .comp.on { background: rgba(0,230,118,.1); color: var(--primary); border-color: var(--primary); }
+    .comp.on { background: var(--accent-soft); color: var(--primary); border-color: var(--primary); }
     .jchips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 12px; }
     .jchip { flex: 0 0 auto; min-width: 42px; height: 36px; border: 1px solid var(--border); background: var(--surface);
       color: var(--muted); border-radius: 10px; cursor: pointer; font-weight: 800; }
@@ -152,7 +152,7 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
     .atajos { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
     .atajo { background: var(--surface-2); border: 1px solid var(--border); color: var(--ink); border-radius: 10px;
       padding: 8px 13px; cursor: pointer; font-weight: 700; font-size: .8rem; }
-    .aviso { background: rgba(0,230,118,.08); border: 1px solid rgba(0,230,118,.22); color: var(--primary); padding: 10px 14px; border-radius: 10px; margin-bottom: 12px; }
+    .aviso { background: var(--accent-soft); border: 1px solid var(--accent-line); color: var(--primary); padding: 10px 14px; border-radius: 10px; margin-bottom: 12px; }
     .hint { text-align: center; color: var(--muted); font-size: .76rem; margin: 6px 0 16px; }
 
     .pitch { position: relative; border-radius: 16px; padding: 16px 8px;
@@ -179,7 +179,7 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
     .banco { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 14px; margin-bottom: 18px; }
     .bh { display: flex; align-items: center; justify-content: space-between; }
     .banco h3 { margin: 0; font-size: 1rem; }
-    .add { background: rgba(0,230,118,.1); border: 1px solid var(--primary); color: var(--primary); border-radius: 9px;
+    .add { background: var(--accent-soft); border: 1px solid var(--primary); color: var(--primary); border-radius: 9px;
       padding: 6px 12px; cursor: pointer; font-weight: 800; font-size: .78rem; }
     .sm { font-size: .8rem; } .faint { color: var(--faint); }
     .bfila { display: flex; align-items: center; gap: 8px; padding: 9px 4px; border-bottom: 1px solid var(--border); }
@@ -190,9 +190,9 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
     .chips { display: flex; gap: 4px; }
     .ch { width: 32px; padding: 5px 0; border-radius: 7px; border: 1px solid var(--border); background: var(--surface-2);
       color: var(--muted); font-weight: 800; font-size: .62rem; cursor: pointer; }
-    .ch.on.DEF { background: var(--pos-DEF); color: #07120d; border-color: var(--pos-DEF); }
-    .ch.on.MED { background: var(--pos-MED); color: #07120d; border-color: var(--pos-MED); }
-    .ch.on.DEL { background: var(--pos-DEL); color: #07120d; border-color: var(--pos-DEL); }
+    .ch.on.DEF { background: var(--pos-DEF); color: var(--accent-ink); border-color: var(--pos-DEF); }
+    .ch.on.MED { background: var(--pos-MED); color: var(--accent-ink); border-color: var(--pos-MED); }
+    .ch.on.DEL { background: var(--pos-DEL); color: var(--accent-ink); border-color: var(--pos-DEL); }
     .mv { width: 26px; padding: 5px 0; border: 1px solid var(--border); background: var(--surface-2); color: var(--muted); border-radius: 7px; cursor: pointer; font-size: .7rem; }
     .mv:disabled { opacity: .3; }
     .rm { width: 26px; padding: 5px 0; border: 1px solid var(--border); background: var(--surface-2); color: var(--bad); border-radius: 7px; cursor: pointer; }
@@ -212,10 +212,10 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
     .cands { overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
     .cand { display: grid; grid-template-columns: 32px 40px 1fr 22px; align-items: center; gap: 10px; padding: 8px 10px;
       background: var(--surface-2); border: 1px solid var(--border); border-radius: 11px; cursor: pointer; text-align: left; }
-    .cand.sel { border-color: var(--primary); background: rgba(0,230,118,.08); }
+    .cand.sel { border-color: var(--primary); background: var(--accent-soft); }
     .cm { font-weight: 900; color: var(--primary); text-align: center; }
     .cav { width: 40px; height: 40px; border-radius: 11px; display: flex; align-items: center; justify-content: center;
-      font-weight: 800; color: #07120d; overflow: hidden; }
+      font-weight: 800; color: var(--accent-ink); overflow: hidden; }
     .cav img { width: 100%; height: 100%; object-fit: cover; } .cav img.esc { object-fit: contain; padding: 5px; }
     .cav.POR { background: var(--pos-POR); } .cav.DEF { background: var(--pos-DEF); }
     .cav.MED { background: var(--pos-MED); } .cav.DEL { background: var(--pos-DEL); }

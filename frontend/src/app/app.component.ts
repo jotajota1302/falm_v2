@@ -51,15 +51,14 @@ interface NavItem { path: string; icon: string; label: string; }
       position: sticky; top: 0; z-index: 30;
       display: flex; align-items: center; gap: 12px;
       height: 58px; padding: 0 18px;
-      background: rgba(8, 13, 11, .72);
-      backdrop-filter: saturate(160%) blur(14px);
-      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      border-bottom: 1px solid var(--line);
     }
-    .brand { font-weight: 900; font-size: 1.15rem; letter-spacing: -.04em; }
-    .brand .ball { filter: drop-shadow(0 0 6px var(--glow)); }
+    .brand { font-family: var(--fh); font-weight: 600; font-size: 16px;
+      text-transform: uppercase; letter-spacing: .01em; }
     .temp { margin-left: auto; background: var(--surface-2); border: 1px solid var(--border); color: var(--ink);
       border-radius: 9px; padding: 6px 8px; font-size: .76rem; font-weight: 700; max-width: 140px; }
-    .team { margin-left: auto; font-weight: 700; font-size: .82rem; color: var(--primary);
+    .team { margin-left: auto; font-weight: 600; font-size: 13px; color: var(--text);
       text-transform: uppercase; letter-spacing: .04em; }
     .temp + .team { margin-left: 10px; }
     .gear { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px;
@@ -78,8 +77,8 @@ interface NavItem { path: string; icon: string; label: string; }
       color: var(--muted); font-weight: 700; font-size: .9rem; transition: all .14s ease; }
     .nav a .ic { font-size: 1.15rem; width: 22px; text-align: center; }
     .nav a:hover { background: var(--surface); color: var(--ink); }
-    .nav a.active { color: var(--primary); background: rgba(0, 230, 118, .1);
-      box-shadow: inset 2px 0 0 var(--primary); }
+    .nav a.active { color: var(--accent); background: color-mix(in oklab, var(--accent) 9%, var(--surface));
+      box-shadow: inset 2px 0 0 var(--accent); }
 
     /* bottom-nav (móvil) */
     @media (max-width: 760px) {
@@ -90,12 +89,12 @@ interface NavItem { path: string; icon: string; label: string; }
         flex-direction: row; justify-content: space-around; gap: 0;
         padding: 8px 4px calc(8px + env(safe-area-inset-bottom));
         border-right: none; border-top: 1px solid var(--border);
-        background: rgba(8, 13, 11, .82); backdrop-filter: saturate(160%) blur(16px);
+        background: var(--surface);
       }
       .nav a { flex-direction: column; gap: 3px; padding: 4px 2px; font-size: .58rem; flex: 1;
         text-align: center; border-radius: 10px; }
       .nav a.active { background: transparent; box-shadow: none; }
-      .nav a.active .ic { transform: translateY(-1px); filter: drop-shadow(0 4px 8px var(--glow)); }
+      .nav a.active .ic { transform: translateY(-1px); }
     }
   `],
 })
@@ -109,6 +108,7 @@ export class AppComponent {
     { path: '/plantilla', icon: '👕', label: 'Equipo' },
     { path: '/alineacion', icon: '📋', label: 'Once' },
     { path: '/mercado', icon: '🛒', label: 'Mercado' },
+    { path: '/draft', icon: '🎯', label: 'Draft' },
     { path: '/clasificacion', icon: '🏆', label: 'Clasif.' },
     { path: '/jornadas', icon: '📅', label: 'Partidos' },
     { path: '/puntuaciones', icon: '📊', label: 'Stats' },

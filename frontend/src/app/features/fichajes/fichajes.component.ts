@@ -109,7 +109,7 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
     .slots { display: flex; gap: 12px; flex: 1; min-width: 220px; }
     .slot { flex: 1; display: flex; flex-direction: column; gap: 4px; padding: 8px 10px; border-radius: 12px;
       border: 1px dashed var(--border); min-width: 0; }
-    .slot.lleno { border-style: solid; border-color: var(--primary); background: rgba(0,230,118,.06); }
+    .slot.lleno { border-style: solid; border-color: var(--primary); background: var(--accent-soft); }
     .slot .pr { font-size: .68rem; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
     .mini { display: flex; align-items: center; gap: 7px; min-width: 0; }
     .mini img { width: 26px; height: 26px; border-radius: 7px; object-fit: cover; flex: 0 0 auto; }
@@ -119,7 +119,7 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
     .vacio { color: var(--faint); font-size: .82rem; }
     .enviar { flex: 0 0 auto; }
     .enviar:disabled { opacity: .5; cursor: not-allowed; }
-    .aviso { background: rgba(0,230,118,.08); border: 1px solid rgba(0,230,118,.22); color: var(--primary);
+    .aviso { background: var(--accent-soft); border: 1px solid var(--accent-line); color: var(--primary);
       padding: 10px 14px; border-radius: 10px; }
     .lesion { padding: 0; margin-bottom: 14px; overflow: hidden; }
     .lhead { width: 100%; display: flex; align-items: center; justify-content: space-between; background: none; border: none;
