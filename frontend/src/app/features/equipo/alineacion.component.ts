@@ -296,7 +296,7 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
     .fila { position: relative; z-index: 1; display: flex; justify-content: center;
       align-items: center; gap: 10px; flex-wrap: wrap; padding: 4px; }
 
-    .slot { background: none; border: none; cursor: pointer; width: 88px; padding: 0; }
+    .slot { background: none; border: none; cursor: pointer; width: 100px; padding: 0; }
     .slot.vacio { min-height: 112px; border-radius: 13px; display: flex;
       flex-direction: column; align-items: center; justify-content: center; gap: 6px;
       border: 1.5px dashed rgba(255,255,255,.9);

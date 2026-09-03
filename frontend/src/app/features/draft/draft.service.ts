@@ -37,6 +37,16 @@ export interface DraftPickFila {
   orden_seleccion: number;
 }
 
+/** Un pick con los datos del jugador, para el resumen final. */
+export interface PickDetalle {
+  activo_id: string;
+  equipo_falm_id: string;
+  orden_seleccion: number;
+  nombre: string;
+  posicion: string;
+  club: string;
+}
+
 export interface ItemCola {
   activo_id: string;
   prioridad: number;
@@ -61,6 +71,12 @@ export class DraftService {
   readonly catalogo = signal<ActivoLibre[]>([]);
   readonly cola = signal<ItemCola[]>([]);
   readonly equipos = signal<{ id: string; nombre: string }[]>([]);
+  /**
+   * Picks con nombre y club. Hace falta para el resumen del final: al consolidar,
+   * los jugadores pasan a la plantilla y salen de v_activo_libre, así que
+   * cruzarlos con el catálogo daría una lista vacía justo al terminar.
+   */
+  readonly detalle = signal<PickDetalle[]>([]);
   readonly miEquipoId = signal<string | null>(null);
   readonly conectado = signal(true);
   /** ADMIN o GESTOR: puede fichar en nombre del equipo al que le toca el turno. */
@@ -171,6 +187,7 @@ export class DraftService {
       await this.refrescarPicks();
       this.catalogo.set(await this.falm.mercadoLibre());
       await this.refrescarCola();
+      await this.cargarDetalle();
     } catch (e: any) {
       this.error.set(e?.message ?? 'No se pudo cargar el draft.');
     } finally {
@@ -209,6 +226,34 @@ export class DraftService {
     const hechos = new Set(filas.map((p) => p.orden_seleccion));
     this.orden.update((o) => o.map((f) => ({ ...f, completado: hechos.has(f.orden_global) })));
     this.draft.update((x) => (x ? { ...x, picks_hechos: filas.length } : x));
+  }
+
+  /** Los picks con datos del jugador, leídos de la BD y no del catálogo. */
+  async cargarDetalle(): Promise<void> {
+    const d = this.draft();
+    if (!d) return;
+    const { data, error } = await this.sb.client
+      .from('draft_pick')
+      .select('activo_id, equipo_falm_id, orden_seleccion, ' +
+        'activo:activo_id (tipo, equipo_lfp:equipo_lfp_id (nombre), ' +
+        'jugador_lfp:jugador_lfp_id (nombre, apellido, posicion, equipo_lfp:equipo_lfp_id (nombre)))')
+      .eq('draft_id', d.id)
+      .order('orden_seleccion', { ascending: true });
+    if (error) return;
+    this.detalle.set((data ?? []).map((p: any) => {
+      const a = p.activo;
+      const esPorteria = a?.tipo === 'DEFENSA';
+      return {
+        activo_id: p.activo_id,
+        equipo_falm_id: p.equipo_falm_id,
+        orden_seleccion: p.orden_seleccion,
+        nombre: esPorteria
+          ? `Portería ${a?.equipo_lfp?.nombre ?? ''}`.trim()
+          : `${a?.jugador_lfp?.nombre ?? ''} ${a?.jugador_lfp?.apellido ?? ''}`.trim(),
+        posicion: esPorteria ? 'PORTERO' : (a?.jugador_lfp?.posicion ?? ''),
+        club: esPorteria ? (a?.equipo_lfp?.nombre ?? '') : (a?.jugador_lfp?.equipo_lfp?.nombre ?? ''),
+      } as PickDetalle;
+    }));
   }
 
   private async refrescarCola() {

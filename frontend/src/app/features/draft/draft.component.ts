@@ -522,11 +522,13 @@ export class DraftComponent implements OnInit, OnDestroy {
       .filter((a): a is ActivoLibre => !!a);
   });
 
+  /**
+   * Mi plantilla al terminar. Sale del detalle leído de la BD y no del catálogo,
+   * porque al consolidar los jugadores salen de v_activo_libre.
+   */
   readonly misFichados = computed(() => {
-    const cat = new Map(this.d.catalogo().map((a) => [a.activo_id, a]));
-    return this.d.misPicks()
-      .map((p) => cat.get(p.activo_id))
-      .filter((a): a is ActivoLibre => !!a);
+    const yo = this.d.miEquipoId();
+    return this.d.detalle().filter((p) => p.equipo_falm_id === yo);
   });
 
   readonly terminado = computed(() => {
