@@ -29,37 +29,33 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
           }
         </div>
       }
-      @if (jornadasComp().length) {
-        <div class="jchips">
-          @for (j of jornadasComp(); track j.id) {
-            <button class="jchip" [class.on]="j.id === jornada()?.id" (click)="seleccionarJornada(j)">J{{ j.numero }}</button>
+
+      <header class="phead">
+        <div>
+          <h1>Manda tu alineación</h1>
+          <p class="sub">Toca un hueco del campo y elige jugador. Once titulares, más los suplentes
+            que quieras con la línea que cubre cada uno.</p>
+        </div>
+        <div class="acciones">
+          <button class="btn-sec" (click)="repetirUltima()">Repetir última</button>
+          <button class="btn" (click)="guardar()" [disabled]="guardando()">{{ guardando() ? 'Enviando…' : 'Enviar alineación' }}</button>
+        </div>
+      </header>
+
+      <!-- Jornada: se abre en la que toca y se pasa de una en una. -->
+      @if (jornada(); as j) {
+        <div class="jnav">
+          <button class="jb" (click)="irJornada(-1)" [disabled]="idxJornada() <= 0" aria-label="Jornada anterior">‹</button>
+          <div class="jc">
+            <strong>Jornada {{ j.numero }}</strong>
+            @if (j.fecha) { <span class="jf">Cierra {{ fechaCorta(j.fecha) }}</span> }
+          </div>
+          <button class="jb" (click)="irJornada(1)" [disabled]="idxJornada() >= jornadasComp().length - 1" aria-label="Jornada siguiente">›</button>
+          @if (!esJornadaPorDefecto()) {
+            <button class="jhoy" (click)="irAJornadaActual()">Ir a la actual</button>
           }
         </div>
       }
-
-      @if (jornada(); as j) {
-        <div class="jhead">
-          <span class="je">Editando</span>
-          <strong>Jornada {{ j.numero }}</strong>
-          @if (j.fecha) { <span class="jf">· cierra {{ fechaCorta(j.fecha) }}</span> }
-        </div>
-      }
-
-      <header class="phead">
-        <div class="ptit">
-          <h1>Manda tu alineación</h1>
-          <p class="sub">Toca un hueco del campo y elige jugador. Once titulares, más suplentes con la cobertura por línea que quieras.</p>
-        </div>
-        <div class="acciones">
-          <div class="formas">
-            @for (f of formaciones; track f) {
-              <button class="forma" [class.on]="f === formacion()" (click)="cambiarFormacion(f)">{{ f }}</button>
-            }
-          </div>
-          <button class="btn-sec" (click)="repetirUltima()">↩ Repetir última</button>
-          <button class="btn" (click)="guardar()" [disabled]="guardando()">{{ guardando() ? '…' : 'Enviar alineación' }}</button>
-        </div>
-      </header>
 
       @if (!esLiga()) {
         <div class="atajos">
@@ -69,16 +65,14 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
       @if (aviso()) { <p class="aviso">{{ aviso() }}</p> }
 
       <!-- CAMPO: huecos por formación -->
-      <div class="kpis">
-        <div class="kpi">
-          <span class="lb">Titulares</span>
-          <span class="v num" [class.ok]="titulares().length === 11" [class.ko]="titulares().length !== 11">{{ titulares().length }}/11</span>
+      <div class="fbar">
+        <span class="lb">Formación</span>
+        <div class="formas">
+          @for (f of formaciones; track f) {
+            <button class="forma" [class.on]="f === formacion()" (click)="cambiarFormacion(f)">{{ f }}</button>
+          }
         </div>
-        <div class="kpi">
-          <span class="lb">Media prevista</span>
-          <span class="v num acc">{{ mediaPrevista() }}</span>
-        </div>
-        <span class="form-actual num">{{ formacion() }}</span>
+        <span class="cuenta num" [class.ok]="titulares().length === 11">{{ titulares().length }}/11</span>
       </div>
       <div class="pitch">
         @for (pos of ['DELANTERO','MEDIO','DEFENSA','PORTERO']; track pos) {
@@ -98,7 +92,6 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
           </div>
         }
       </div>
-      <p class="hint">Toca un hueco para elegir. {{ titulares().length }}/11 titulares.</p>
 
       <!-- BANQUILLO -->
       <div class="banco">
@@ -159,24 +152,32 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
       background: var(--surface); color: var(--text2); cursor: pointer; font-family: var(--fb);
       font-weight: 600; font-size: var(--t-sm); white-space: nowrap; }
     .comp.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
-    .jchips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 12px; }
-    .jchip { flex: 0 0 auto; min-width: 44px; padding: 8px 10px; border: 1px solid var(--line); background: var(--surface);
-      color: var(--text2); border-radius: 10px; cursor: pointer; font-family: var(--fm); font-weight: 600; font-size: var(--t-sm); }
-    .jchip.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
-    .jhead { display: flex; align-items: baseline; gap: 7px; margin: 4px 0 12px; }
-    .jhead .je { font-size: var(--t-xs); text-transform: uppercase; letter-spacing: .16em; color: var(--text2); font-weight: 700; }
-    .jhead strong { font-family: var(--fh); font-size: var(--t-lg); font-weight: 600; text-transform: uppercase; color: var(--accent); }
-    .jhead .jf { font-size: var(--t-sm); color: var(--text2); text-transform: capitalize; }
-    /* cabecera de pantalla */
-    .phead { display: flex; align-items: flex-start; justify-content: space-between;
-      gap: 18px; flex-wrap: wrap; margin-bottom: 16px; }
-    .ptit .sub { margin: 5px 0 0; font-size: var(--t-sm); color: var(--text2); max-width: 62ch; }
+    /* Navegador de jornada: la que toca, y las demás de una en una. */
+    .jnav { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+    .jb { width: 34px; height: 34px; flex: 0 0 auto; border: 1px solid var(--line);
+      background: var(--surface); color: var(--text); border-radius: 10px; cursor: pointer;
+      font-family: var(--fb); font-size: var(--t-lg); line-height: 1; }
+    .jb:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+    .jb:disabled { opacity: .35; cursor: not-allowed; }
+    .jc { display: flex; align-items: baseline; gap: 10px; }
+    .jc strong { font-family: var(--fh); font-size: var(--t-lg); font-weight: 600; text-transform: uppercase; }
+    .jf { font-size: var(--t-sm); color: var(--text2); text-transform: capitalize; }
+    .jhoy { margin-left: auto; background: none; border: none; cursor: pointer; padding: 0;
+      font-family: var(--fb); font-size: var(--t-xs); font-weight: 700; letter-spacing: .1em;
+      text-transform: uppercase; color: var(--accent); }
+
+    .phead .sub { max-width: 62ch; }
     .acciones { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+
+    /* Formación y recuento de titulares, pegados al campo que gobiernan. */
+    .fbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
     .formas { display: flex; gap: 3px; padding: 3px; background: var(--surface2);
       border: 1px solid var(--line); border-radius: 11px; }
     .forma { font-family: var(--fm); font-size: var(--t-sm); font-weight: 700; padding: 8px 12px;
       border: none; border-radius: 8px; background: transparent; color: var(--text2); cursor: pointer; }
     .forma.on { background: var(--accent); color: var(--accent-ink); }
+    .cuenta { margin-left: auto; font-size: var(--t-md); font-weight: 700; color: var(--bad); }
+    .cuenta.ok { color: var(--good); }
 
     .atajos { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
     .atajo { background: var(--surface); border: 1px solid var(--line); color: var(--text); border-radius: 11px;
@@ -184,17 +185,6 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
     .atajo:hover { border-color: var(--accent); }
     .aviso { background: var(--surface); border: 1px solid var(--accent); color: var(--accent);
       padding: 10px 15px; border-radius: 11px; margin-bottom: 12px; font-size: var(--t-sm); font-weight: 600; }
-    .hint { text-align: center; color: var(--text2); font-size: var(--t-xs); margin: 8px 0 18px; }
-
-    /* KPIs del campo */
-    .kpis { display: flex; align-items: flex-end; gap: 26px; padding: 0 4px 11px; }
-    .kpi { display: flex; flex-direction: column; gap: 2px; }
-    .kpi .lb { font-size: var(--t-xs); font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--text2); }
-    .kpi .v { font-size: var(--t-lg); font-weight: 700; }
-    .kpi .v.ok { color: var(--good); }
-    .kpi .v.ko { color: var(--bad); }
-    .kpi .v.acc { color: var(--accent); }
-    .form-actual { margin-left: auto; font-size: var(--t-sm); color: var(--text2); }
 
     /* campo: hierba segada sobre papel, no estadio nocturno */
     .pitch { position: relative; background: var(--pitch); border: 1px solid var(--line);
@@ -266,7 +256,6 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
       .slot.vacio { min-height: 76px; }
       .slot.vacio .mas { width: 28px; height: 28px; font-size: var(--t-md); }
       .slot.vacio .lb { font-size: var(--t-xs); }
-      .kpis { gap: 16px; }
       .formas { width: 100%; }
       .forma { flex: 1; padding: 10px 8px; }
       .atajo { flex: 1 1 auto; }
@@ -322,6 +311,34 @@ export class AlineacionComponent implements OnInit {
     const t = this.titulares().reduce((a, id) => a + (p[id] ?? 0), 0);
     return Math.round(t * 10) / 10;
   });
+
+  /** Posición de la jornada abierta dentro de la competición. */
+  idxJornada = computed(() => this.jornadasComp().findIndex((j) => j.id === this.jornada()?.id));
+
+  /** La jornada que toca: la primera por jugar, o la última si ya pasaron todas. */
+  private porDefecto(): JornadaFalm | null {
+    const js = this.jornadasComp();
+    if (!js.length) return null;
+    const ahora = Date.now();
+    return js.find((j) => j.fecha && new Date(j.fecha).getTime() > ahora) ?? js[js.length - 1];
+  }
+  esJornadaPorDefecto = computed(() => {
+    const js = this.jornadasComp();
+    if (!js.length) return true;
+    const ahora = Date.now();
+    const def = js.find((j) => j.fecha && new Date(j.fecha).getTime() > ahora) ?? js[js.length - 1];
+    return def?.id === this.jornada()?.id;
+  });
+
+  async irJornada(paso: number) {
+    const js = this.jornadasComp();
+    const i = this.idxJornada() + paso;
+    if (i >= 0 && i < js.length) await this.seleccionarJornada(js[i]);
+  }
+  async irAJornadaActual() {
+    const j = this.porDefecto();
+    if (j) await this.seleccionarJornada(j);
+  }
 
   /** Cupos por línea según la formación (POR siempre 1). */
   cupos = computed(() => {
@@ -480,12 +497,9 @@ export class AlineacionComponent implements OnInit {
     this.competicionId.set(compId);
     const js = await this.falm.jornadas(compId);
     this.jornadasComp.set(js);
-    if (js.length) {
-      // por defecto, la próxima jornada a jugar (primera con fecha futura); si todas pasaron, la última
-      const ahora = Date.now();
-      const proxima = js.find((j) => j.fecha && new Date(j.fecha).getTime() > ahora) ?? js[js.length - 1];
-      await this.seleccionarJornada(proxima);
-    } else { this.jornada.set(null); this.limpiar(); }
+    const proxima = this.porDefecto();
+    if (proxima) await this.seleccionarJornada(proxima);
+    else { this.jornada.set(null); this.limpiar(); }
   }
   async seleccionarJornada(j: JornadaFalm) {
     this.jornada.set(j); this.aviso.set('');
