@@ -278,3 +278,48 @@ antes de intentar el pick, no como un error después.
 **Test real**: sobre un draft de prueba, entran 2 del Real Madrid y el tercero se
 rechaza; entran 3 de un club normal y el cuarto se rechaza. **TEST OK**,
 revertido al terminar.
+
+## 12. Intercambios y limpieza del SQL (2026-09-03) — ✅
+
+### Los intercambios no se ejecutaban
+
+Al ir a añadir el cupo por club apareció algo más gordo: **aceptar una oferta solo
+cambiaba el estado a ACEPTADA**. Los jugadores no se movían. No hay trigger, y la
+tabla `plantilla` solo la escribe el admin (`wr_admin`), así que desde el cliente
+era imposible que el traspaso ocurriera. La funcionalidad estaba a medias desde
+la V2.
+
+Y la política `wr_oferente` daba `ALL` al oferente **y** al receptor: cualquiera
+de los dos podía aceptar, incluido quien hizo la oferta.
+
+**Ahora** hay `falm.oferta_responder(p_oferta, p_estado)`, que en una sola
+transacción:
+
+- comprueba quién puede qué: el receptor acepta o rechaza, el oferente cancela;
+- rechaza ofertas ya respondidas o caducadas;
+- verifica que los jugadores sigan en las plantillas de origen;
+- comprueba por los dos lados el tope de 23 y el **cupo por club**;
+- y hace el traspaso: baja en el origen, alta en el destino, conservando histórico.
+
+La política pasa a `insert` del oferente, `update` solo admin y `delete` del
+oferente: el estado ya solo se cambia por la función.
+
+**Test real**: A con 3 del Alavés y 1 del Betis, B con 1 del Alavés. B ofrece su
+alavesista pidiendo el bético → rechazado por cupo. Cambiando la petición a un
+alavesista → aceptado, los dos jugadores cambian de plantilla, y una segunda
+respuesta sobre la misma oferta se rechaza. **TEST OK**.
+
+### Limpieza de `tools/sql`
+
+Tres ficheros contradecían a la base, y ejecutarlos habría revertido protecciones:
+
+| Fichero | Qué revertía |
+|---|---|
+| `draft_pick_v2.sql` | `draft_pick` sin el tope por club |
+| `admin_operaciones.sql` | `estado_crons` sin guardia de rol (fuga de los comandos de cron) |
+| `liga_falm_calendario.sql` | `generar_liga_falm` sin la revocación de permisos |
+
+Los tres alineados con lo aplicado, más `intercambios.sql` que faltaba y un
+`README.md` con las reglas: los ficheros reflejan lo aplicado, son idempotentes,
+los `*_test.sql` se revierten solos, y la verdad última son las migraciones de
+Supabase (con el `pg_get_functiondef` para comprobarlo).

@@ -123,3 +123,10 @@ end $function$;
 -- Ejecutado asi (y despues falm.refrescar_calendario_fd para fijar los cierres):
 --   select falm.generar_liga_falm(
 --            (select id from falm.temporada where activa), 5, 36, array[6,17,26,33]);
+
+-- generar_liga_falm monta jornadas y calendario de una tacada: es un camino
+-- paralelo que se salta las protecciones de generar_jornadas_liga y
+-- generar_calendario_liga (que rechazan regenerar con la liga en marcha).
+-- No se llama desde el frontend, asi que queda solo para mantenimiento.
+revoke execute on function falm.generar_liga_falm(uuid, integer, integer, integer[])
+  from public, authenticated, anon;

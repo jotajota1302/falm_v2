@@ -1,16 +1,16 @@
--- draft_pick v2: mismo motor de turnos, con tres validaciones nuevas.
+-- Motor de picks del draft. Refleja lo aplicado en la base.
 --
---  1. Identidad: solo puedes fichar por tu equipo. La versión anterior recibía
---     p_equipo como parámetro y no lo comprobaba, así que cualquier usuario
---     logueado podía fichar por el equipo al que le tocara el turno.
---  2. Disponibilidad real: el activo debe estar en v_activo_libre (eso deja
---     fuera a los porteros individuales y a los que no son de primer equipo).
---  3. Mínimo de 2 porterías dentro de los 23 turnos de cada equipo.
+-- draft_pick valida, por este orden:
+--   1. que el draft este en curso
+--   2. identidad: solo fichas por tu equipo, salvo que seas admin (asi el
+--      comisario puede meter el pick de quien lo canta en voz alta)
+--   3. que el activo no este ya elegido y siga disponible
+--   4. el tope por club: 2 del Madrid/Barca/Atleti, 3 del resto, contando la
+--      porteria de un club como uno de los suyos
+--   5. el minimo de 2 porterias dentro de los turnos que quedan
 --
--- Y un 'for update' sobre el turno, para que dos peticiones simultáneas se
--- serialicen en vez de leer las dos el mismo turno.
---
--- auth.uid() nulo = ejecución de mantenimiento (psql/MCP): se permite.
+-- El "for update" sobre el turno serializa dos peticiones simultaneas: la
+-- segunda espera y se encuentra el turno ya cerrado.
 
 create or replace function falm.draft_pick(p_draft uuid, p_activo uuid, p_equipo uuid)
 returns jsonb
@@ -21,11 +21,14 @@ as $function$
 declare
   v_turno falm.draft_orden;
   v_estado falm.draft_estado;
-  v_uid uuid := auth.uid();
   v_es_porteria boolean;
   v_porterias int;
   v_restantes int;
   v_faltan int;
+  v_club uuid;
+  v_club_nombre text;
+  v_limite int;
+  v_tiene int;
 begin
   select estado into v_estado from falm.draft where id = p_draft;
   if v_estado is null then raise exception 'Draft no encontrado'; end if;
@@ -49,6 +52,22 @@ begin
     raise exception 'Ese activo no está disponible';
   end if;
 
+  -- Tope por club. La porteria de un club cuenta como uno de los suyos.
+  v_club := falm.club_de_activo(p_activo);
+  if v_club is not null then
+    select nombre, limite_plantilla into v_club_nombre, v_limite
+      from falm.equipo_lfp where id = v_club;
+    select count(*) into v_tiene
+      from falm.draft_pick dp
+     where dp.draft_id = p_draft and dp.equipo_falm_id = p_equipo
+       and falm.club_de_activo(dp.activo_id) = v_club;
+    if v_tiene >= v_limite then
+      raise exception 'Ya tienes % de % y el máximo por ese club es %',
+        v_tiene, v_club_nombre, v_limite;
+    end if;
+  end if;
+
+  -- Minimo de 2 porterias dentro de los turnos que quedan.
   select (a.tipo = 'DEFENSA') into v_es_porteria from falm.activo a where a.id = p_activo;
   select count(*) into v_porterias
     from falm.draft_pick dp join falm.activo a on a.id = dp.activo_id
@@ -72,8 +91,7 @@ begin
   return falm.draft_estado(p_draft);
 end $function$;
 
--- Deshacer el último pick. En una quedada presencial alguien dicta mal un
--- nombre y hay que poder arreglarlo sin tocar la base a mano.
+-- Deshacer el ultimo pick: en la quedada alguien dicta mal un nombre.
 create or replace function falm.draft_pick_deshacer(p_draft uuid)
 returns jsonb
 language plpgsql
@@ -81,7 +99,6 @@ security definer
 set search_path to 'public', 'falm'
 as $function$
 declare
-  v_uid uuid := auth.uid();
   v_estado falm.draft_estado;
   v_pick falm.draft_pick;
 begin
@@ -104,5 +121,37 @@ begin
   return falm.draft_estado(p_draft);
 end $function$;
 
+-- Consolidar: los picks pasan a plantilla. No se descuenta presupuesto, esta
+-- temporada no se juega con dinero.
+create or replace function falm.draft_consolidar(p_draft uuid)
+returns jsonb
+language plpgsql
+security definer
+set search_path to 'public', 'falm'
+as $function$
+declare v_estado falm.draft_estado; v_temp uuid; v_n int;
+begin
+  if not falm.puede_gestionar() then
+    raise exception 'Solo un administrador puede consolidar el draft';
+  end if;
+
+  select estado, temporada_id into v_estado, v_temp from falm.draft where id = p_draft;
+  if v_estado is null then raise exception 'Draft no encontrado'; end if;
+  if v_estado <> 'COMPLETADO' then raise exception 'Solo se consolida un draft COMPLETADO'; end if;
+
+  insert into falm.plantilla(temporada_id, equipo_falm_id, activo_id, precio, fecha_fichaje)
+  select v_temp, dp.equipo_falm_id, dp.activo_id, coalesce(a.precio_mercado, 0), now()
+  from falm.draft_pick dp
+  join falm.activo a on a.id = dp.activo_id
+  where dp.draft_id = p_draft
+    and not exists (select 1 from falm.plantilla pl
+                     where pl.activo_id = dp.activo_id and pl.fecha_baja is null);
+  get diagnostics v_n = row_count;
+
+  update falm.draft set estado = 'CONSOLIDADO' where id = p_draft;
+  return jsonb_build_object('consolidado', true, 'altas_plantilla', v_n);
+end $function$;
+
 grant execute on function falm.draft_pick(uuid, uuid, uuid) to authenticated;
 grant execute on function falm.draft_pick_deshacer(uuid) to authenticated;
+grant execute on function falm.draft_consolidar(uuid) to authenticated;
