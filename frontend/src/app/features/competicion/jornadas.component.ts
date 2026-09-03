@@ -145,7 +145,7 @@ import { colorEquipo } from '../../shared/equipo-colores';
     .muted { color: var(--text2); } .err { color: var(--bad); }
 
     @media (max-width: 560px) {
-      .nm { font-size: var(--t-sm); }
+      .nm { font-size: var(--t-md); }
       .dcols { grid-template-columns: 1fr; }
     }
   `],

@@ -117,7 +117,7 @@ import { colorEquipo } from '../../shared/equipo-colores';
     .ronda h2 { color: var(--accent); }
     .llave { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 13px 15px; }
     .eq { display: flex; align-items: center; gap: 10px; padding: 5px 0; color: var(--text2); }
-    .eq .nm { flex: 1; font-size: var(--t-sm); }
+    .eq .nm { flex: 1; font-size: var(--t-md); }
     .eq .ag { font-size: var(--t-lg); font-weight: 700; }
     .eq.gana { color: var(--text); }
     .eq.gana .ag { color: var(--accent); }

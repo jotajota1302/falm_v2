@@ -177,7 +177,7 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
       background: var(--surface); border: 1px solid var(--line); border-radius: 9px; cursor: pointer; }
     .fila:hover { background: var(--surface2); }
     .fila.sel { border-color: var(--accent); background: var(--accent-soft); }
-    .nm { flex: 1; text-align: left; font-weight: 600; font-size: var(--t-sm);
+    .nm { flex: 1; text-align: left; font-weight: 600; font-size: var(--t-md);
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .tick { color: var(--accent); font-weight: 700; }
     .coment-in { width: 100%; font-family: var(--fb); font-size: var(--t-md); background: var(--surface);

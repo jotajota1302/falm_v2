@@ -47,13 +47,14 @@
      xl  titulares de bloque
      2xl h1     3xl la cifra única de una pantalla
      ------------------------------------------------------------------ */
-  --t-xs: 11px;
-  --t-sm: 13px;
-  --t-md: 15px;
-  --t-lg: 20px;
-  --t-xl: 27px;
-  --t-2xl: 34px;
-  --t-3xl: 44px;
+  --esc: 1;   /* palanca: sube o baja toda la tipografía de la app a la vez */
+  --t-xs: calc(12px * var(--esc));
+  --t-sm: calc(14px * var(--esc));
+  --t-md: calc(16px * var(--esc));   /* el cuerpo, como el estándar del navegador */
+  --t-lg: calc(22px * var(--esc));
+  --t-xl: calc(30px * var(--esc));
+  --t-2xl: calc(38px * var(--esc));
+  --t-3xl: calc(50px * var(--esc));
 
   /* ---- forma ---- */
   --r: 18px;
@@ -101,7 +102,7 @@ h3 { font-family: var(--fh); font-weight: 500; font-size: var(--t-sm); text-tran
 
 /* rótulo de columna o de bloque */
 .lb {
-  font-size: var(--t-xs); font-weight: 700; letter-spacing: .14em;
+  font-size: var(--t-xs); font-weight: 700; letter-spacing: .1em;
   text-transform: uppercase; color: var(--text2);
 }
 
@@ -112,7 +113,7 @@ h3 { font-family: var(--fh); font-weight: 500; font-size: var(--t-sm); text-tran
   border: 1px solid var(--line); border-radius: 16px; padding: 15px 17px;
 }
 .kpi .lb { display: block; }
-.kpi .v { display: block; margin-top: 4px; font-family: var(--fh); font-size: var(--t-xl); font-weight: 600; }
+.kpi .v { display: block; margin-top: 5px; font-family: var(--fh); font-size: var(--t-xl); font-weight: 600; }
 .kpi .v small { font-size: var(--t-md); color: var(--text2); }
 
 /* filtros en píldora */
@@ -128,11 +129,11 @@ h3 { font-family: var(--fh); font-weight: 500; font-size: var(--t-sm); text-tran
 .tabla { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; }
 .tabla .barra {
   display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-  padding: 13px 18px; border-bottom: 1px solid var(--line);
+  padding: 14px 18px; border-bottom: 1px solid var(--line);
 }
 .tabla .fila {
   width: 100%; display: grid; align-items: center; gap: 10px;
-  padding: 11px 18px; border: none; border-bottom: 1px solid var(--line);
+  padding: 13px 18px; border: none; border-bottom: 1px solid var(--line);
   background: transparent; text-align: left; font-size: var(--t-sm);
   color: var(--text); font-family: var(--fb);
 }
@@ -141,7 +142,7 @@ h3 { font-family: var(--fh); font-weight: 500; font-size: var(--t-sm); text-tran
 .tabla button.fila:hover { background: var(--surface2); }
 .tabla .fila.cab {
   cursor: default; padding: 12px 18px;
-  font-size: var(--t-xs); font-weight: 700; letter-spacing: .14em;
+  font-size: var(--t-xs); font-weight: 700; letter-spacing: .1em;
   text-transform: uppercase; color: var(--text2);
 }
 .der { text-align: right; }
@@ -179,7 +180,7 @@ h3 { font-family: var(--fh); font-weight: 500; font-size: var(--t-sm); text-tran
 /* badge de posición */
 .pos {
   display: inline-flex; align-items: center; justify-content: center;
-  min-width: 34px; padding: 3px 7px; border-radius: 6px;
+  min-width: 38px; padding: 4px 8px; border-radius: 6px;
   font-family: var(--fb); font-size: var(--t-xs); font-weight: 700;
   letter-spacing: .06em; text-transform: uppercase;
   color: #fff;

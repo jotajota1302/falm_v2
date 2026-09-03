@@ -151,7 +151,7 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
     /* Lo pedido se marca en el papel, para no perderlo al desplazar la lista. */
     .fila.pedido { background: var(--accent-soft); }
     .nom { background: none; border: none; padding: 0; text-align: left; cursor: pointer;
-      font-family: var(--fb); font-size: var(--t-sm); font-weight: 700; color: var(--text);
+      font-family: var(--fb); font-size: var(--t-md); font-weight: 700; color: var(--text);
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .nom:hover { color: var(--accent); }
     .club { display: flex; align-items: center; gap: 6px; color: var(--text2); font-size: var(--t-xs);
@@ -177,7 +177,7 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
       background: var(--surface); border: 1px solid var(--line); color: var(--text2); }
     .slot.lleno .prio { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
     .sw { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-    .sn { font-size: var(--t-sm); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sn { font-size: var(--t-md); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .smeta { font-size: var(--t-xs); color: var(--text2); }
     .vacia { color: var(--text2); font-size: var(--t-sm); }
     .rm { background: transparent; border: 1px solid var(--line); color: var(--bad);
