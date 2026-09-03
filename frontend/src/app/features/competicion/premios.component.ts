@@ -50,13 +50,13 @@ const COLORES = ['#00e676', '#38bdf8', '#fb7185', '#a3e635', '#ffc24b', '#c084fc
     .row { display: grid; grid-template-columns: 38px 32px 1fr auto; align-items: center; gap: 11px;
       padding: 11px 13px; border-bottom: 1px solid var(--border); }
     .row:last-child { border-bottom: none; }
-    .row.yo { background: rgba(0,230,118,.07); box-shadow: inset 2px 0 0 var(--primary); }
+    .row.yo { background: var(--accent-soft); box-shadow: inset 2px 0 0 var(--primary); }
     .pos { text-align: center; font-weight: 800; color: var(--muted); }
     .medal { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px;
-      border-radius: 50%; font-weight: 800; font-size: .78rem; color: #07120d; }
+      border-radius: 50%; font-weight: 800; font-size: .78rem; color: var(--accent-ink); }
     .medal[data-m="1"] { background: #ffc24b; } .medal[data-m="2"] { background: #cbd5e1; } .medal[data-m="3"] { background: #d4915a; }
     .av { width: 32px; height: 32px; border-radius: 9px; display: flex; align-items: center; justify-content: center;
-      font-weight: 800; color: #07120d; font-size: .85rem; }
+      font-weight: 800; color: var(--accent-ink); font-size: .85rem; }
     .nm { font-weight: 700; font-size: .9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .ben { font-weight: 900; color: var(--gold); } .ben small { font-size: .7rem; opacity: .8; }
     .muted { color: var(--muted); } .err { color: var(--bad); }

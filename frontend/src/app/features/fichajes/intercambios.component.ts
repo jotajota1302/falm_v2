@@ -123,9 +123,9 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     .tabs { display: flex; gap: 8px; margin-bottom: 14px; }
     .tabs button { background: var(--surface); border: 1px solid var(--border); color: var(--muted);
       border-radius: 11px; padding: 9px 16px; cursor: pointer; font-weight: 800; font-size: .85rem; }
-    .tabs button.on { background: rgba(0,230,118,.1); color: var(--primary); border-color: var(--primary); }
+    .tabs button.on { background: var(--accent-soft); color: var(--primary); border-color: var(--primary); }
     .dot { background: var(--bad); color: #fff; border-radius: 999px; padding: 0 7px; font-size: .7rem; margin-left: 5px; }
-    .aviso { background: rgba(0,230,118,.08); border: 1px solid rgba(0,230,118,.22); color: var(--primary); padding: 10px 14px; border-radius: 10px; margin-bottom: 12px; }
+    .aviso { background: var(--accent-soft); border: 1px solid var(--accent-line); color: var(--primary); padding: 10px 14px; border-radius: 10px; margin-bottom: 12px; }
     .err { color: var(--bad); }
     .muted { color: var(--muted); }
     .lista { display: flex; flex-direction: column; gap: 12px; }
@@ -134,7 +134,7 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     .dir { color: var(--muted); font-size: .85rem; } .dir b { color: var(--ink); }
     .est { font-size: .68rem; font-weight: 800; padding: 3px 9px; border-radius: 999px; text-transform: uppercase; letter-spacing: .03em; }
     .est[data-e=PENDIENTE] { background: rgba(255,194,75,.15); color: var(--gold); }
-    .est[data-e=ACEPTADA] { background: rgba(0,230,118,.15); color: var(--primary); }
+    .est[data-e=ACEPTADA] { background: var(--accent-soft); color: var(--primary); }
     .est[data-e=RECHAZADA], .est[data-e=CANCELADA], .est[data-e=EXPIRADA] { background: rgba(251,113,133,.14); color: var(--bad); }
     .cambio { display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: start; }
     .col { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
@@ -144,7 +144,7 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
       border-radius: 9px; padding: 5px 8px; font-size: .82rem; font-weight: 600; }
     .mini img { width: 22px; height: 22px; border-radius: 6px; object-fit: cover; }
     .mini i { width: 22px; height: 22px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center;
-      font-size: .6rem; font-weight: 800; font-style: normal; color: #07120d; background: var(--muted); }
+      font-size: .6rem; font-weight: 800; font-style: normal; color: var(--accent-ink); background: var(--muted); }
     .mini[data-pos=POR] i { background: var(--pos-POR); } .mini[data-pos=DEF] i { background: var(--pos-DEF); }
     .mini[data-pos=MED] i { background: var(--pos-MED); } .mini[data-pos=DEL] i { background: var(--pos-DEL); }
     .coment { margin: 12px 0 0; color: var(--muted); font-style: italic; font-size: .85rem; }
@@ -162,8 +162,8 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     .lt { margin: 0 0 10px; font-size: .95rem; } .lt small { color: var(--primary); font-weight: 900; }
     .fila { width: 100%; display: flex; align-items: center; gap: 9px; padding: 8px 9px; margin-bottom: 5px;
       background: var(--surface-2); border: 1px solid var(--border); border-radius: 9px; cursor: pointer; }
-    .fila.sel { border-color: var(--primary); background: rgba(0,230,118,.08); }
-    .pos { flex: 0 0 auto; width: 34px; padding: 3px 0; text-align: center; border-radius: 6px; font-size: .66rem; font-weight: 800; color: #07120d; }
+    .fila.sel { border-color: var(--primary); background: var(--accent-soft); }
+    .pos { flex: 0 0 auto; width: 34px; padding: 3px 0; text-align: center; border-radius: 6px; font-size: .66rem; font-weight: 800; color: var(--accent-ink); }
     .pos.POR { background: var(--pos-POR); } .pos.DEF { background: var(--pos-DEF); }
     .pos.MED { background: var(--pos-MED); } .pos.DEL { background: var(--pos-DEL); }
     .nm { flex: 1; text-align: left; font-weight: 600; font-size: .82rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

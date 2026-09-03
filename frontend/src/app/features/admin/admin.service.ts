@@ -104,15 +104,24 @@ export class AdminService {
     return est;
   }
 
+  /** Deshace el último pick del draft. La función valida que seas ADMIN/GESTOR. */
+  async draftDeshacer(draftId: string): Promise<void> {
+    const { error } = await this.sb.client.rpc('draft_pick_deshacer', { p_draft: draftId });
+    if (error) throw error;
+  }
+
   async draftPicks(draftId: string): Promise<{ orden: number; ronda: number; equipo: string; jugador: string; posicion: string }[]> {
     const { data, error } = await this.sb.client.from('draft_pick')
-      .select('orden_seleccion, ronda, equipo:equipo_falm_id (nombre), activo:activo_id (jugador_lfp:jugador_lfp_id (nombre, apellido, posicion))')
+      .select('orden_seleccion, ronda, equipo:equipo_falm_id (nombre), ' +
+        'activo:activo_id (tipo, jugador_lfp:jugador_lfp_id (nombre, apellido, posicion), equipo_lfp:equipo_lfp_id (nombre))')
       .eq('draft_id', draftId).order('orden_seleccion', { ascending: false }).limit(20);
     if (error) throw error;
     return (data ?? []).map((p: any) => ({
       orden: p.orden_seleccion, ronda: p.ronda, equipo: p.equipo?.nombre ?? '?',
-      jugador: `${p.activo?.jugador_lfp?.nombre ?? ''} ${p.activo?.jugador_lfp?.apellido ?? ''}`.trim() || '?',
-      posicion: p.activo?.jugador_lfp?.posicion ?? '',
+      jugador: p.activo?.tipo === 'DEFENSA'
+        ? `Portería ${p.activo?.equipo_lfp?.nombre ?? ''}`.trim()
+        : `${p.activo?.jugador_lfp?.nombre ?? ''} ${p.activo?.jugador_lfp?.apellido ?? ''}`.trim() || '?',
+      posicion: p.activo?.tipo === 'DEFENSA' ? 'PORTERO' : (p.activo?.jugador_lfp?.posicion ?? ''),
     }));
   }
 

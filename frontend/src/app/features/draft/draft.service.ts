@@ -63,6 +63,8 @@ export class DraftService {
   readonly equipos = signal<{ id: string; nombre: string }[]>([]);
   readonly miEquipoId = signal<string | null>(null);
   readonly conectado = signal(true);
+  /** ADMIN o GESTOR: puede fichar en nombre del equipo al que le toca el turno. */
+  readonly soyGestor = signal(false);
   readonly cargando = signal(true);
   readonly error = signal('');
 
@@ -129,6 +131,8 @@ export class DraftService {
     try {
       const eq = await this.falm.miEquipo();
       this.miEquipoId.set(eq?.id ?? null);
+      const { data: gestor } = await this.sb.client.rpc('es_gestor');
+      this.soyGestor.set(gestor === true);
       this.equipos.set(await this.falm.equiposFalm());
 
       const { data: d } = await this.sb.client

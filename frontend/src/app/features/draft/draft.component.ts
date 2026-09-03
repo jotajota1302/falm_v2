@@ -71,6 +71,12 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
           {{ minPorterias - d.misPorterias() }} porterías: solo puedes elegir portería.
         </div>
       }
+      @if (d.soyGestor() && !d.esMiTurno()) {
+        <div class="aviso">
+          Modo administrador: al fichar lo harás en nombre de
+          <strong>{{ nombreEquipo(d.turno()?.equipo_falm_id) }}</strong>.
+        </div>
+      }
       @if (msg()) { <div class="aviso err" (click)="msg.set('')">{{ msg() }}</div> }
 
       <div class="cols">
@@ -270,9 +276,15 @@ export class DraftComponent implements OnInit, OnDestroy {
   tomado(a: ActivoLibre) { return this.d.tomadoPor().get(a.activo_id) ?? null; }
   enCola(a: ActivoLibre) { return this.d.cola().some((c) => c.activo_id === a.activo_id); }
 
+  /**
+   * Un gestor ficha por el equipo al que le toca: en la quedada presencial hay
+   * quien dicta su elección en voz alta. El cupo de porterías solo se comprueba
+   * en cliente para mi propio equipo; para el resto lo valida el servidor.
+   */
   puedeFichar(a: ActivoLibre) {
-    if (!this.d.esMiTurno() || this.tomado(a)) return false;
-    return !this.d.debeElegirPorteria() || a.tipo === 'DEFENSA';
+    if (this.tomado(a) || !this.d.turno()) return false;
+    if (this.d.esMiTurno()) return !this.d.debeElegirPorteria() || a.tipo === 'DEFENSA';
+    return this.d.soyGestor();
   }
 
   readonly visibles = computed(() => {
@@ -358,10 +370,13 @@ export class DraftComponent implements OnInit, OnDestroy {
   }
 
   async fichar(a: ActivoLibre) {
-    if (!confirm(`¿Fichar a ${a.nombre}?`)) return;
+    const mio = this.d.esMiTurno();
+    const equipoTurno = this.d.turno()?.equipo_falm_id ?? null;
+    const para = mio ? '' : ` para ${this.nombreEquipo(equipoTurno)}`;
+    if (!confirm(`¿Fichar a ${a.nombre}${para}?`)) return;
     this.msg.set('');
     try {
-      await this.d.fichar(a.activo_id);
+      await this.d.fichar(a.activo_id, mio ? undefined : equipoTurno ?? undefined);
     } catch (e: any) {
       this.msg.set(e?.message ?? 'No se pudo fichar.');
     }

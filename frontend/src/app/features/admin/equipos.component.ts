@@ -39,7 +39,7 @@ const COLORES = ['#00e676', '#38bdf8', '#fb7185', '#a3e635', '#ffc24b', '#c084fc
     .grid { display: flex; flex-direction: column; gap: 10px; }
     .eq { display: flex; align-items: center; gap: 14px; padding: 14px 16px; }
     .av { flex: 0 0 auto; width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center;
-      justify-content: center; font-weight: 800; color: #07120d; }
+      justify-content: center; font-weight: 800; color: var(--accent-ink); }
     .info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
     .info strong { font-size: .95rem; }
     .meta { color: var(--muted); font-size: .78rem; }

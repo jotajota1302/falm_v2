@@ -33,7 +33,7 @@ interface Op { id: string; icono: string; titulo: string; desc: string; rpc: str
   `,
   styles: [`
     .intro { font-size: .85rem; margin: 0 0 14px; }
-    .res { background: rgba(0,230,118,.08); border: 1px solid rgba(0,230,118,.22); color: var(--primary); padding: 10px 14px; border-radius: 10px; margin-bottom: 12px; }
+    .res { background: var(--accent-soft); border: 1px solid var(--accent-line); color: var(--primary); padding: 10px 14px; border-radius: 10px; margin-bottom: 12px; }
     .err { color: var(--bad); }
     .grid { display: flex; flex-direction: column; gap: 10px; }
     .op { display: flex; align-items: center; gap: 14px; padding: 14px 16px; }

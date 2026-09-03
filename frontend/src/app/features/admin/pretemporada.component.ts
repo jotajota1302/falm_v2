@@ -1,5 +1,6 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { AdminService, AdminTemporada } from './admin.service';
 
 const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'MED', DELANTERO: 'DEL' };
@@ -8,7 +9,7 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
 @Component({
   selector: 'app-admin-pretemporada',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, RouterLink],
   template: `
     @if (aviso()) { <p class="aviso">{{ aviso() }}</p> }
     @if (error()) { <p class="err">{{ error() }}</p> }
@@ -67,7 +68,8 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
             <div class="turno">
               <span class="tl">Turno</span>
               <b>Ronda {{ t.ronda }}</b> · elige <b>{{ t.equipo }}</b>
-              <button class="mini" (click)="picar()">Simular pick</button>
+              <a class="mini" routerLink="/draft">Ir al tablero</a>
+              <button class="mini" (click)="deshacer()">↩ Deshacer último</button>
             </div>
           } @else if (draft().estado === 'COMPLETADO') {
             <button class="btn" (click)="consolidar()">Consolidar → crear plantillas</button>
@@ -100,9 +102,9 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     .row { display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 9px; }
     .nm { font-weight: 700; } .anio { font-size: .8rem; } .row .badge { margin-left: auto; }
     .badge { font-size: .64rem; font-weight: 800; padding: 2px 8px; border-radius: 999px; background: var(--surface-2); color: var(--muted); }
-    .badge.on, .badge[data-e=EN_CURSO] { background: rgba(0,230,118,.15); color: var(--primary); }
+    .badge.on, .badge[data-e=EN_CURSO] { background: var(--accent-soft); color: var(--primary); }
     .badge[data-e=COMPLETADO] { background: rgba(255,194,75,.15); color: var(--gold); }
-    .mini { margin-left: auto; background: var(--surface-2); border: 1px solid var(--border); color: var(--ink); border-radius: 8px; padding: 5px 11px; cursor: pointer; font-weight: 700; font-size: .76rem; }
+    .mini { background: var(--surface-2); border: 1px solid var(--border); color: var(--ink); border-radius: 8px; padding: 5px 11px; cursor: pointer; font-weight: 700; font-size: .76rem; }
     .aviso { background: rgba(255,194,75,.08); border: 1px solid rgba(255,194,75,.22); color: var(--gold); padding: 10px 14px; border-radius: 10px; margin-bottom: 12px; }
     .err { color: var(--bad); }
     .dhead { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
@@ -111,13 +113,14 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     .bar { flex: 1; height: 8px; background: var(--surface-2); border-radius: 999px; overflow: hidden; }
     .bar span { display: block; height: 100%; background: var(--primary); border-radius: 999px; }
     .pcttxt { font-size: .76rem; color: var(--muted); font-weight: 700; white-space: nowrap; }
-    .turno { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: rgba(0,230,118,.06); border: 1px solid rgba(0,230,118,.2); border-radius: 10px; font-size: .88rem; }
+    .turno { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: var(--accent-soft); border: 1px solid var(--accent-line); border-radius: 10px; font-size: .88rem; }
     .turno .tl { font-size: .66rem; text-transform: uppercase; letter-spacing: .05em; color: var(--faint); font-weight: 800; }
     .picks { display: flex; flex-direction: column; gap: 5px; }
     .pk { display: flex; align-items: center; gap: 9px; padding: 6px 9px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; font-size: .82rem; }
-    .pos { flex: 0 0 auto; width: 32px; text-align: center; padding: 2px 0; border-radius: 5px; font-size: .62rem; font-weight: 800; color: #07120d; }
+    .pos { flex: 0 0 auto; width: 32px; text-align: center; padding: 2px 0; border-radius: 5px; font-size: .62rem; font-weight: 800; color: var(--accent-ink); }
     .pos.POR { background: var(--pos-POR); } .pos.DEF { background: var(--pos-DEF); }
     .pos.MED { background: var(--pos-MED); } .pos.DEL { background: var(--pos-DEL); }
+    .turno a.mini { margin-left: auto; text-decoration: none; display: inline-block; }
     .pj { font-weight: 700; } .o { width: 34px; }
   `],
 })
@@ -186,5 +189,14 @@ export class AdminPretemporadaComponent implements OnInit {
     if (!d?.id) return;
     this.accion(() => this.admin.ejecutar('draft_consolidar', { p_draft: d.id }), '✅ Draft consolidado: plantillas creadas.');
   }
-  picar() { this.aviso.set('El pick se realiza desde el tablero del equipo en su turno (próximo paso de la UI de draft).'); }
+  /**
+   * Deshacer el último pick. En la quedada presencial alguien dicta mal un
+   * nombre y hay que poder arreglarlo sin tocar la base a mano.
+   */
+  async deshacer() {
+    const d = this.draft();
+    if (!d?.id) return;
+    if (!confirm('¿Deshacer el último pick?')) return;
+    await this.accion(() => this.admin.draftDeshacer(d.id), '✅ Pick deshecho.');
+  }
 }

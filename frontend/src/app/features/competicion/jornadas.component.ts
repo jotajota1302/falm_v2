@@ -109,7 +109,7 @@ const COLORES = ['#00e676', '#38bdf8', '#fb7185', '#a3e635', '#ffc24b', '#c084fc
       background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; font-size: .78rem; }
     .dj.supl { opacity: .85; border-style: dashed; }
     .dj.nojugo { opacity: .45; }
-    .dpos { text-align: center; padding: 1px 0; border-radius: 4px; font-size: .58rem; font-weight: 800; color: #07120d; }
+    .dpos { text-align: center; padding: 1px 0; border-radius: 4px; font-size: .58rem; font-weight: 800; color: var(--accent-ink); }
     .dpos.POR { background: var(--pos-POR); } .dpos.DEF { background: var(--pos-DEF); }
     .dpos.MED { background: var(--pos-MED); } .dpos.DEL { background: var(--pos-DEL); }
     .dn { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
@@ -119,7 +119,7 @@ const COLORES = ['#00e676', '#38bdf8', '#fb7185', '#a3e635', '#ffc24b', '#c084fc
       border: 1px solid var(--border); background: var(--surface); color: var(--muted); cursor: pointer;
       font-weight: 800; font-size: .82rem; white-space: nowrap; transition: all .14s ease; }
     .comp .ci { font-size: 1rem; }
-    .comp.on { background: rgba(0,230,118,.1); color: var(--primary); border-color: var(--primary);
+    .comp.on { background: var(--accent-soft); color: var(--primary); border-color: var(--primary);
       box-shadow: inset 0 0 0 1px var(--primary); }
     .jchips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 14px; }
     .jchip { flex: 0 0 auto; min-width: 44px; height: 38px; border: 1px solid var(--border); background: var(--surface);
@@ -130,7 +130,7 @@ const COLORES = ['#00e676', '#38bdf8', '#fb7185', '#a3e635', '#ffc24b', '#c084fc
     .lado { display: flex; align-items: center; gap: 10px; min-width: 0; }
     .lado.izq { justify-content: flex-end; } .lado.der { justify-content: flex-start; }
     .av { flex: 0 0 auto; width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center;
-      justify-content: center; font-weight: 800; color: #07120d; font-size: .9rem; }
+      justify-content: center; font-weight: 800; color: var(--accent-ink); font-size: .9rem; }
     .nm { font-weight: 700; font-size: .86rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .lado.gana .nm { color: var(--ink); }
     .centro { display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 0 10px; }
