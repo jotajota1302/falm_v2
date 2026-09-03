@@ -214,7 +214,24 @@ export class AppComponent implements AfterViewChecked {
   hayDer = signal(false);
   @ViewChild('navref') navRef?: ElementRef<HTMLElement>;
 
-  ngAfterViewChecked() { this.medir(); }
+  ngAfterViewChecked() { this.medir(); this.centrarActiva(); }
+
+  /**
+   * Al entrar en una sección, su pestaña puede quedar fuera de la barra o
+   * cortada por el borde. Se la trae al centro una vez por cambio de ruta.
+   */
+  private ultimaCentrada = '';
+  private centrarActiva() {
+    const el = this.navRef?.nativeElement;
+    if (!el || el.scrollWidth <= el.clientWidth) return;
+    const ruta = this.router.url.split('?')[0];
+    if (ruta === this.ultimaCentrada) return;
+    const activa = el.querySelector<HTMLElement>('a.active');
+    if (!activa) return;
+    this.ultimaCentrada = ruta;
+    const centro = activa.offsetLeft - (el.clientWidth - activa.offsetWidth) / 2;
+    el.scrollTo({ left: Math.max(0, centro), behavior: 'smooth' });
+  }
   @HostListener('window:resize') medir() {
     const el = this.navRef?.nativeElement;
     if (!el) { this.hayIzq.set(false); this.hayDer.set(false); return; }

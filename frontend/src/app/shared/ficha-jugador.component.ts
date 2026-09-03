@@ -70,6 +70,12 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
       border-top: 3px solid var(--c, var(--accent));
       border-radius: 22px 22px 0 0; padding: 22px; }
     @media (min-width: 560px) { .back { align-items: center; } .panel { border-radius: 22px; } }
+    @media (max-width: 560px) {
+      .panel { padding: 18px 15px; }
+      .head { gap: 12px; }
+      .av { width: 68px; height: 68px; }
+      .acum .s { padding: 10px 6px; }
+    }
     /* El filo superior identifica la posición sin repetirla en color por todo el panel. */
     .panel[data-pos=POR] { --c: var(--por); } .panel[data-pos=DEF] { --c: var(--def); }
     .panel[data-pos=MED] { --c: var(--med); } .panel[data-pos=DEL] { --c: var(--del); }
@@ -85,8 +91,8 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
     .av .pl { position: relative; z-index: 1; width: 100%; height: 100%; object-fit: contain; object-position: bottom; }
     .av .ini { position: relative; z-index: 1; font-family: var(--fb); font-weight: 700; font-size: var(--t-xl); padding-bottom: 6px; color: var(--text2); }
     .meta h2 { margin: 5px 0; font-size: var(--t-xl); letter-spacing: -.01em; }
-    .eq { display: flex; align-items: center; gap: 6px; color: var(--text2); font-size: var(--t-sm);
-      letter-spacing: .06em; text-transform: uppercase; }
+    /* El club se escribe como en Mercado o Inicio: texto normal con su escudo. */
+    .eq { display: flex; align-items: center; gap: 7px; color: var(--text2); font-size: var(--t-sm); }
     .esc { width: 18px; height: 18px; object-fit: contain; }
 
     .acum { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; margin-bottom: 20px;

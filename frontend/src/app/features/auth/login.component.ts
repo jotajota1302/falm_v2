@@ -33,8 +33,10 @@ import { AuthService } from '../../core/auth.service';
     </div>
   `,
   styles: [`
-    .wrap { min-height: 100vh; display: grid; place-items: center; padding: 20px; }
-    .caja { width: 360px; max-width: 100%; padding: 32px 28px; display: flex; flex-direction: column; gap: 14px;
+    /* 100svh: en el móvil la barra del navegador se come parte de 100vh y la
+       caja quedaba cortada por abajo. */
+    .wrap { min-height: 100vh; min-height: 100svh; display: grid; place-items: center; padding: 20px; }
+    .caja { width: 360px; max-width: 100%; padding: clamp(22px, 6vw, 32px) clamp(18px, 5vw, 28px); display: flex; flex-direction: column; gap: 14px;
       background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); }
     /* Cabecera de portada: antetítulo, cabecera y entradilla. */
     .cab { font-size: var(--t-xs); font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--accent); }
