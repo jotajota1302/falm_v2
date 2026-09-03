@@ -30,19 +30,25 @@
 -- public queda con 6 tablas, todas con RLS y politicas.
 
 -- ---------------------------------------------------------------------------
--- 3. Schemas de proyectos antiguos: archivados, no borrados
+-- 3. Schemas de proyectos antiguos: INTENTADO Y REVERTIDO
 -- ---------------------------------------------------------------------------
--- alter schema <x> rename to bk_<x>_20260903, y revoke a anon/authenticated:
---   skills_registry (21 tablas)  teatro (18)      ai_agents (13)
---   n8n_workflows (9)            mcp_shield (8)   taxes (4)
---   university (4)               csv_ai (3)
+-- Se renombraron a bk_<x>_20260903 los ocho schemas parados (skills_registry,
+-- teatro, ai_agents, n8n_workflows, mcp_shield, taxes, university, csv_ai) y
+-- SE CAYO LA API ENTERA: PGRST002, "Could not query the database for the schema
+-- cache".
 --
--- Renombrar en vez de borrar porque es instantaneo, no pierde nada y se deshace
--- con otro rename. El borrado definitivo espera a que exista un volcado fuera
--- de Supabase: hoy la unica copia de esos datos es la propia base.
+-- Causa: la lista de "Exposed schemas" de la API (Settings -> API) seguia
+-- nombrando esos schemas. PostgREST no encuentra uno de su lista, no puede
+-- construir el cache y deja de responder a TODO el proyecto, FALM incluida.
+-- Borrar tablas de un schema expuesto no da problema; renombrar el schema, si.
 --
--- Cuando llegue el momento:
---   drop schema bk_skills_registry_20260903 cascade;   -- etc.
+-- Revertido: los ocho vuelven a su nombre y a sus permisos originales.
+--
+-- El orden correcto, para cuando se retome:
+--   1. Settings -> API -> Exposed schemas: dejar solo public y falm.
+--      (Ahora mismo la API expone schemas de proyectos muertos.)
+--   2. Comprobar que la API sigue viva.
+--   3. Entonces si, renombrar o borrar.
 
 -- ---------------------------------------------------------------------------
 -- 4. PENDIENTE: dos triggers ajenos colgando de auth.users
