@@ -194,6 +194,14 @@ export class AdminService {
     return est;
   }
 
+  /** Activos ya elegidos en el draft, para no ofrecerlos otra vez. */
+  async draftPickIds(draftId: string): Promise<string[]> {
+    const { data, error } = await this.sb.client
+      .from('draft_pick').select('activo_id').eq('draft_id', draftId);
+    if (error) throw error;
+    return (data ?? []).map((r: any) => r.activo_id as string);
+  }
+
   /** Deshace el último pick del draft. La función valida que seas ADMIN/GESTOR. */
   async draftDeshacer(draftId: string): Promise<void> {
     const { error } = await this.sb.client.rpc('draft_pick_deshacer', { p_draft: draftId });

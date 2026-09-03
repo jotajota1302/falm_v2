@@ -95,19 +95,6 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
           {{ minPorterias - d.misPorterias() }} porterías: solo puedes elegir portería.
         </p>
       }
-      @if (d.soyGestor()) {
-        <p class="nota" [class.admin]="modoAdmin()">
-          <label class="swadmin">
-            <input type="checkbox" [ngModel]="modoAdmin()" (ngModelChange)="modoAdmin.set($event)" />
-            Fichar en nombre de otro equipo
-          </label>
-          @if (modoAdmin()) {
-            <span>· al fichar lo harás por <strong>{{ nombreEquipo(d.turno()?.equipo_falm_id) }}</strong></span>
-          } @else {
-            <span class="faint">· ahora mismo juegas como {{ nombreEquipo(d.miEquipoId()) }}</span>
-          }
-        </p>
-      }
       @if (msg()) { <p class="nota mal" (click)="msg.set('')">{{ msg() }}</p> }
 
       <div class="cols">
@@ -314,8 +301,7 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     .ret.esc { object-fit: contain; padding: 4px; background: var(--surface); }
     .ret.sin { display: flex; align-items: center; justify-content: center;
       font-size: var(--t-xs); color: var(--text2); font-weight: 700; }
-    .swadmin { display: inline-flex; gap: 7px; align-items: center; cursor: pointer; }
-    .nota.admin { border-color: var(--accent); }
+
     .club { display: flex; align-items: center; gap: 6px; color: var(--text2);
       font-size: var(--t-xs); letter-spacing: .06em; text-transform: uppercase;
       min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -352,13 +338,13 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
       color: var(--text2); cursor: pointer; font-size: var(--t-xs); line-height: 1; padding: 3px 0; }
     .mv:hover { border-color: var(--accent); color: var(--accent); }
     .orden li.ahora { background: var(--accent-soft); border-radius: var(--r-xs);
-      box-shadow: inset 3px 0 0 var(--accent); padding-left: 7px; padding-right: 7px;
-      margin: 2px -7px; border-bottom-color: transparent; }
+      box-shadow: inset 3px 0 0 var(--accent); padding: 7px 8px;
+      border-bottom-color: transparent; }
     .orden li.ahora .nom { font-weight: 800; color: var(--accent); }
     .orden li.ahora .p { color: var(--accent); }
-    .ahora-tag { font-size: 9px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
+    .ahora-tag { font-size: 8.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
       color: var(--accent-ink); background: var(--accent); border-radius: var(--pill);
-      padding: 2px 7px; }
+      padding: 3px 8px; line-height: 1; white-space: nowrap; }
     .orden li.yo .nom { color: var(--accent); }
     .orden li.yo:not(.ahora) .nom { font-style: italic; }
 
@@ -395,8 +381,6 @@ export class DraftComponent implements OnInit, OnDestroy {
   limite = signal(30);
   msg = signal('');
   prePick = signal(false);
-  /** Solo para admins: fichar por el equipo al que le toca. Apagado por defecto. */
-  modoAdmin = signal(false);
   verGlobal = signal(true);
 
   private eraMiTurno = false;
@@ -482,10 +466,8 @@ export class DraftComponent implements OnInit, OnDestroy {
    * quien dicta su elección en voz alta. El cupo de porterías solo se comprueba
    * en cliente para mi propio equipo; para el resto lo valida el servidor.
    */
-  /** El equipo que se llevaría el pick: el mío, o el del turno si soy admin. */
+  /** El equipo que se llevaría el pick: siempre el mío. */
   equipoObjetivo(): string | null {
-    if (this.d.esMiTurno()) return this.d.miEquipoId();
-    if (this.d.soyGestor() && this.modoAdmin()) return this.d.turno()?.equipo_falm_id ?? null;
     return this.d.miEquipoId();
   }
 
@@ -500,11 +482,15 @@ export class DraftComponent implements OnInit, OnDestroy {
     return this.cupoUsado(a) >= (a.limite_club ?? 3);
   }
 
+  /**
+   * Cada uno ficha solo en su turno, admin incluido. Meter el pick de otro se
+   * hace desde el panel de administración, para que nadie fiche por error en
+   * nombre de un rival.
+   */
   puedeFichar(a: ActivoLibre) {
-    if (this.tomado(a) || !this.d.turno()) return false;
+    if (this.tomado(a) || !this.d.turno() || !this.d.esMiTurno()) return false;
     if (this.clubLleno(a)) return false;
-    if (this.d.esMiTurno()) return !this.d.debeElegirPorteria() || a.tipo === 'DEFENSA';
-    return this.d.soyGestor() && this.modoAdmin();
+    return !this.d.debeElegirPorteria() || a.tipo === 'DEFENSA';
   }
 
   readonly visibles = computed(() => {
@@ -620,13 +606,10 @@ export class DraftComponent implements OnInit, OnDestroy {
   }
 
   async fichar(a: ActivoLibre) {
-    const mio = this.d.esMiTurno();
-    const equipoTurno = this.modoAdmin() ? (this.d.turno()?.equipo_falm_id ?? null) : null;
-    const para = mio ? '' : ` para ${this.nombreEquipo(equipoTurno)}`;
-    if (!confirm(`¿Fichar a ${a.nombre}${para}?`)) return;
+    if (!confirm(`¿Fichar a ${a.nombre}?`)) return;
     this.msg.set('');
     try {
-      await this.d.fichar(a.activo_id, mio ? undefined : equipoTurno ?? undefined);
+      await this.d.fichar(a.activo_id);
     } catch (e: any) {
       this.msg.set(e?.message ?? 'No se pudo fichar.');
     }

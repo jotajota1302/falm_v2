@@ -1,7 +1,8 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { AdminService, AdminTemporada, EstadoPretemporada, JornadaCalendario } from './admin.service';
+import { ActivoLibre, FalmService } from '../../core/falm.service';
 import { AdminDraftSorteoComponent, EquipoSorteo } from './draft-sorteo.component';
 import { AdminCalendarioEditorComponent } from './calendario-editor.component';
 
@@ -149,6 +150,30 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
               <a class="mini" routerLink="/draft">Ir al tablero</a>
               <button class="mini" (click)="deshacer()">↩ Deshacer último</button>
             </div>
+
+            <h4 class="ph">Fichar por {{ t.equipo }}</h4>
+            <p class="hint">
+              Para quien esté en la quedada sin móvil y cante su elección en voz alta.
+              En el tablero cada uno ficha solo en su turno, también tú.
+            </p>
+            <input class="buscarj" type="search"
+                   [placeholder]="'Buscar jugador para ' + t.equipo + '…'"
+                   [ngModel]="buscaJ()" (ngModelChange)="buscaJ.set($event)" />
+            @if (buscaJ().length > 1) {
+              @if (candidatos().length === 0) {
+                <p class="hint">Ningún jugador libre con ese nombre.</p>
+              } @else {
+                <div class="cands">
+                  @for (c of candidatos(); track c.activo_id) {
+                    <button class="cand" (click)="picarPara(c, t)">
+                      <span class="pos" [class]="abr(c.posicion)">{{ abr(c.posicion) }}</span>
+                      <span class="cn">{{ c.nombre }}</span>
+                      <span class="cc faint">{{ c.club }}</span>
+                    </button>
+                  }
+                </div>
+              }
+            }
           } @else if (draft().estado === 'COMPLETADO') {
             <button class="btn" (click)="consolidar()">Consolidar → crear plantillas</button>
           }
@@ -175,6 +200,15 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     .form { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
     .form input { background: var(--surface); border: 1px solid var(--line); border-radius: 9px; padding: 8px 10px; }
     .form label { font-size: var(--t-sm); color: var(--text2); display: flex; gap: 6px; align-items: center; }
+    .buscarj { width: 100%; margin-bottom: 9px; }
+    .cands { display: flex; flex-direction: column; gap: 5px; margin-bottom: 6px; }
+    .cand { display: grid; grid-template-columns: 34px 1fr auto; gap: 9px; align-items: center;
+      padding: 8px 10px; background: var(--surface2); border: 1px solid var(--line);
+      border-radius: var(--r-xs); cursor: pointer; text-align: left; font-family: var(--fb);
+      font-size: var(--t-sm); color: var(--text); }
+    .cand:hover { border-color: var(--accent); }
+    .cand .cn { font-weight: 700; }
+    .cand .cc { font-size: var(--t-xs); text-transform: uppercase; letter-spacing: .06em; }
     .estado { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 10px; }
     .hint.alerta { color: var(--bad); border-left: 2px solid var(--bad); padding-left: 9px; }
     .conf { display: flex; gap: 7px; align-items: center; margin-bottom: 11px;
@@ -216,6 +250,9 @@ export class AdminPretemporadaComponent implements OnInit {
   estado = signal<EstadoPretemporada | null>(null);
   jornadas = signal<JornadaCalendario[]>([]);
   confirmar = signal(false);
+  catalogo = signal<ActivoLibre[]>([]);
+  elegidos = signal<Set<string>>(new Set());
+  buscaJ = signal('');
   sorteoAbierto = signal(false);
   cargando = signal(true);
   aviso = signal('');
@@ -225,7 +262,7 @@ export class AdminPretemporadaComponent implements OnInit {
   lfpDesde = 5;
   lfpHasta = 36;
 
-  constructor(private admin: AdminService) {}
+  constructor(private admin: AdminService, private falm: FalmService) {}
   abr(p: string) { return ABR[p] ?? p; }
   pct() { const d = this.draft(); return d && d.picks_totales ? Math.round(100 * d.picks_hechos / d.picks_totales) : 0; }
 
@@ -249,7 +286,14 @@ export class AdminPretemporadaComponent implements OnInit {
       }
       const d = await this.admin.draftActivo();
       this.draft.set(d);
-      if (d?.id) this.picks.set(await this.admin.draftPicks(d.id)); else this.picks.set([]);
+      if (d?.id) {
+        this.picks.set(await this.admin.draftPicks(d.id));
+        this.elegidos.set(new Set(await this.admin.draftPickIds(d.id)));
+        if (!this.catalogo().length) this.catalogo.set(await this.falm.mercadoLibre());
+      } else {
+        this.picks.set([]);
+        this.elegidos.set(new Set());
+      }
     } catch (e: any) { this.error.set(e?.message ?? 'Error'); }
     finally { this.cargando.set(false); }
   }
@@ -297,6 +341,30 @@ export class AdminPretemporadaComponent implements OnInit {
   /** Mueve una jornada FALM a otra jornada de LaLiga. */
   async editarJornada([id, lfp]: [string, number]) {
     await this.accion(() => this.admin.editarJornada(id, lfp), 'Jornada remapeada.');
+  }
+
+  /** Ocho candidatos como mucho: esto se usa con alguien esperando al lado. */
+  readonly candidatos = computed(() => {
+    const t = this.buscaJ().trim().toLowerCase();
+    if (t.length < 2) return [];
+    const fuera = this.elegidos();
+    return this.catalogo()
+      .filter((a) => !fuera.has(a.activo_id) &&
+        `${a.nombre} ${a.club}`.toLowerCase().includes(t))
+      .slice(0, 8);
+  });
+
+  /** Mete el pick del equipo al que le toca. La función valida turno y cupos. */
+  async picarPara(c: ActivoLibre, t: any) {
+    const d = this.draft();
+    if (!d?.id || !t?.equipo_falm_id) return;
+    if (!confirm(`¿Fichar a ${c.nombre} para ${t.equipo}?`)) return;
+    await this.accion(
+      () => this.admin.ejecutar('draft_pick',
+        { p_draft: d.id, p_activo: c.activo_id, p_equipo: t.equipo_falm_id }),
+      `✅ ${c.nombre} fichado para ${t.equipo}.`
+    );
+    this.buscaJ.set('');
   }
 
   /** Crea el draft con el orden cantado en el sorteo físico. */
