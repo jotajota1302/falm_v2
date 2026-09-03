@@ -1,21 +1,24 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, computed, signal } from '@angular/core';
 import { Competicion, FalmService, FilaClasificacion, RondaEliminatoria } from '../../core/falm.service';
 
-const COLORES = ['#00e676', '#38bdf8', '#fb7185', '#a3e635', '#ffc24b', '#c084fc', '#f97316', '#2dd4bf', '#f472b6', '#60a5fa'];
+/** Tintas de prensa: cada equipo tiene su marca de color, sin neones. */
+const COLORES = ['#a32b3f', '#1f6fa8', '#5c8a1f', '#b8791a', '#7b4f9d',
+                 '#2f7d4f', '#c05621', '#3b6ea5', '#8a2f6b', '#59606b'];
 
-/** Clasificación con avatares de equipo y top-3 destacado. */
+/** Clasificación de la competición elegida, con premios integrados en la tabla. */
 @Component({
   selector: 'app-clasificacion',
   standalone: true,
   template: `
-    <h1>🏆 Clasificación</h1>
+    <header class="phead">
+      <h1>Clasificación</h1>
+      <p class="sub">{{ subtitulo() }}</p>
+    </header>
 
     @if (competiciones().length > 1) {
       <div class="comps">
         @for (c of competiciones(); track c.id) {
-          <button class="comp" [class.on]="c.id === competicionId()" (click)="seleccionar(c.id)">
-            <span class="ci">{{ icono(c.tipo) }}</span> {{ etiqueta(c.tipo) }}
-          </button>
+          <button [class.on]="c.id === competicionId()" (click)="seleccionar(c.id)">{{ etiqueta(c.tipo) }}</button>
         }
       </div>
     }
@@ -28,121 +31,106 @@ const COLORES = ['#00e676', '#38bdf8', '#fb7185', '#a3e635', '#ffc24b', '#c084fc
       @if (rondas().length === 0) { <p class="muted">Aún no hay eliminatoria.</p> }
       <div class="bracket">
         @for (r of rondas(); track r.ronda) {
-          <div class="ronda">
-            <h3 class="rt">{{ r.ronda }}</h3>
+          <section class="ronda">
+            <h2>{{ r.ronda }}</h2>
             @for (k of r.llaves; track k.a + k.b) {
-              <div class="llave card rise">
-                @if (k.subtitulo) { <span class="sub">{{ k.subtitulo }}</span> }
+              <div class="llave">
                 <div class="eq" [class.gana]="k.ganador === k.a">
-                  <span class="av" [style.background]="color(k.a)">{{ inicial(k.a) }}</span>
+                  <span class="marca" [style.background]="color(k.a)"></span>
                   <span class="nm">{{ k.a }}</span>
                   <span class="ag num">{{ k.aggA }}</span>
                 </div>
                 <div class="eq" [class.gana]="k.ganador === k.b">
-                  <span class="av" [style.background]="color(k.b)">{{ inicial(k.b) }}</span>
+                  <span class="marca" [style.background]="color(k.b)"></span>
                   <span class="nm">{{ k.b }}</span>
                   <span class="ag num">{{ k.aggB }}</span>
                 </div>
                 <div class="legs">
                   @for (l of k.legs; track $index) {
-                    <span class="leg">{{ l.local }} {{ l.pl }}–{{ l.pv }} {{ l.visitante }}</span>
+                    <span class="leg">{{ l.local }} <b class="num">{{ l.pl }}–{{ l.pv }}</b> {{ l.visitante }}</span>
                   }
                 </div>
               </div>
             }
-          </div>
+          </section>
         }
       </div>
     } @else if (filas().length === 0) {
       <p class="muted">Aún no hay clasificación.</p>
     } @else {
-      <div class="tabla card rise">
-        <div class="row head">
-          <span class="c-pos">#</span><span class="c-eq">Equipo</span>
-          <span class="c-n">PJ</span><span class="c-sec">V</span><span class="c-sec">E</span>
-          <span class="c-sec">D</span><span class="c-pts">Pts</span>
+      <div class="tabla">
+        <div class="fila cab">
+          <span>#</span><span>Equipo</span>
+          <span class="der">V</span><span class="der">E</span><span class="der">D</span>
+          <span class="der">Puntos</span><span class="der">Fantasy</span><span class="der">Beneficio</span>
         </div>
         @for (f of filas(); track f.equipo_falm_id; let i = $index) {
-          <div class="row" [class.top]="i < 3" [style.--accent]="color(f.equipo_nombre)">
-            <span class="c-pos num">
-              @if (i < 3) { <span class="medal" [attr.data-m]="i+1">{{ i+1 }}</span> }
-              @else { {{ f.posicion }} }
+          <div class="fila" [class.podio]="i < 3">
+            <span class="pos">
+              <span class="marca" [style.background]="color(f.equipo_nombre)"></span>
+              <span class="num">{{ f.posicion || i + 1 }}</span>
             </span>
-            <span class="c-eq">
-              <span class="av" [style.background]="color(f.equipo_nombre)">{{ inicial(f.equipo_nombre) }}</span>
-              <span class="nm">{{ f.equipo_nombre }}</span>
+            <span class="nm">{{ f.equipo_nombre }}</span>
+            <span class="der num sec">{{ f.victorias }}</span>
+            <span class="der num sec">{{ f.empates }}</span>
+            <span class="der num sec">{{ f.derrotas }}</span>
+            <span class="der num pts">{{ f.puntos_clasificacion }}</span>
+            <span class="der num sec">{{ f.puntos_favor }}</span>
+            <span class="der num ben" [class.neg]="beneficio(f.equipo_nombre) < 0">
+              {{ beneficio(f.equipo_nombre) > 0 ? '+' : '' }}{{ beneficio(f.equipo_nombre) }}<small>€</small>
             </span>
-            <span class="c-n num">{{ f.partidos_jugados }}</span>
-            <span class="c-sec num">{{ f.victorias }}</span>
-            <span class="c-sec num">{{ f.empates }}</span>
-            <span class="c-sec num">{{ f.derrotas }}</span>
-            <span class="c-pts num">{{ f.puntos_clasificacion }}</span>
           </div>
         }
       </div>
-    }
-
-    @if (!cargando() && !error() && ranking().length) {
-      <h3 class="th prem-th">💰 Clasificación por premios</h3>
-      <div class="tabla card rise">
-        @for (e of ranking(); track e.nombre; let i = $index) {
-          <div class="row prem" [class.top]="i < 3" [style.--accent]="color(e.nombre)">
-            <span class="c-pos num">@if (i < 3) { <span class="medal" [attr.data-m]="i+1">{{ i+1 }}</span> } @else { {{ i+1 }} }</span>
-            <span class="c-eq"><span class="av" [style.background]="color(e.nombre)">{{ inicial(e.nombre) }}</span><span class="nm">{{ e.nombre }}</span></span>
-            <span class="c-ben num">{{ e.beneficio }}<small>€</small></span>
-          </div>
-        }
-      </div>
+      <p class="nota">La marca de color identifica a cada equipo en el resto de la app. El beneficio suma premios de jornada y de competición.</p>
     }
   `,
   styles: [`
-    h1 { margin: 0 0 16px; }
-    .prem-th { margin: 24px 0 10px; }
-    .row.prem { grid-template-columns: 42px 1fr auto; }
-    .c-ben { font-weight: 900; color: var(--gold); font-size: 1.05rem; } .c-ben small { font-size: .7rem; opacity: .8; margin-left: 1px; }
-    .comps { display: flex; gap: 8px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 4px; }
-    .comp { flex: 0 0 auto; display: flex; align-items: center; gap: 6px; padding: 9px 15px; border-radius: 11px;
-      border: 1px solid var(--border); background: var(--surface); color: var(--muted); cursor: pointer;
-      font-weight: 800; font-size: .82rem; white-space: nowrap; transition: all .14s ease; }
-    .comp .ci { font-size: 1rem; }
-    .comp.on { background: var(--accent-soft); color: var(--primary); border-color: var(--primary);
-      box-shadow: inset 0 0 0 1px var(--primary); }
-    .bracket { display: flex; flex-direction: column; gap: 18px; }
-    .ronda { display: flex; flex-direction: column; gap: 10px; }
-    .rt { margin: 0; font-size: 1rem; color: var(--gold); }
-    .llave { position: relative; padding: 12px 14px; }
-    .llave .sub { position: absolute; top: 10px; right: 12px; font-size: .62rem; font-weight: 800; text-transform: uppercase;
-      letter-spacing: .04em; color: var(--faint); background: var(--surface-2); border: 1px solid var(--border); padding: 2px 8px; border-radius: 999px; }
-    .eq { display: flex; align-items: center; gap: 10px; padding: 5px 0; }
-    .eq .av { flex: 0 0 auto; width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center;
-      justify-content: center; font-weight: 800; font-size: .8rem; color: var(--accent-ink); }
-    .eq .nm { flex: 1; font-weight: 700; font-size: .9rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .eq .ag { font-weight: 900; font-size: 1.1rem; color: var(--muted); }
-    .eq.gana .nm { color: var(--ink); } .eq.gana .ag { color: var(--primary); }
-    .legs { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
-    .leg { font-size: .72rem; color: var(--faint); }
-    .tabla { overflow: hidden; }
-    .row { display: grid; grid-template-columns: 42px 1fr 36px 30px 30px 30px 54px;
-      align-items: center; padding: 11px 12px; border-bottom: 1px solid var(--border); }
-    .row:last-child { border-bottom: none; }
-    .row.head { font-size: .66rem; text-transform: uppercase; letter-spacing: .06em; color: var(--faint); font-weight: 700; }
-    .row.head span { text-align: center; }
-    .row.top { background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 10%, transparent), transparent 40%); }
-    .c-pos { text-align: center; font-weight: 700; color: var(--muted); }
-    .medal { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px;
-      border-radius: 50%; font-weight: 800; font-size: .8rem; color: var(--accent-ink); }
-    .medal[data-m="1"] { background: #ffc24b; } .medal[data-m="2"] { background: #cbd5e1; } .medal[data-m="3"] { background: #d4915a; }
-    .c-eq { display: flex; align-items: center; gap: 10px; min-width: 0; }
-    .av { flex: 0 0 auto; width: 30px; height: 30px; border-radius: 9px; display: flex; align-items: center;
-      justify-content: center; font-weight: 800; font-size: .85rem; color: var(--accent-ink); }
-    .nm { font-weight: 700; font-size: .9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .c-n, .c-sec { text-align: center; color: var(--muted); font-size: .85rem; }
-    .c-pts { text-align: center; font-weight: 900; font-size: 1.05rem; color: var(--primary); }
-    .muted { color: var(--muted); } .err { color: #fb7185; }
+    .phead { margin-bottom: 18px; }
+    .phead .sub { margin: 5px 0 0; color: var(--text2); font-size: 13.5px; }
 
-    @media (max-width: 560px) {
-      .row { grid-template-columns: 38px 1fr 30px 50px; }
-      .c-sec { display: none; }
+    .comps { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+    .comps button { background: var(--surface); border: 1px solid var(--line); color: var(--text2);
+      border-radius: var(--pill); padding: 7px 16px; cursor: pointer; font-family: var(--fb);
+      font-weight: 600; font-size: 12.5px; }
+    .comps button.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+
+    .tabla { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; }
+    .fila { display: grid; align-items: center; gap: 10px;
+      grid-template-columns: 52px 1.9fr 46px 46px 46px 74px 84px 96px;
+      padding: 11px 18px; border-bottom: 1px solid var(--line); font-size: 13.5px; }
+    .fila:last-child { border-bottom: none; }
+    .fila.cab { font-size: 9px; font-weight: 700; letter-spacing: .16em;
+      text-transform: uppercase; color: var(--text2); padding: 12px 18px; }
+    /* Los tres primeros cobran el premio: el papel se tiñe, sin medallas. */
+    .fila.podio { background: var(--accent-soft); }
+    .der { text-align: right; }
+    .pos { display: flex; align-items: center; gap: 8px; }
+    .marca { width: 3px; height: 20px; border-radius: 2px; flex: 0 0 auto; }
+    .nm { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sec { color: var(--text2); }
+    .pts { font-weight: 700; }
+    .ben { font-weight: 700; color: var(--good); }
+    .ben.neg { color: var(--bad); }
+    .ben small { font-size: 10px; opacity: .75; margin-left: 1px; }
+    .nota { margin: 12px 2px 0; font-size: 11.5px; color: var(--text2); }
+
+    .bracket { display: flex; flex-direction: column; gap: 20px; }
+    .ronda { display: flex; flex-direction: column; gap: 10px; }
+    .ronda h2 { color: var(--accent); }
+    .llave { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 13px 15px; }
+    .eq { display: flex; align-items: center; gap: 10px; padding: 5px 0; color: var(--text2); }
+    .eq .nm { flex: 1; font-size: 13.5px; }
+    .eq .ag { font-size: 17px; font-weight: 700; }
+    .eq.gana { color: var(--text); }
+    .eq.gana .ag { color: var(--accent); }
+    .legs { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 9px; padding-top: 9px; border-top: 1px solid var(--line); }
+    .leg { font-size: 11.5px; color: var(--text2); }
+    .muted { color: var(--text2); } .err { color: var(--bad); }
+
+    @media (max-width: 720px) {
+      .fila { grid-template-columns: 46px 1fr 60px 78px; }
+      .fila > :nth-child(3), .fila > :nth-child(4), .fila > :nth-child(5), .fila > :nth-child(7) { display: none; }
     }
   `],
 })
@@ -156,15 +144,23 @@ export class ClasificacionComponent implements OnInit {
   cargando = signal(true);
   error = signal('');
 
+  /** Cuenta de qué competición y hasta qué jornada se está mirando. */
+  subtitulo = computed(() => {
+    const c = this.competiciones().find((x) => x.id === this.competicionId());
+    const pj = Math.max(0, ...this.filas().map((f) => f.partidos_jugados || 0));
+    const eti = c ? this.etiqueta(c.tipo) : 'Liga';
+    if (this.modo() === 'bracket') return `${eti} · eliminatorias a doble partido.`;
+    return pj ? `${eti} · tras ${pj} ${pj === 1 ? 'jornada' : 'jornadas'}.` : `${eti} · aún sin jornadas jugadas.`;
+  });
+
   constructor(private falm: FalmService) {}
 
-  inicial(n?: string) { return (n || '?').trim().charAt(0).toUpperCase(); }
   color(n?: string) {
     let h = 0; for (const ch of n || '') h = (h * 31 + ch.charCodeAt(0)) >>> 0;
     return COLORES[h % COLORES.length];
   }
-  icono(t: string) { return t === 'CHAMPIONS' ? '🌟' : t === 'CLAUSURA' ? '🔚' : '🏆'; }
   etiqueta(t: string) { return t === 'CHAMPIONS' ? 'Champions' : t === 'CLAUSURA' ? 'Clausura' : 'Liga'; }
+  beneficio(nombre?: string) { return this.ranking().find((r) => r.nombre === nombre)?.beneficio ?? 0; }
 
   async ngOnInit() {
     try {

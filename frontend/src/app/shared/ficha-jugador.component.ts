@@ -1,7 +1,6 @@
 import { Component, computed, effect, signal } from '@angular/core';
 import { FalmService } from '../core/falm.service';
 import { FichaService, JugadorRef } from './ficha.service';
-import { clubGrad, clubInk } from './club-colors';
 
 const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: 'DEF', DEFENSA: 'DEF',
   Mediocampista: 'MED', MEDIO: 'MED', Delantero: 'DEL', DELANTERO: 'DEL' };
@@ -14,12 +13,13 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
     @if (ficha.abierto(); as j) {
       <div class="back" (click)="ficha.close()">
         <div class="panel rise" (click)="$event.stopPropagation()" [attr.data-pos]="abr(j.posicion)">
-          <button class="x" (click)="ficha.close()">✕</button>
+          <button class="x" (click)="ficha.close()" aria-label="Cerrar ficha">✕</button>
+
           <div class="head">
-            <span class="av" [style.background]="fondoAv(j)">
+            <span class="av">
               @if (j.escudo) { <img class="wm" [src]="j.escudo" alt="" /> }
               @if (j.foto) { <img class="pl" [src]="j.foto" alt="" (error)="sinFoto.set(true)" [style.display]="sinFoto() ? 'none':'block'" /> }
-              @if (!j.foto || sinFoto()) { <span class="ini" [style.color]="inkAv(j)">{{ (j.nombre || '?').charAt(0) }}</span> }
+              @if (!j.foto || sinFoto()) { <span class="ini">{{ (j.nombre || '?').charAt(0) }}</span> }
             </span>
             <div class="meta">
               <span class="pos" [class]="abr(j.posicion)">{{ abr(j.posicion) }}</span>
@@ -33,24 +33,24 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
           @if (cargando()) {
             <p class="muted">Cargando estadísticas…</p>
           } @else if (fallo()) {
-            <p class="muted">No se pudieron cargar las estadísticas. Cierra y vuelve a intentar en un momento.</p>
+            <p class="muted">No se pudieron cargar las estadísticas. Cierra y vuelve a intentarlo en un momento.</p>
           } @else {
             <div class="acum">
               <div class="s"><b class="num">{{ acum().puntos }}</b><span>Puntos</span></div>
               <div class="s"><b class="num">{{ acum().goles }}</b><span>Goles</span></div>
-              <div class="s"><b class="num">{{ acum().asis }}</b><span>Asist.</span></div>
+              <div class="s"><b class="num">{{ acum().asis }}</b><span>Asistencias</span></div>
               <div class="s"><b class="num">{{ acum().estrellas }}</b><span>Estrellas</span></div>
               <div class="s"><b class="num">{{ acum().imbatidos }}</b><span>Imbatido</span></div>
               <div class="s"><b class="num">{{ acum().jugadas }}</b><span>Jornadas</span></div>
             </div>
 
-            <h3 class="th">Puntos por jornada</h3>
+            <h3>Puntos por jornada</h3>
             @if (barras().length) {
               <div class="chart">
                 @for (d of barras(); track d.j) {
                   <div class="bar" [title]="'J' + d.j + ': ' + d.p + ' pts'">
                     <span class="fill" [style.height.%]="d.h" [class.neg]="d.p < 0"></span>
-                    <span class="jl">{{ d.j }}</span>
+                    <span class="jl num">{{ d.j }}</span>
                   </div>
                 }
               </div>
@@ -63,38 +63,45 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
     }
   `,
   styles: [`
-    .back { position: fixed; inset: 0; z-index: 60; background: rgba(0,0,0,.66);
-      backdrop-filter: blur(4px); display: flex; align-items: flex-end; justify-content: center; }
+    .back { position: fixed; inset: 0; z-index: 60; background: rgba(22,19,15,.42);
+      display: flex; align-items: flex-end; justify-content: center; }
     .panel { position: relative; width: 100%; max-width: 520px; max-height: 88vh; overflow-y: auto;
-      background: linear-gradient(180deg, var(--surface), var(--bg-elev));
-      border: 1px solid var(--border); border-top: 3px solid var(--c, var(--primary));
+      background: var(--surface); border: 1px solid var(--line);
+      border-top: 3px solid var(--c, var(--accent));
       border-radius: 22px 22px 0 0; padding: 22px; }
     @media (min-width: 560px) { .back { align-items: center; } .panel { border-radius: 22px; } }
-    .panel[data-pos=POR] { --c: var(--pos-POR); } .panel[data-pos=DEF] { --c: var(--pos-DEF); }
-    .panel[data-pos=MED] { --c: var(--pos-MED); } .panel[data-pos=DEL] { --c: var(--pos-DEL); }
-    .x { position: absolute; top: 14px; right: 14px; background: var(--surface-2); border: 1px solid var(--border);
-      color: var(--muted); width: 32px; height: 32px; border-radius: 9px; cursor: pointer; }
+    /* El filo superior identifica la posición sin repetirla en color por todo el panel. */
+    .panel[data-pos=POR] { --c: var(--por); } .panel[data-pos=DEF] { --c: var(--def); }
+    .panel[data-pos=MED] { --c: var(--med); } .panel[data-pos=DEL] { --c: var(--del); }
+
+    .x { position: absolute; top: 14px; right: 14px; background: var(--surface2); border: 1px solid var(--line);
+      color: var(--text2); width: 32px; height: 32px; border-radius: 9px; cursor: pointer; font-size: 13px; }
+
     .head { display: flex; gap: 16px; align-items: center; margin-bottom: 18px; }
-    .av { position: relative; width: 84px; height: 84px; border-radius: 18px; overflow: hidden; flex: 0 0 auto;
+    .av { position: relative; width: 84px; height: 84px; border-radius: 16px; overflow: hidden; flex: 0 0 auto;
+      background: var(--surface2); border: 1px solid var(--line);
       display: flex; align-items: flex-end; justify-content: center; }
-    .av .wm { position: absolute; width: 124%; left: 50%; top: 50%; transform: translate(-50%,-50%); opacity: .18; object-fit: contain; }
-    .av .pl { position: relative; z-index: 1; width: 100%; height: 100%; object-fit: contain; object-position: bottom; filter: drop-shadow(0 3px 4px rgba(0,0,0,.4)); }
-    .av .ini { position: relative; z-index: 1; font-size: 2.4rem; font-weight: 900; padding-bottom: 6px; }
-    .meta h2 { margin: 4px 0; font-size: 1.4rem; }
-    .eq { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: .85rem; }
+    .av .wm { position: absolute; width: 124%; left: 50%; top: 50%; transform: translate(-50%,-50%); opacity: .16; object-fit: contain; }
+    .av .pl { position: relative; z-index: 1; width: 100%; height: 100%; object-fit: contain; object-position: bottom; }
+    .av .ini { position: relative; z-index: 1; font-family: var(--fh); font-size: 34px; padding-bottom: 6px; color: var(--text2); }
+    .meta h2 { margin: 5px 0; font-size: 24px; letter-spacing: -.01em; }
+    .eq { display: flex; align-items: center; gap: 6px; color: var(--text2); font-size: 12px;
+      letter-spacing: .06em; text-transform: uppercase; }
     .esc { width: 18px; height: 18px; object-fit: contain; }
-    .acum { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 18px; }
-    .acum .s { background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px;
-      padding: 12px; text-align: center; }
-    .acum .s b { display: block; font-size: 1.5rem; font-weight: 900; }
-    .acum .s span { font-size: .72rem; color: var(--muted); }
-    .th { margin: 4px 0 10px; }
-    .chart { display: flex; align-items: flex-end; gap: 4px; height: 110px; overflow-x: auto; padding-bottom: 4px; }
-    .bar { flex: 0 0 16px; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 3px; }
-    .fill { width: 100%; min-height: 2px; background: var(--primary); border-radius: 4px 4px 0 0; }
+
+    .acum { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; margin-bottom: 20px;
+      background: var(--line); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+    .acum .s { background: var(--surface); padding: 12px 10px; text-align: center; }
+    .acum .s b { display: block; font-family: var(--fm); font-size: 21px; font-weight: 700; }
+    .acum .s span { font-size: 9px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--text2); }
+
+    h3 { margin: 0 0 12px; color: var(--text2); letter-spacing: .16em; font-size: 9px; font-weight: 700; }
+    .chart { display: flex; align-items: flex-end; gap: 5px; height: 118px; overflow-x: auto; padding-bottom: 4px; }
+    .bar { flex: 0 0 17px; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 4px; }
+    .fill { width: 100%; min-height: 2px; background: var(--accent); border-radius: 4px 4px 0 0; }
     .fill.neg { background: var(--bad); }
-    .jl { font-size: .56rem; color: var(--faint); }
-    .muted { color: var(--muted); }
+    .jl { font-size: 9px; color: var(--text2); font-weight: 600; }
+    .muted { color: var(--text2); }
   `],
 })
 export class FichaJugadorComponent {
@@ -137,8 +144,6 @@ export class FichaJugadorComponent {
   }
 
   abr(p?: string) { return ABR[p ?? ''] ?? 'MED'; }
-  fondoAv(j: any) { return clubGrad(j?.escudo, this.abr(j?.posicion)); }
-  inkAv(j: any) { return clubInk(j?.escudo); }
 
   private async cargar(j: JugadorRef) {
     this.cargando.set(true);

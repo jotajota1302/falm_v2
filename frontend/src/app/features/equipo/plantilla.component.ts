@@ -19,48 +19,91 @@ const ETI: Record<string, string> = { PORTERO: 'Porteros', DEFENSA: 'Defensas', 
     } @else if (!equipo()) {
       <p class="muted">No tienes equipo en la temporada activa.</p>
     } @else {
-      <header class="hero rise">
-        <div>
-          <h1>{{ equipo()!.nombre }}</h1>
-          <span class="sub">{{ items().length }} jugadores en plantilla</span>
-        </div>
-        <div class="presu">
-          <span class="lbl">Puntos plantilla</span>
-          <span class="val num pts">{{ totalPuntos() }}</span>
-        </div>
+      <header class="phead">
+        <h1>Mi plantilla</h1>
+        <p class="sub">{{ resumen() }}</p>
       </header>
 
-      @for (g of grupos(); track g.pos) {
-        <div class="linea">
-          <span class="pos" [class]="abr(g.pos)">{{ abr(g.pos) }}</span>
-          <h3>{{ g.eti }}</h3>
-          <span class="n faint">{{ g.items.length }}</span>
+      <div class="kpis">
+        <div class="kpi">
+          <span class="lb">Puntos totales</span>
+          <span class="v num">{{ totalPuntos() }}</span>
         </div>
-        <div class="grid">
-          @for (j of g.items; track j.activo_id) {
-            <falm-fut-card class="rise"
-              (click)="abrir(j)"
-              [nombre]="j.nombre" [escudo]="j.escudo ?? null"
-              [foto]="j.foto ?? null" [posicion]="j.posicion" [media]="puntosDe(j)" [stats]="statsDe(j)" />
-          }
+        <div class="kpi">
+          <span class="lb">Jugadores</span>
+          <span class="v num">{{ items().length }}</span>
         </div>
-      }
+        <div class="kpi">
+          <span class="lb">Valor de plantilla</span>
+          <span class="v num">{{ valorPlantilla() }}<small> M</small></span>
+        </div>
+        <div class="kpi">
+          <span class="lb">Presupuesto libre</span>
+          <span class="v num" [class.neg]="equipo()!.presupuesto < 0">{{ equipo()!.presupuesto }}<small> M</small></span>
+        </div>
+      </div>
+
+      <div class="tabla">
+        <div class="fila cab">
+          <span>Pos</span><span>Jugador</span><span>Club</span><span>Estado</span>
+          <span class="der">Pts</span><span class="der">Media</span><span class="der">Precio</span>
+        </div>
+        @for (j of filas(); track j.activo_id) {
+          <button class="fila" (click)="abrir(j)">
+            <span class="pos" [class]="abr(j.posicion)">{{ abr(j.posicion) }}</span>
+            <span class="nom">{{ j.nombre }}</span>
+            <span class="club">
+              @if (j.escudo) { <img [src]="j.escudo" alt="" loading="lazy" /> }
+              {{ j.club }}
+            </span>
+            <span class="estado" [class.virtual]="j.tipo === 'DEFENSA'">{{ j.tipo === 'DEFENSA' ? 'Virtual' : 'OK' }}</span>
+            <span class="der num">{{ puntosDe(j) }}</span>
+            <span class="der num media">{{ mediaDe(j) }}</span>
+            <span class="der num precio">{{ j.precio }}</span>
+          </button>
+        }
+      </div>
     }
   `,
   styles: [`
-    .hero { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 22px; }
-    .hero .sub { color: var(--muted); font-size: .85rem; }
-    .presu { text-align: right; }
-    .presu .lbl { display: block; font-size: .7rem; color: var(--faint); text-transform: uppercase; letter-spacing: .05em; }
-    .presu .val { font-size: 1.5rem; } .presu .pts { color: var(--primary); }
-    .ptsbadge { position: absolute; top: 8px; left: 8px; z-index: 2; background: var(--accent); color: var(--accent-ink);
-      font-weight: 900; font-size: .82rem; padding: 2px 8px; border-radius: 999px; box-shadow: 0 2px 6px rgba(0,0,0,.4); }
-    .ptsbadge small { font-size: .6rem; margin-left: 2px; font-weight: 800; }
-    .linea { display: flex; align-items: center; gap: 10px; margin: 20px 0 12px; }
-    .linea h3 { margin: 0; }
-    .linea .n { margin-left: auto; font-weight: 700; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(108px, 1fr)); gap: 10px; }
-    .muted { color: var(--muted); } .err { color: var(--bad, #fb7185); }
+    .phead { margin-bottom: 18px; }
+    .phead .sub { margin: 5px 0 0; color: var(--text2); font-size: 13.5px; }
+
+    .kpis { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
+    .kpi { flex: 1 1 190px; background: var(--surface); border: 1px solid var(--line);
+      border-radius: 16px; padding: 15px 17px; }
+    .kpi .lb { display: block; font-size: 9px; font-weight: 700; letter-spacing: .16em;
+      text-transform: uppercase; color: var(--text2); }
+    .kpi .v { display: block; margin-top: 4px; font-family: var(--fh); font-size: 27px; font-weight: 600; }
+    .kpi .v small { font-size: 14px; color: var(--text2); }
+    .kpi .v.neg { color: var(--bad); }
+
+    /* La plantilla se lee como una clasificación: una fila por jugador. */
+    .tabla { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; }
+    .fila { width: 100%; display: grid; align-items: center; gap: 10px;
+      grid-template-columns: 46px 1.7fr 108px 84px 62px 66px 78px;
+      padding: 11px 18px; border: none; border-bottom: 1px solid var(--line);
+      background: transparent; text-align: left; font-size: 13px; color: var(--text);
+      font-family: var(--fb); cursor: pointer; }
+    .fila:last-child { border-bottom: none; }
+    .fila:not(.cab):hover { background: var(--surface2); }
+    .fila.cab { cursor: default; font-size: 9px; font-weight: 700; letter-spacing: .16em;
+      text-transform: uppercase; color: var(--text2); padding: 12px 18px; }
+    .der { text-align: right; }
+    .nom { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .club { display: flex; align-items: center; gap: 6px; color: var(--text2); font-size: 12px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .club img { width: 16px; height: 16px; object-fit: contain; }
+    .estado { font-size: 11.5px; color: var(--text2); }
+    .estado.virtual { color: var(--por); font-weight: 600; }
+    .media { color: var(--text2); }
+    .precio { color: var(--accent); font-weight: 700; }
+    .muted { color: var(--text2); } .err { color: var(--bad); }
+
+    @media (max-width: 760px) {
+      .fila { grid-template-columns: 40px 1fr 56px 62px; }
+      .fila > :nth-child(3), .fila > :nth-child(4), .fila > :nth-child(6) { display: none; }
+    }
   `],
 })
 export class PlantillaComponent implements OnInit {
@@ -78,9 +121,33 @@ export class PlantillaComponent implements OnInit {
     return Object.keys(by).sort((a, b) => ORDEN[a] - ORDEN[b]).map((pos) => ({ pos, eti: ETI[pos] ?? pos, items: by[pos] }));
   });
 
+  /** Por posición (POR, DEF, MED, DEL) y dentro por puntos, de más a menos. */
+  filas = computed(() =>
+    [...this.items()].sort((a, b) =>
+      (ORDEN[a.posicion] - ORDEN[b.posicion]) || (this.puntosDe(b) - this.puntosDe(a))));
+
+  valorPlantilla = computed(() =>
+    +this.items().reduce((s, j) => s + Number(j.precio ?? 0), 0).toFixed(1));
+
+  resumen = computed(() => {
+    const n = this.items().length;
+    const virtuales = this.items().filter((j) => j.tipo === 'DEFENSA').length;
+    const porteros = this.items().filter((j) => j.posicion === 'PORTERO').length;
+    const partes = [`${n} jugadores`, `${porteros} porteros`];
+    if (virtuales) partes.push(`${virtuales} de portería virtual`);
+    return partes.join(' · ');
+  });
+
   constructor(private falm: FalmService, public ficha: FichaService) {}
   abr(p: string) { return ({ PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'MED', DELANTERO: 'DEL' } as Record<string, string>)[p] ?? p; }
   puntosDe(j: ItemPlantilla) { return Number(this.statsEq()[j.activo_id]?.puntos ?? 0); }
+  /** Media por jornada disputada; un guion mientras no haya ninguna. */
+  mediaDe(j: ItemPlantilla): string {
+    const s = this.statsEq()[j.activo_id];
+    const n = Number(s?.jornadas ?? s?.jugadas ?? 0);
+    if (!n) return '—';
+    return (Number(s?.puntos ?? 0) / n).toFixed(1);
+  }
   statsDe(j: ItemPlantilla): { ico: string; n: number | string }[] | null {
     const s = this.statsEq()[j.activo_id];
     if (!s) return null;

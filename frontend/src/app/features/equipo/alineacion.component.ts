@@ -45,13 +45,21 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
         </div>
       }
 
-      <div class="barra">
-        <select [ngModel]="formacion()" (ngModelChange)="cambiarFormacion($event)">
-          @for (f of formaciones; track f) { <option [value]="f">{{ f }}</option> }
-        </select>
-        <button class="atajo" (click)="repetirUltima()">↩︎ Repetir última</button>
-        <button class="btn" (click)="guardar()" [disabled]="guardando()">{{ guardando() ? '…' : 'Guardar' }}</button>
-      </div>
+      <header class="phead">
+        <div class="ptit">
+          <h1>Manda tu alineación</h1>
+          <p class="sub">Toca un hueco del campo y elige jugador. Once titulares, más suplentes con la cobertura por línea que quieras.</p>
+        </div>
+        <div class="acciones">
+          <div class="formas">
+            @for (f of formaciones; track f) {
+              <button class="forma" [class.on]="f === formacion()" (click)="cambiarFormacion(f)">{{ f }}</button>
+            }
+          </div>
+          <button class="btn-sec" (click)="repetirUltima()">↩ Repetir última</button>
+          <button class="btn" (click)="guardar()" [disabled]="guardando()">{{ guardando() ? '…' : 'Enviar alineación' }}</button>
+        </div>
+      </header>
 
       @if (!esLiga()) {
         <div class="atajos">
@@ -61,6 +69,17 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
       @if (aviso()) { <p class="aviso">{{ aviso() }}</p> }
 
       <!-- CAMPO: huecos por formación -->
+      <div class="kpis">
+        <div class="kpi">
+          <span class="lb">Titulares</span>
+          <span class="v num" [class.ok]="titulares().length === 11" [class.ko]="titulares().length !== 11">{{ titulares().length }}/11</span>
+        </div>
+        <div class="kpi">
+          <span class="lb">Media prevista</span>
+          <span class="v num acc">{{ mediaPrevista() }}</span>
+        </div>
+        <span class="form-actual num">{{ formacion() }}</span>
+      </div>
       <div class="pitch">
         @for (pos of ['DELANTERO','MEDIO','DEFENSA','PORTERO']; track pos) {
           <div class="fila" [attr.data-linea]="abr(pos)">
@@ -147,49 +166,79 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
     .jhead .je { font-size: .68rem; text-transform: uppercase; letter-spacing: .06em; color: var(--faint); font-weight: 800; }
     .jhead strong { font-size: 1.1rem; color: var(--primary); }
     .jhead .jf { font-size: .76rem; color: var(--muted); text-transform: capitalize; }
-    .barra { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-    .barra select { font-weight: 800; margin-right: auto; }
+    /* cabecera de pantalla */
+    .phead { display: flex; align-items: flex-start; justify-content: space-between;
+      gap: 18px; flex-wrap: wrap; margin-bottom: 16px; }
+    .ptit .sub { margin: 5px 0 0; font-size: 13.5px; color: var(--text2); max-width: 62ch; }
+    .acciones { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+    .formas { display: flex; gap: 3px; padding: 3px; background: var(--surface2);
+      border: 1px solid var(--line); border-radius: 11px; }
+    .forma { font-family: var(--fm); font-size: 12.5px; font-weight: 700; padding: 8px 12px;
+      border: none; border-radius: 8px; background: transparent; color: var(--text2); cursor: pointer; }
+    .forma.on { background: var(--accent); color: var(--accent-ink); }
+
     .atajos { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
-    .atajo { background: var(--surface-2); border: 1px solid var(--border); color: var(--ink); border-radius: 10px;
-      padding: 8px 13px; cursor: pointer; font-weight: 700; font-size: .8rem; }
-    .aviso { background: var(--accent-soft); border: 1px solid var(--accent-line); color: var(--primary); padding: 10px 14px; border-radius: 10px; margin-bottom: 12px; }
-    .hint { text-align: center; color: var(--muted); font-size: .76rem; margin: 6px 0 16px; }
+    .atajo { background: var(--surface); border: 1px solid var(--line); color: var(--text); border-radius: 11px;
+      padding: 10px 15px; cursor: pointer; font-weight: 600; font-size: 13px; }
+    .atajo:hover { border-color: var(--accent); }
+    .aviso { background: var(--surface); border: 1px solid var(--accent); color: var(--accent);
+      padding: 10px 15px; border-radius: 11px; margin-bottom: 12px; font-size: 13px; font-weight: 600; }
+    .hint { text-align: center; color: var(--text2); font-size: 11.5px; margin: 8px 0 18px; }
 
-    .pitch { position: relative; border-radius: 16px; padding: 16px 8px;
-      background: repeating-linear-gradient(0deg, #0f3d24 0 38px, #114327 38px 76px);
-      border: 1px solid rgba(255,255,255,.12); display: flex; flex-direction: column; gap: 12px;
-      min-height: 380px; box-shadow: inset 0 0 60px rgba(0,0,0,.4); overflow: hidden; }
-    .pitch::before { content:''; position:absolute; left:50%; top:50%; width:84px; height:84px;
-      border:2px solid rgba(255,255,255,.16); border-radius:50%; transform:translate(-50%,-50%); }
-    .fila { position: relative; z-index: 1; display: flex; justify-content: space-evenly; align-items: center;
-      gap: 6px; flex-wrap: wrap; padding: 6px 6px 6px 22px; border-radius: 12px; }
-    .fila[data-linea=POR] { background: linear-gradient(90deg, rgba(73,192,138,.22), rgba(73,192,138,.04) 60%, transparent); }
-    .fila[data-linea=DEF] { background: linear-gradient(90deg, rgba(79,155,232,.22), rgba(79,155,232,.04) 60%, transparent); }
-    .fila[data-linea=MED] { background: linear-gradient(90deg, rgba(224,178,78,.22), rgba(224,178,78,.04) 60%, transparent); }
-    .fila[data-linea=DEL] { background: linear-gradient(90deg, rgba(236,111,77,.24), rgba(236,111,77,.05) 60%, transparent); }
-    .banda { position: absolute; left: 1px; top: 0; bottom: 0; width: 18px; display: flex; align-items: center; justify-content: center;
-      writing-mode: vertical-rl; transform: rotate(180deg); font-size: .5rem; font-weight: 900; letter-spacing: .14em;
-      color: rgba(255,255,255,.7); text-transform: uppercase; pointer-events: none; }
-    .slot { background: none; border: none; cursor: pointer; width: 72px; padding: 0; }
-    .slot.vacio { height: 78px; border: 2px dashed rgba(255,255,255,.28); border-radius: 12px; display: flex;
-      flex-direction: column; align-items: center; justify-content: center; gap: 2px; background: rgba(255,255,255,.05); }
-    .slot.vacio .mas { font-size: 1.4rem; color: rgba(255,255,255,.6); line-height: 1; }
-    .slot.vacio .lb { font-size: .56rem; font-weight: 800; color: rgba(255,255,255,.5); }
+    /* KPIs del campo */
+    .kpis { display: flex; align-items: flex-end; gap: 26px; padding: 0 4px 11px; }
+    .kpi { display: flex; flex-direction: column; gap: 2px; }
+    .kpi .lb { font-size: 9px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--text2); }
+    .kpi .v { font-size: 17px; font-weight: 700; }
+    .kpi .v.ok { color: var(--good); }
+    .kpi .v.ko { color: var(--bad); }
+    .kpi .v.acc { color: var(--accent); }
+    .form-actual { margin-left: auto; font-size: 12px; color: var(--text2); }
 
-    .banco { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 14px; margin-bottom: 18px; }
+    /* campo: hierba segada sobre papel, no estadio nocturno */
+    .pitch { position: relative; background: var(--pitch); border: 1px solid var(--line);
+      border-radius: 14px; padding: 18px 12px; display: flex; flex-direction: column; gap: 10px;
+      min-height: 430px; justify-content: space-between; overflow: hidden; }
+    .fila { position: relative; display: flex; justify-content: center; align-items: center;
+      gap: 10px; flex-wrap: wrap; padding: 6px 4px 6px 22px; border-radius: 12px; }
+    .fila[data-linea=POR] { background: color-mix(in oklab, var(--por) 12%, transparent); }
+    .fila[data-linea=DEF] { background: color-mix(in oklab, var(--def) 12%, transparent); }
+    .fila[data-linea=MED] { background: color-mix(in oklab, var(--med) 12%, transparent); }
+    .fila[data-linea=DEL] { background: color-mix(in oklab, var(--del) 12%, transparent); }
+    .banda { position: absolute; left: 2px; top: 0; bottom: 0; width: 14px; display: flex; align-items: center; justify-content: center;
+      writing-mode: vertical-rl; transform: rotate(180deg); font-size: 9px; font-weight: 700; letter-spacing: .18em;
+      text-transform: uppercase; pointer-events: none; }
+    .fila[data-linea=POR] .banda { color: var(--por); }
+    .fila[data-linea=DEF] .banda { color: var(--def); }
+    .fila[data-linea=MED] .banda { color: var(--med); }
+    .fila[data-linea=DEL] .banda { color: var(--del); }
+    .slot { background: none; border: none; cursor: pointer; width: 88px; padding: 0; }
+    .slot.vacio { min-height: 104px; border: 1.5px dashed var(--line); border-radius: 13px; display: flex;
+      flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+      background: color-mix(in oklab, var(--surface) 55%, transparent); }
+    .slot.vacio .mas { display: flex; align-items: center; justify-content: center;
+      width: 34px; height: 34px; border-radius: 50%; font-size: 17px; line-height: 1; color: var(--text2); }
+    .slot.vacio[data-pos=POR] .mas { border: 1.5px dashed var(--por); color: var(--por); }
+    .slot.vacio[data-pos=DEF] .mas { border: 1.5px dashed var(--def); color: var(--def); }
+    .slot.vacio[data-pos=MED] .mas { border: 1.5px dashed var(--med); color: var(--med); }
+    .slot.vacio[data-pos=DEL] .mas { border: 1.5px dashed var(--del); color: var(--del); }
+    .slot.vacio .lb { font-size: 9.5px; font-weight: 700; letter-spacing: .14em; color: var(--text2); }
+
+    .banco { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 16px; margin-bottom: 18px; }
     .bh { display: flex; align-items: center; justify-content: space-between; }
-    .banco h3 { margin: 0; font-size: 1rem; }
-    .add { background: var(--accent-soft); border: 1px solid var(--primary); color: var(--primary); border-radius: 9px;
-      padding: 6px 12px; cursor: pointer; font-weight: 800; font-size: .78rem; }
-    .sm { font-size: .8rem; } .faint { color: var(--faint); }
-    .bfila { display: flex; align-items: center; gap: 8px; padding: 9px 4px; border-bottom: 1px solid var(--border); }
-    .bfila:last-child { border-bottom: none; }
-    .prio { width: 22px; height: 22px; border-radius: 50%; background: var(--surface-2); border: 1px solid var(--border);
-      display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: .72rem; flex: 0 0 auto; }
-    .bnm { flex: 1; font-weight: 700; font-size: .85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .add { background: var(--surface); border: 1px solid var(--line); color: var(--text); border-radius: 11px;
+      padding: 8px 13px; cursor: pointer; font-weight: 600; font-size: 12.5px; }
+    .add:hover { border-color: var(--accent); }
+    .sm { font-size: 11.5px; } .faint { color: var(--faint); }
+    .bfila { display: flex; align-items: center; gap: 8px; padding: 8px 10px; margin-top: 6px;
+      background: var(--surface2); border: 1px solid var(--line); border-radius: 11px; }
+    .prio { width: 22px; height: 22px; border-radius: 50%; background: var(--surface); border: 1px solid var(--line);
+      display: flex; align-items: center; justify-content: center; font-family: var(--fm);
+      font-weight: 700; font-size: 11px; flex: 0 0 auto; }
+    .bnm { flex: 1; font-weight: 700; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .chips { display: flex; gap: 4px; }
-    .ch { width: 32px; padding: 5px 0; border-radius: 7px; border: 1px solid var(--border); background: var(--surface-2);
-      color: var(--muted); font-weight: 800; font-size: .62rem; cursor: pointer; }
+    .ch { width: 28px; padding: 5px 0; border-radius: 6px; border: 1px solid var(--line); background: transparent;
+      color: var(--text2); font-weight: 700; font-size: 9px; cursor: pointer; }
     .ch.on.DEF { background: var(--pos-DEF); color: var(--accent-ink); border-color: var(--pos-DEF); }
     .ch.on.MED { background: var(--pos-MED); color: var(--accent-ink); border-color: var(--pos-MED); }
     .ch.on.DEL { background: var(--pos-DEL); color: var(--accent-ink); border-color: var(--pos-DEL); }
@@ -198,11 +247,11 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
     .rm { width: 26px; padding: 5px 0; border: 1px solid var(--border); background: var(--surface-2); color: var(--bad); border-radius: 7px; cursor: pointer; }
 
     /* bottom sheet selector */
-    .back { position: fixed; inset: 0; z-index: 60; background: rgba(0,0,0,.66); backdrop-filter: blur(4px);
+    .back { position: fixed; inset: 0; z-index: 60; background: rgba(0,0,0,.55); backdrop-filter: blur(3px);
       display: flex; align-items: flex-end; justify-content: center; }
     .sheet { width: 100%; max-width: 520px; max-height: 82vh; display: flex; flex-direction: column;
-      background: linear-gradient(180deg, var(--surface), var(--bg-elev)); border: 1px solid var(--border);
-      border-top: 3px solid var(--primary); border-radius: 22px 22px 0 0; padding: 16px; }
+      background: var(--surface); border: 1px solid var(--line);
+      border-top: 3px solid var(--accent); border-radius: 20px 20px 0 0; padding: 16px; }
     @media (min-width: 560px) { .back { align-items: center; } .sheet { border-radius: 22px; } }
     .sh { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
     .st { font-weight: 800; font-size: .95rem; }
@@ -246,6 +295,12 @@ export class AlineacionComponent implements OnInit {
 
   compTipo = computed(() => this.competiciones().find((c) => c.id === this.competicionId())?.tipo ?? 'LIGA');
   esLiga = computed(() => this.compTipo() === 'LIGA');
+  /** Suma de medias del once: el dato que se mira antes de enviar. */
+  mediaPrevista = computed(() => {
+    const p = this.puntos();
+    const t = this.titulares().reduce((a, id) => a + (p[id] ?? 0), 0);
+    return Math.round(t * 10) / 10;
+  });
 
   /** Cupos por línea según la formación (POR siempre 1). */
   cupos = computed(() => {

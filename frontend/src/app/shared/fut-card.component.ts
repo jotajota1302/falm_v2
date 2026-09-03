@@ -45,7 +45,7 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     .info { display: flex; flex-direction: column; align-items: flex-start; gap: 4cqw; }
     .val { font-weight: 900; font-size: 21cqw; line-height: 1; color: inherit; text-shadow: 0 1px 2px rgba(0,0,0,.22); }
     .val small { font-size: 8cqw; font-weight: 800; opacity: .8; margin-left: 1px; }
-    .pos { font-weight: 900; font-size: 8cqw; letter-spacing: .03em; color: #07120d; padding: 1.5cqw 5cqw; border-radius: 4cqw; background: #fff; }
+    .pos { font-weight: 900; font-size: 8cqw; letter-spacing: .03em; color: var(--accent-ink); padding: 1.5cqw 5cqw; border-radius: 4cqw; background: #fff; }
     .fut[data-pos=POR] .pos { background: var(--pos-POR); } .fut[data-pos=DEF] .pos { background: var(--pos-DEF); }
     .fut[data-pos=MED] .pos { background: var(--pos-MED); } .fut[data-pos=DEL] .pos { background: var(--pos-DEL); }
     .face { height: 100%; max-width: 60%; object-fit: contain; object-position: top right; align-self: stretch;

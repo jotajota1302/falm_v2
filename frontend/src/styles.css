@@ -1,140 +1,192 @@
 /* ============================================================
-   FALM V2 — Sistema de diseño "MATCHDAY" (dark sport premium)
+   FALM V2 — Sistema de diseño "PRENSA"
+   Papel de periódico, tinta granate y tipografía condensada.
+   Tokens según docs de rediseño (paleta `prensa` + tipografía `condensada`).
    ============================================================ */
 :root {
-  /* superficies (estadio nocturno) */
-  --bg: #080d0b;
-  --bg-elev: #0d1411;
-  --surface: #121b17;
-  --surface-2: #1a2620;
-  --border: rgba(255, 255, 255, .08);
-  --border-strong: rgba(255, 255, 255, .15);
+  /* ---- paleta prensa ---- */
+  --bg: #f2efe8;          /* papel */
+  --surface: #fffdf9;     /* tarjetas, cabecera, tablas */
+  --surface2: #eae5da;    /* fondos secundarios, hover, barras vacías */
+  --line: #d9d2c3;        /* todos los bordes y separadores */
+  --text: #16130f;
+  --text2: #6d6353;
+  --accent: #a32b3f;      /* acción primaria, cifras destacadas */
+  --accent-ink: #fff8f2;
+  --accent-deep: #8a2435; /* hover / foco */
+  --accent-soft: color-mix(in oklab, var(--accent) 9%, var(--surface));  /* fondos tenidos */
+  --accent-line: color-mix(in oklab, var(--accent) 38%, var(--line));    /* bordes tenidos */
 
-  /* texto */
-  --ink: #eef3f0;
-  --muted: #93a39b;
-  --faint: #5e6e67;
+  /* posiciones */
+  --por: #b8791a;
+  --def: #1f6fa8;
+  --med: #5c8a1f;
+  --del: #b83248;
 
-  /* marca */
-  --primary: #00e676;
-  --primary-deep: #00b85e;
-  --primary-ink: #042716;
-  --glow: rgba(0, 230, 118, .35);
-  --gold: #ffc24b;
-  --accent: #ffc24b;   /* alias dorado (compat) */
-  --bad: #fb7185;
+  --good: #2f7d4f;
+  --bad: #b83248;
 
-  /* colores por posición (convención fantasy) */
-  --pos-POR: #f59e0b;
-  --pos-DEF: #38bdf8;
-  --pos-MED: #a3e635;
-  --pos-DEL: #fb7185;
+  --pitch: repeating-linear-gradient(0deg, #e6e1d4 0 46px, #dfd9ca 46px 92px);
 
-  /* forma */
+  /* ---- tipografía ---- */
+  --fh: 'Oswald', 'Archivo', Helvetica, sans-serif;             /* titulares */
+  --fb: 'Source Sans 3', 'Archivo', Helvetica, sans-serif;      /* cuerpo / UI */
+  --fm: 'IBM Plex Mono', ui-monospace, SFMono-Regular, monospace; /* cifras */
+
+  /* ---- forma ---- */
   --r: 18px;
-  --r-sm: 12px;
+  --r-sm: 13px;
   --r-xs: 8px;
-  --shadow: 0 10px 34px rgba(0, 0, 0, .5);
-  --shadow-sm: 0 2px 10px rgba(0, 0, 0, .35);
-  --font: 'Archivo', system-ui, -apple-system, sans-serif;
+  --pill: 999px;
+
+  /* ------------------------------------------------------------------
+     Alias de los nombres antiguos del tema MATCHDAY. Los componentes
+     siguen usándolos, así que apuntan a los tokens nuevos y heredan la
+     paleta sin tocar cada fichero.
+     ------------------------------------------------------------------ */
+  --bg-elev: var(--surface);
+  --surface-2: var(--surface2);
+  --border: var(--line);
+  --border-strong: #c7bfad;
+  --ink: var(--text);
+  --muted: var(--text2);
+  --faint: #948a79;
+  --primary: var(--accent);
+  --primary-deep: var(--accent-deep);
+  --primary-ink: var(--accent-ink);
+  --gold: var(--por);
+  --glow: transparent;          /* la paleta prensa no usa resplandores */
+  --shadow: none;               /* ni sombras: la jerarquía va con bordes */
+  --shadow-sm: none;
+  --font: var(--fb);
+  --pos-POR: var(--por);
+  --pos-DEF: var(--def);
+  --pos-MED: var(--med);
+  --pos-DEL: var(--del);
 }
 
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; min-height: 100%; }
 body {
-  font-family: var(--font);
-  color: var(--ink);
+  font-family: var(--fb);
+  color: var(--text);
   background: var(--bg);
-  background-image:
-    radial-gradient(1100px 520px at 50% -12%, rgba(0, 230, 118, .11), transparent 62%),
-    radial-gradient(760px 380px at 102% 2%, rgba(56, 189, 248, .06), transparent 55%);
-  background-attachment: fixed;
   -webkit-font-smoothing: antialiased;
-  letter-spacing: -.01em;
+  font-size: 14px;
+  line-height: 1.45;
 }
 a { color: inherit; text-decoration: none; }
 
-h1 { font-size: 1.55rem; font-weight: 800; letter-spacing: -.03em; margin: 0; }
-h2 { font-size: 1.05rem; font-weight: 700; letter-spacing: -.02em; }
-h3 { font-size: .95rem; font-weight: 700; }
+/* Titulares condensados en versalitas: el tono de portada deportiva. */
+h1 {
+  font-family: var(--fh); font-weight: 600; font-size: 34px;
+  text-transform: uppercase; letter-spacing: -.02em; line-height: 1.05; margin: 0;
+}
+h2 {
+  font-family: var(--fh); font-weight: 600; font-size: 15px;
+  text-transform: uppercase; letter-spacing: .01em; margin: 0;
+}
+h3 { font-family: var(--fh); font-weight: 500; font-size: 13.5px; text-transform: uppercase; margin: 0; }
 
 /* ---- utilidades ---- */
 .card {
-  background: linear-gradient(180deg, var(--surface), var(--bg-elev));
-  border: 1px solid var(--border);
+  background: var(--surface);
+  border: 1px solid var(--line);
   border-radius: var(--r);
-  box-shadow: var(--shadow-sm);
 }
-.muted { color: var(--muted); }
+.muted { color: var(--text2); }
 .faint { color: var(--faint); }
-.err { color: #fb7185; }
-.num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+.err { color: var(--bad); }
+
+/* Las cifras van en mono: alinean en columna y se leen como resultados. */
+.num {
+  font-family: var(--fm); font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum"; font-weight: 600;
+}
 
 .chip {
   display: inline-flex; align-items: center; gap: 5px;
-  padding: 3px 10px; border-radius: 999px;
-  font-size: .74rem; font-weight: 700; letter-spacing: .01em;
+  padding: 3px 10px; border-radius: var(--pill);
+  font-size: 11px; font-weight: 700; letter-spacing: .01em;
+  border: 1px solid var(--line);
 }
-.chip-gold { background: rgba(255, 194, 75, .14); color: var(--gold); }
-.chip-ok { background: rgba(0, 230, 118, .16); color: var(--primary); }
-.chip-warn { background: rgba(245, 158, 11, .16); color: #fbbf24; }
+.chip-gold { background: color-mix(in oklab, var(--por) 14%, var(--surface)); color: var(--por); border-color: color-mix(in oklab, var(--por) 35%, var(--line)); }
+.chip-ok   { background: color-mix(in oklab, var(--good) 12%, var(--surface)); color: var(--good); border-color: color-mix(in oklab, var(--good) 32%, var(--line)); }
+.chip-warn { background: color-mix(in oklab, var(--por) 12%, var(--surface)); color: var(--por); border-color: color-mix(in oklab, var(--por) 30%, var(--line)); }
 
 /* badge de posición */
 .pos {
   display: inline-flex; align-items: center; justify-content: center;
-  min-width: 34px; padding: 2px 7px; border-radius: 7px;
-  font-size: .68rem; font-weight: 800; letter-spacing: .03em;
-  color: #07120d;
+  min-width: 34px; padding: 3px 7px; border-radius: 6px;
+  font-family: var(--fb); font-size: 9px; font-weight: 700;
+  letter-spacing: .08em; text-transform: uppercase;
+  color: #fff;
 }
-.pos.POR { background: var(--pos-POR); }
-.pos.DEF { background: var(--pos-DEF); }
-.pos.MED { background: var(--pos-MED); }
-.pos.DEL { background: var(--pos-DEL); }
+.pos.POR { background: var(--por); }
+.pos.DEF { background: var(--def); }
+.pos.MED { background: var(--med); }
+.pos.DEL { background: var(--del); }
 
 /* precio en € */
-.euro { color: var(--gold); font-weight: 800; }
+.euro { font-family: var(--fm); color: var(--accent); font-weight: 700; }
 .euro::after { content: ' M'; font-size: .7em; font-weight: 600; opacity: .7; }
 
 /* tabla base */
 table.falm { width: 100%; border-collapse: collapse; }
-table.falm th, table.falm td { padding: 12px 8px; text-align: center; font-size: .9rem; }
+table.falm th, table.falm td { padding: 11px 8px; text-align: center; font-size: 13px; }
 table.falm thead th {
-  color: var(--faint); font-weight: 700; font-size: .68rem;
-  text-transform: uppercase; letter-spacing: .06em;
-  border-bottom: 1px solid var(--border);
+  color: var(--text2); font-weight: 700; font-size: 9px;
+  text-transform: uppercase; letter-spacing: .16em;
+  border-bottom: 1px solid var(--line);
 }
-table.falm tbody tr { border-bottom: 1px solid var(--border); }
+table.falm tbody tr { border-bottom: 1px solid var(--line); }
 table.falm tbody tr:last-child { border-bottom: none; }
 
 /* inputs */
 input, select {
-  font-family: var(--font);
-  background: var(--surface-2);
-  border: 1px solid var(--border);
+  font-family: var(--fb);
+  background: var(--surface);
+  border: 1px solid var(--line);
   border-radius: var(--r-sm);
-  color: var(--ink);
+  color: var(--text);
   padding: 11px 14px;
-  font-size: 1rem;
+  font-size: 14px;
 }
 input::placeholder { color: var(--faint); }
-input:focus, select:focus { outline: none; border-color: var(--primary-deep); }
+input:focus, select:focus { outline: none; border-color: var(--accent); }
 
 /* botón primario */
 .btn {
-  border: none; cursor: pointer; font-family: var(--font);
-  font-weight: 700; border-radius: var(--r-sm);
-  padding: 11px 18px; font-size: .95rem;
-  background: var(--primary); color: var(--primary-ink);
-  box-shadow: 0 6px 20px var(--glow);
-  transition: transform .12s ease, box-shadow .12s ease;
+  border: none; cursor: pointer; font-family: var(--fb);
+  font-weight: 700; border-radius: 11px;
+  padding: 11px 22px; font-size: 13.5px;
+  background: var(--accent); color: var(--accent-ink);
+  transition: opacity .12s ease;
 }
-.btn:hover { transform: translateY(-1px); }
-.btn:disabled { opacity: .45; cursor: not-allowed; box-shadow: none; }
+.btn:hover { opacity: .88; }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+
+/* botón secundario */
+.btn-sec {
+  cursor: pointer; font-family: var(--fb); font-weight: 600;
+  border-radius: 11px; padding: 10px 15px; font-size: 13px;
+  background: var(--surface); color: var(--text);
+  border: 1px solid var(--line);
+  transition: border-color .12s ease;
+}
+.btn-sec:hover { border-color: var(--accent); }
+
+/* foco visible para teclado */
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 /* scrollbars finos */
 ::-webkit-scrollbar { height: 7px; width: 7px; }
-::-webkit-scrollbar-thumb { background: var(--surface-2); border-radius: 999px; }
+::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: var(--pill); }
 
 /* entrada con stagger */
-@keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
-.rise { animation: rise .4s cubic-bezier(.2, .7, .2, 1) both; }
+@keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.rise { animation: rise .28s cubic-bezier(.2, .7, .2, 1) both; }
+@media (prefers-reduced-motion: reduce) {
+  .rise { animation: none; }
+  * { transition-duration: .01ms !important; }
+}
