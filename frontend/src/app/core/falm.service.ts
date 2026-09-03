@@ -539,6 +539,32 @@ export class FalmService {
     return new Set((data ?? []).map((r: any) => r.equipo_falm_id));
   }
 
+  /**
+   * Lo que ha puntuado cada activo en una jornada FALM. Una jornada nuestra
+   * puede abarcar más de una de LaLiga (las dobles), así que se suman todas
+   * las que tenga mapeadas.
+   */
+  async puntosDeJornada(jornadaFalmId: string, activoIds: string[]): Promise<Record<string, number>> {
+    const ids = [...new Set(activoIds.filter(Boolean))];
+    if (!ids.length) return {};
+    const { data: mapeo, error: e1 } = await this.sb.client
+      .from('mapeo_jornada')
+      .select('jornada_lfp_id')
+      .eq('jornada_falm_id', jornadaFalmId);
+    if (e1) throw e1;
+    const lfp = (mapeo ?? []).map((m: any) => m.jornada_lfp_id);
+    if (!lfp.length) return {};
+    const { data, error } = await this.sb.client
+      .from('puntuacion')
+      .select('activo_id, puntos')
+      .in('jornada_lfp_id', lfp)
+      .in('activo_id', ids);
+    if (error) throw error;
+    const total: Record<string, number> = {};
+    for (const r of data ?? []) total[(r as any).activo_id] = (total[(r as any).activo_id] ?? 0) + Number((r as any).puntos ?? 0);
+    return total;
+  }
+
   /** Convierte filas alineacion_activo en la lista Alineado ordenada. */
   private aMapa(filas: any[]): Alineado[] {
     return (filas ?? [])
