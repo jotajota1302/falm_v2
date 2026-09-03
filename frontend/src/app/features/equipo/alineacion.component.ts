@@ -368,7 +368,13 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
     .cav img { width: 100%; height: 100%; object-fit: cover; } .cav img.esc { object-fit: contain; padding: 5px; }
     .cav.POR { background: var(--por); } .cav.DEF { background: var(--def); }
     .cav.MED { background: var(--med); } .cav.DEL { background: var(--del); }
+    .cw { display: flex; flex-direction: column; min-width: 0; gap: 1px; }
     .cn { font-weight: 700; font-size: var(--t-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    /* De qué club es: decide tanto como el nombre a la hora de alinear. */
+    .cc { display: flex; align-items: center; gap: 5px; min-width: 0;
+      font-size: var(--t-xs); color: var(--text2); letter-spacing: .06em; text-transform: uppercase;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cc img { width: 14px; height: 14px; flex: 0 0 auto; object-fit: contain; }
     .ck { color: var(--accent); font-weight: 700; text-align: center; }
     .listo { margin-top: 12px; background: var(--accent); color: var(--accent-ink); border: none; border-radius: 11px;
       padding: 12px; cursor: pointer; font-family: var(--fb); font-weight: 700; font-size: var(--t-sm); }
