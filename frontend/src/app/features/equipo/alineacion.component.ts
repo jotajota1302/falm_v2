@@ -150,7 +150,13 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
                   @else if (j.escudo) { <img class="esc" [src]="j.escudo" alt="" /> }
                   @else { {{ j.nombre.charAt(0) }} }
                 </span>
-                <span class="cn">{{ j.nombre }}</span>
+                <span class="cw">
+                  <span class="cn">{{ j.nombre }}</span>
+                  <span class="cc">
+                    @if (j.escudo) { <img [src]="j.escudo" alt="" loading="lazy" /> }
+                    {{ j.club }}
+                  </span>
+                </span>
                 <span class="ck">{{ seleccionado(j) ? '✓' : '' }}</span>
               </button>
             }
