@@ -5,7 +5,8 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
 /**
  * Carta de jugador sobre el campo de la Alineación: papel con filo del color de
  * la posición, retrato recortado y los puntos en cifra mono.
- * Todo mide en cqw, así que se ve igual en un hueco pequeño que en uno grande.
+ * Los espacios miden en cqw, para que la carta escale con su hueco; el texto
+ * usa la escala tipográfica de la app, que si no salía por debajo del mínimo.
  */
 @Component({
   selector: 'falm-fut-card',
@@ -50,15 +51,15 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     .top { position: relative; z-index: 1; flex: 1; min-height: 0;
       display: flex; align-items: flex-start; justify-content: space-between; gap: 3cqw; }
     .info { display: flex; flex-direction: column; align-items: flex-start; gap: 3cqw; }
-    .val { font-family: var(--fm); font-weight: 700; font-size: 17cqw; line-height: 1; }
-    .val small { font-size: 7cqw; opacity: .7; margin-left: 1px; }
-    .pos { min-width: 0; padding: 1.5cqw 4cqw; border-radius: 3cqw; font-size: 7cqw; letter-spacing: .06em; }
+    .val { font-family: var(--fm); font-weight: 700; font-size: var(--t-lg); line-height: 1; }
+    .val small { font-size: var(--t-xs); opacity: .7; margin-left: 1px; }
+    .pos { min-width: 0; padding: 2px 6px; border-radius: 5px; font-size: var(--t-xs); letter-spacing: .06em; }
 
     .face { height: 100%; max-width: 62%; object-fit: contain; object-position: top right; align-self: stretch; z-index: 1; }
     /* El escudo de una portería no es un retrato: ocupa bastante menos. */
     .face.esc { max-width: 46%; max-height: 72%; object-position: center;
       opacity: 1; align-self: center; }
-    .ph { font-family: var(--fb); font-weight: 700; font-size: 11cqw; color: var(--text2); margin-left: auto; }
+    .ph { font-family: var(--fb); font-weight: 700; font-size: var(--t-md); color: var(--text2); margin-left: auto; }
 
     .foot { position: relative; z-index: 1; margin-top: 3cqw; }
     .n1 { display: block; font-family: var(--fb); font-weight: 700; font-size: var(--t-md);
@@ -71,7 +72,7 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     /* modo campo (Alineación): la banda ya dice la posición, así que sobra el badge */
     .fut.campo .info { position: absolute; top: 4cqw; left: 5cqw; z-index: 3; }
     .fut.campo .val { background: var(--surface2); border: 1px solid var(--line);
-      padding: 1px 5px; border-radius: 6px; font-size: var(--t-xs); }
+      padding: 1px 6px; border-radius: 6px; font-size: var(--t-sm); }
     .fut.campo .top { justify-content: center; align-items: stretch; }
     .fut.campo .face { max-width: 88%; object-position: center bottom; }
     .fut.campo .face.esc { max-width: 58%; max-height: 74%; object-position: center; }
