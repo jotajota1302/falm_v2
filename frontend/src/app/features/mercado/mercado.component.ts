@@ -40,7 +40,7 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
         </div>
 
         <div class="fila cab">
-          <span>Pos</span><span>Jugador</span><span>Club</span>
+          <span>Pos</span><span></span><span>Jugador</span><span>Club</span>
           <button class="ord der" [class.on]="orden() === 'pts'" (click)="ordenar('pts')">Pts</button>
         </div>
 
@@ -50,12 +50,17 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
           @for (a of visibles().slice(0, limite()); track a.activo_id) {
             <button class="fila" (click)="abrir(a)">
               <span class="pos" [class]="abr(a.posicion)">{{ abr(a.posicion) }}</span>
+              @if (foto(a)) {
+                <img class="fo" [src]="foto(a)" alt="" loading="lazy" (error)="sinFoto(a)" />
+              } @else if (a.escudo) {
+                <img class="fo es" [src]="a.escudo" alt="" loading="lazy" />
+              } @else { <span class="fo"></span> }
               <span class="nom">{{ a.nombre }}</span>
               <span class="club">
                 @if (a.escudo) { <img [src]="a.escudo" alt="" loading="lazy" /> }
                 {{ a.club }}
               </span>
-              <span class="der num">{{ ptsDe(a) }}</span>
+              <span class="pts num" [class.cero]="!ptsDe(a)">{{ ptsDe(a) }}</span>
             </button>
           }
         }
@@ -75,11 +80,7 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
     .phead .sub { margin: 5px 0 0; color: var(--text2); font-size: var(--t-sm); max-width: 62ch; }
     .acc { display: flex; gap: 8px; }
 
-    .tabla { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; }
-
-    /* Filtros y buscador viven en la cabecera de la tabla, no sueltos sobre el papel. */
-    .barra { display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-      padding: 13px 18px; border-bottom: 1px solid var(--line); }
+    /* La caja y las filas salen de styles.css; aquí solo las columnas y lo propio. */
     .barra .lb { font-size: var(--t-xs); font-weight: 700; letter-spacing: .16em;
       text-transform: uppercase; color: var(--text2); margin-right: 2px; }
     .barra button { background: var(--surface); border: 1px solid var(--line); color: var(--text2);
@@ -92,24 +93,27 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
     .barra button.pos-f.on.DEL { background: var(--del); border-color: var(--del); }
     .barra .buscar { margin-left: auto; flex: 0 1 250px; padding: 7px 13px; font-size: var(--t-sm); border-radius: var(--pill); }
 
-    .fila { width: 100%; display: grid; align-items: center; gap: 10px;
-      grid-template-columns: 46px 1.9fr 170px 74px;
-      padding: 10px 18px; border: none; border-bottom: 1px solid var(--line);
-      background: transparent; text-align: left; font-size: var(--t-sm); color: var(--text);
-      font-family: var(--fb); cursor: pointer; }
-    .fila:last-child { border-bottom: none; }
-    .fila:not(.cab):hover { background: var(--surface2); }
-    .fila.cab { cursor: default; padding: 11px 18px; }
-    .fila.cab > span, .ord { font-size: var(--t-xs); font-weight: 700; letter-spacing: .16em;
-      text-transform: uppercase; color: var(--text2); }
-    .ord { background: none; border: none; padding: 0; cursor: pointer; font-family: var(--fb); }
+    .fila { grid-template-columns: 46px 26px 1.9fr 170px 60px; padding: 7px 18px; }
+    .ord { background: none; border: none; padding: 0; cursor: pointer; font-family: var(--fb);
+      font-size: var(--t-xs); font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+      color: var(--text2); }
     .ord.on { color: var(--accent); }
-    .der { text-align: right; }
     .nom { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .club { display: flex; align-items: center; gap: 6px; color: var(--text2); font-size: var(--t-xs);
-      letter-spacing: .06em; text-transform: uppercase;
+
+    /* Misma cara y mismo escudo que en Inicio: retrato redondo, y el escudo del
+       club sobre un disco porque los casi blancos se perdían sobre el papel. */
+    .fo { width: 26px; height: 26px; border-radius: 50%; object-fit: cover;
+      object-position: top center; background: var(--surface2); }
+    .fo.es { object-fit: contain; padding: 3px; border: 1px solid var(--line); }
+    .club { display: flex; align-items: center; gap: 7px; color: var(--text2);
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .club img { width: 16px; height: 16px; object-fit: contain; flex: 0 0 auto; }
+    .club img { width: 18px; height: 18px; object-fit: contain; flex: 0 0 auto; }
+
+    .pts { font-family: var(--fm); text-align: right; }
+    /* Quien aún no ha puntuado lleva un cero, no un hueco. */
+    .pts.cero { display: inline-flex; align-items: center; justify-content: center;
+      margin-left: auto; width: 22px; height: 22px; color: var(--text2);
+      border: 1px solid var(--line); border-radius: 50%; }
     .vacio { padding: 22px 18px; margin: 0; font-size: var(--t-sm); }
 
     .pie { display: flex; align-items: center; justify-content: space-between;
@@ -117,8 +121,9 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
     .pie .muted { font-size: var(--t-sm); }
 
     @media (max-width: 760px) {
-      .fila { grid-template-columns: 40px 1fr 58px 66px; }
-      .fila > :nth-child(3) { display: none; }
+      /* Sin sitio para el club: se queda el escudo pegado al retrato. */
+      .fila { grid-template-columns: 42px 26px 1fr 52px; padding: 7px 13px; }
+      .fila > :nth-child(4) { display: none; }
       .barra .buscar { margin-left: 0; flex: 1 1 100%; }
     }
   `],
@@ -133,6 +138,8 @@ export class MercadoComponent implements OnInit {
   limite = signal(30);
   cargando = signal(true);
   error = signal('');
+  private caras = signal<Record<string, string>>({});
+  private rotas = signal<Set<string>>(new Set());
 
   visibles = computed(() => {
     const f = this.texto().trim().toLowerCase();
@@ -160,6 +167,30 @@ export class MercadoComponent implements OnInit {
 
   ptsDe(a: ActivoLibre) { return a.ext_id != null ? Number(this.acum()[a.ext_id]?.puntosTotales ?? 0) : 0; }
 
+  /**
+   * La cara del activo. Una portería no tiene retrato propio, así que lleva la
+   * del portero de ese club: al ficharla fichas a quien pare ese día.
+   */
+  foto(a: ActivoLibre): string | null {
+    if (this.rotas().has(a.activo_id)) return null;
+    return a.foto ?? (a.club_id ? this.caras()[a.club_id] ?? null : null);
+  }
+  /** Si el archivo no carga, esa fila se queda con el escudo. */
+  sinFoto(a: ActivoLibre) { const r = new Set(this.rotas()); r.add(a.activo_id); this.rotas.set(r); }
+
+  /** Un portero conocido por club, para las porterías del mercado. */
+  private async carasDeLasPorterias(libres: ActivoLibre[]) {
+    const clubes = libres.filter((a) => !a.foto && a.club_id).map((a) => a.club_id!);
+    if (!clubes.length) return;
+    const porteros = await this.falm.porterosDeClubes(clubes).catch(() => ({}));
+    const caras: Record<string, string> = {};
+    for (const [club, ps] of Object.entries(porteros)) {
+      const f = ps.find((p) => p.foto)?.foto;
+      if (f) caras[club] = f;
+    }
+    this.caras.set(caras);
+  }
+
   async ngOnInit() {
     try {
       const [libres, acum] = await Promise.all([this.falm.mercadoLibre(), this.falm.puntuacionesAcumuladas()]);
@@ -167,6 +198,7 @@ export class MercadoComponent implements OnInit {
       const m: Record<number, PuntosJugador> = {};
       for (const p of acum) m[p.jugador.id] = p;
       this.acum.set(m);
+      await this.carasDeLasPorterias(libres);
     } catch (e: any) { this.error.set(e?.message ?? 'Error cargando el mercado'); }
     finally { this.cargando.set(false); }
   }
