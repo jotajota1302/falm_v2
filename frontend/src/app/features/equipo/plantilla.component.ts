@@ -28,8 +28,10 @@ const ETI: Record<string, string> = { PORTERO: 'Porteros', DEFENSA: 'Defensas', 
         </div>
         <div class="kpi">
           <span class="lb">Jugadores</span>
-          <span class="v num">{{ items().length }}</span>
-          <span class="det">{{ resumen() }}</span>
+          <span class="dato">
+            <span class="v num">{{ items().length }}</span>
+            <span class="det">{{ resumen() }}</span>
+          </span>
         </div>
       </div>
 
@@ -83,8 +85,9 @@ const ETI: Record<string, string> = { PORTERO: 'Porteros', DEFENSA: 'Defensas', 
     .kpi .v { display: block; margin-top: 4px; font-family: var(--fh); font-size: var(--t-xl); font-weight: 600; }
     .kpi .v small { font-size: var(--t-md); color: var(--text2); }
     .kpi .v.neg { color: var(--bad); }
-    /* El desglose por líneas, donde está el número que desglosa. */
-    .kpi .det { display: block; margin-top: 3px; font-size: var(--t-xs); color: var(--text2); }
+    /* El desglose por líneas, junto al número que desglosa. */
+    .dato { display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap; }
+    .kpi .det { font-size: var(--t-xs); color: var(--text2); }
 
     /* La plantilla se lee como una clasificación: una fila por jugador. */
     .tabla { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; }
@@ -156,8 +159,8 @@ export class PlantillaComponent implements OnInit {
   /** Cuántos hay de cada línea: lo que se mira antes de fichar. */
   resumen = computed(() => {
     const por = (p: string) => this.items().filter((j) => j.posicion === p).length;
-    return [`${por('PORTERO')} porterías`, `${por('DEFENSA')} defensas`,
-            `${por('MEDIO')} medios`, `${por('DELANTERO')} delanteros`].join(' · ');
+    return [`${por('PORTERO')} POR`, `${por('DEFENSA')} DEF`,
+            `${por('MEDIO')} MED`, `${por('DELANTERO')} DEL`].join(' · ');
   });
 
   constructor(private falm: FalmService, public ficha: FichaService) {}

@@ -112,11 +112,11 @@ h3 { font-family: var(--fh); font-weight: 500; font-size: var(--t-sm); text-tran
 .kpis { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
 .kpi {
   flex: 1 1 190px; background: var(--surface);
-  border: 1px solid var(--line); border-radius: 16px; padding: 15px 17px;
+  border: 1px solid var(--line); border-radius: 14px; padding: 11px 15px;
 }
 .kpi .lb { display: block; }
-.kpi .v { display: block; margin-top: 5px; font-family: var(--fh); font-size: var(--t-xl); font-weight: 600; }
-.kpi .v small { font-size: var(--t-md); color: var(--text2); }
+.kpi .v { display: block; margin-top: 2px; font-family: var(--fh); font-size: var(--t-lg); font-weight: 600; }
+.kpi .v small { font-size: var(--t-sm); color: var(--text2); }
 
 /* filtros en píldora */
 .chips { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
