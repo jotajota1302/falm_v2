@@ -60,7 +60,13 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
       <div class="zona">
         <div class="lado-campo">
           <div class="pitch">
-        <span class="lineas" aria-hidden="true"></span>
+            <span class="lineas" aria-hidden="true"></span>
+            <label class="fsel">
+              <span class="lb">Formación</span>
+              <select [ngModel]="formacion()" (ngModelChange)="cambiarFormacion($event)">
+                @for (f of formaciones; track f) { <option [value]="f">{{ f }}</option> }
+              </select>
+            </label>
         @for (pos of ['PORTERO','DEFENSA','MEDIO','DELANTERO']; track pos) {
           <div class="fila" [attr.data-linea]="abr(pos)">
             @for (j of enLinea(pos); track j.activo_id) {
