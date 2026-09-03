@@ -16,202 +16,283 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
   imports: [FormsModule],
   providers: [DraftService],
   template: `
+    <header class="phead">
+      <div>
+        <h1>Draft</h1>
+        <p class="sub">
+          El turno no avanza hasta que el equipo al que le toca elige. Marca con ★ a quien
+          quieras vigilar: si otro se te adelanta, lo verás tacharse al instante.
+        </p>
+      </div>
+    </header>
+
     @if (d.cargando()) {
       <p class="muted">Cargando draft…</p>
     } @else if (d.error()) {
       <p class="err">{{ d.error() }}</p>
     } @else if (!d.draft()) {
-      <p class="muted">No hay ningún draft activo.</p>
+      <p class="muted">No hay ningún draft activo. Se crea desde Admin · Pretemporada.</p>
     } @else if (!d.miEquipoId()) {
       <p class="muted">
         Tu usuario no tiene ningún equipo asignado en esta temporada.
         Habla con el administrador de la liga.
       </p>
     } @else if (terminado()) {
-      <h2>Draft terminado</h2>
-      <p class="faint num">
-        Tu plantilla: {{ d.misPicks().length }} jugadores · {{ d.misPorterias() }} porterías
-      </p>
-      <ol class="cola">
+      <section class="tabla">
+        <div class="barra">
+          <span class="lb">Draft terminado · tu plantilla</span>
+          <span class="muted num">
+            {{ d.misPicks().length }} jugadores · {{ d.misPorterias() }} porterías
+          </span>
+        </div>
+        <div class="fila cab res"><span>Pos</span><span>Jugador</span><span>Club</span></div>
         @for (a of misFichados(); track a.activo_id) {
-          <li>
+          <div class="fila res">
+            <span class="pos" [class]="abr(a.posicion)">{{ abr(a.posicion) }}</span>
             <span class="nom">{{ a.nombre }}</span>
-            <span class="pos">{{ abr(a.posicion) }}</span>
-            <span class="club faint">{{ a.club }}</span>
-          </li>
+            <span class="club">{{ a.club }}</span>
+          </div>
         }
-      </ol>
+      </section>
     } @else {
-      @if (!d.conectado()) {
-        <div class="aviso">Reconectando… los fichajes pueden tardar unos segundos en aparecer.</div>
-      }
+      <!-- La tira de turno se queda pegada arriba: es el dato que se mira sin parar. -->
+      <div class="tira" [class.mio]="d.esMiTurno()">
+        <span class="lb">{{ d.esMiTurno() ? 'Es tu turno' : 'Turno' }}</span>
+        <strong>{{ nombreEquipo(d.turno()?.equipo_falm_id) }}</strong>
+        <span class="ronda num">Ronda {{ d.turno()?.ronda ?? '—' }}</span>
+        @if (!d.conectado()) { <span class="chip chip-warn">Reconectando…</span> }
+      </div>
 
-      <div class="turno" [class.mio]="d.esMiTurno()">
-        @if (d.esMiTurno()) {
-          <strong>TE TOCA</strong>
-        } @else {
-          <span>Turno de <strong>{{ nombreEquipo(d.turno()?.equipo_falm_id) }}</strong></span>
-          @if (d.picksHastaMiTurno() > 0) {
-            <span class="faint">· te toca en {{ d.picksHastaMiTurno() }}</span>
-          }
-        }
-        <span class="faint num">
-          Pick {{ d.draft()!.picks_hechos + 1 }}/{{ d.draft()!.picks_totales }}
-          · Ronda {{ d.turno()?.ronda ?? '—' }}
-        </span>
-        <span class="cupo num">
-          {{ d.misPicks().length }}/{{ d.draft()!.total_rondas }}
-          · porterías {{ d.misPorterias() }}/{{ minPorterias }}
-        </span>
+      <div class="kpis">
+        <div class="kpi">
+          <span class="lb">Tu plantilla</span>
+          <span class="v num">{{ d.misPicks().length }}<small>/{{ d.draft()!.total_rondas }}</small></span>
+        </div>
+        <div class="kpi">
+          <span class="lb">Porterías</span>
+          <span class="v num" [class.falta]="d.misPorterias() < minPorterias">
+            {{ d.misPorterias() }}<small>/{{ minPorterias }}</small>
+          </span>
+        </div>
+        <div class="kpi">
+          <span class="lb">Pick</span>
+          <span class="v num">{{ d.draft()!.picks_hechos + 1 }}<small>/{{ d.draft()!.picks_totales }}</small></span>
+        </div>
+        <div class="kpi">
+          <span class="lb">Te toca en</span>
+          <span class="v num">
+            @if (d.esMiTurno()) { ya } @else if (d.picksHastaMiTurno() > 0) {
+              {{ d.picksHastaMiTurno() }}
+            } @else { — }
+          </span>
+        </div>
       </div>
 
       @if (d.debeElegirPorteria()) {
-        <div class="aviso">
+        <p class="nota">
           Te quedan {{ d.misTurnosRestantes() }} turnos y te faltan
           {{ minPorterias - d.misPorterias() }} porterías: solo puedes elegir portería.
-        </div>
+        </p>
       }
       @if (d.soyGestor() && !d.esMiTurno()) {
-        <div class="aviso">
+        <p class="nota">
           Modo administrador: al fichar lo harás en nombre de
           <strong>{{ nombreEquipo(d.turno()?.equipo_falm_id) }}</strong>.
-        </div>
+        </p>
       }
-      @if (msg()) { <div class="aviso err" (click)="msg.set('')">{{ msg() }}</div> }
+      @if (msg()) { <p class="nota mal" (click)="msg.set('')">{{ msg() }}</p> }
 
       <div class="cols">
-        <section class="cat">
-          <input class="buscar" type="search" placeholder="Buscar jugador o club…"
-                 [ngModel]="texto()" (ngModelChange)="texto.set($event); limite.set(50)" />
-          <div class="filtros">
-            <button [class.on]="!posFiltro()" (click)="posFiltro.set('')">Todos</button>
+        <section class="tabla">
+          <div class="barra">
+            <span class="lb">Fichables</span>
+            <button [class.on]="!posFiltro()" (click)="posFiltro.set(''); limite.set(30)">Todos</button>
             @for (p of pos; track p) {
-              <button [class.on]="posFiltro() === p" (click)="togglePos(p)">{{ abr(p) }}</button>
+              <button class="pos-f" [class]="abr(p)" [class.on]="posFiltro() === p"
+                      (click)="togglePos(p)">{{ abr(p) }}</button>
             }
-            <button [class.on]="soloLibres()" (click)="soloLibres.set(!soloLibres())">Solo libres</button>
             <button [class.on]="soloCola()" (click)="soloCola.set(!soloCola())">★ Mi cola</button>
+            <button [class.on]="!soloLibres()" (click)="soloLibres.set(!soloLibres())">Ver fichados</button>
+            <input class="buscar" type="search" placeholder="Buscar jugador o club…"
+                   [ngModel]="texto()" (ngModelChange)="texto.set($event); limite.set(30)" />
           </div>
 
-          <p class="faint num">{{ visibles().length }} jugadores</p>
-          <ul class="lista">
+          <div class="fila cab">
+            <span></span><span>Pos</span><span>Jugador</span><span>Club</span>
+            <span class="der">Precio</span><span></span>
+          </div>
+
+          @if (visibles().length === 0) {
+            <p class="vacio muted">No hay jugadores para ese filtro.</p>
+          } @else {
             @for (a of visibles().slice(0, limite()); track a.activo_id) {
-              <li [class.tomado]="!!tomado(a)">
-                <button class="estrella" (click)="alternarCola(a)"
+              <div class="fila" [class.tomado]="!!tomado(a)">
+                <button class="estrella" [class.on]="enCola(a)" (click)="alternarCola(a)"
                         [attr.aria-label]="enCola(a) ? 'Quitar de mi cola' : 'Añadir a mi cola'">
                   {{ enCola(a) ? '★' : '☆' }}
                 </button>
+                <span class="pos" [class]="abr(a.posicion)">{{ abr(a.posicion) }}</span>
                 <span class="nom">{{ a.nombre }}</span>
-                <span class="pos">{{ abr(a.posicion) }}</span>
-                <span class="club faint">{{ a.club }}</span>
+                <span class="club">
+                  @if (a.escudo) { <img [src]="a.escudo" alt="" loading="lazy" /> }
+                  {{ a.club }}
+                </span>
+                <span class="der num precio">{{ a.precio_mercado }}</span>
                 @if (tomado(a)) {
-                  <span class="por faint">{{ nombreEquipo(tomado(a)) }}</span>
+                  <span class="chip">{{ nombreEquipo(tomado(a)) }}</span>
                 } @else {
                   <button class="btn" [disabled]="!puedeFichar(a)" (click)="fichar(a)">Fichar</button>
                 }
-              </li>
+              </div>
             }
-          </ul>
-          @if (visibles().length > limite()) {
-            <button class="mas" (click)="limite.set(limite() + 50)">
-              Ver más ({{ visibles().length - limite() }})
-            </button>
           }
         </section>
 
         <aside class="lat">
-          <h3>Mi cola ({{ colaVisible().length }})</h3>
-          <label class="prepick">
-            <input type="checkbox" [ngModel]="prePick()" (ngModelChange)="prePick.set($event)" />
-            Pre-pick: fichar solo al llegar mi turno
-          </label>
-          @if (colaVisible().length === 0) {
-            <p class="muted">Marca jugadores con ★ para tenerlos aquí.</p>
-          } @else {
-            <p class="faint num">{{ colaFichados() }} de tus {{ d.cola().length }} ya fichados</p>
-            <ol class="cola">
-              @for (a of colaVisible(); track a.activo_id) {
-                <li [class.tomado]="!!tomado(a)">
-                  <span class="nom">{{ a.nombre }}</span>
-                  <span class="pos">{{ abr(a.posicion) }}</span>
-                  <button (click)="d.moverCola(a.activo_id, -1)" aria-label="Subir">↑</button>
-                  <button (click)="d.moverCola(a.activo_id, 1)" aria-label="Bajar">↓</button>
+          <section class="card">
+            <h3>Mi cola</h3>
+            <label class="prepick">
+              <input type="checkbox" [ngModel]="prePick()" (ngModelChange)="prePick.set($event)" />
+              Pre-pick: fichar solo al llegar mi turno
+            </label>
+            @if (colaVisible().length === 0) {
+              <p class="muted mini">Marca jugadores con ★ para tenerlos aquí.</p>
+            } @else {
+              <p class="muted num mini">
+                {{ colaFichados() }} de tus {{ d.cola().length }} ya fichados
+              </p>
+              <ol class="cola">
+                @for (a of colaVisible(); track a.activo_id; let i = $index) {
+                  <li [class.tomado]="!!tomado(a)">
+                    <span class="p num">{{ i + 1 }}</span>
+                    <span class="pos" [class]="abr(a.posicion)">{{ abr(a.posicion) }}</span>
+                    <span class="nom">{{ a.nombre }}</span>
+                    <button class="mv" (click)="d.moverCola(a.activo_id, -1)" aria-label="Subir">↑</button>
+                    <button class="mv" (click)="d.moverCola(a.activo_id, 1)" aria-label="Bajar">↓</button>
+                  </li>
+                }
+              </ol>
+            }
+          </section>
+
+          <section class="card">
+            <h3>Próximos turnos</h3>
+            <ol class="orden">
+              @for (o of proximosTurnos(); track o.orden_global; let i = $index) {
+                <li [class.ahora]="i === 0" [class.yo]="o.equipo_falm_id === d.miEquipoId()">
+                  <span class="p num">{{ i === 0 ? '▸' : i }}</span>
+                  <span class="nom">{{ nombreEquipo(o.equipo_falm_id) }}</span>
+                  <span class="r num">R{{ o.ronda }}</span>
                 </li>
               }
             </ol>
-          }
-
-          <h3>Orden del draft</h3>
-          <ol class="orden">
-            @for (o of proximosTurnos(); track o.orden_global) {
-              <li [class.ahora]="o.orden_global === d.turno()?.orden_global"
-                  [class.yo]="o.equipo_falm_id === d.miEquipoId()">
-                {{ nombreEquipo(o.equipo_falm_id) }}
-              </li>
-            }
-          </ol>
+          </section>
         </aside>
+      </div>
+
+      <div class="pie">
+        <span class="muted num">
+          {{ visibles().length }} jugadores · {{ d.draft()!.picks_hechos }} fichados en total
+        </span>
+        @if (visibles().length > limite()) {
+          <button class="btn-sec" (click)="limite.set(limite() + 30)">Ver 30 más</button>
+        }
       </div>
     }
   `,
   styles: [`
-    /* La barra de turno se queda pegada arriba: es el dato que se mira sin parar. */
-    .turno { position: sticky; top: 0; z-index: 5; display: flex; gap: 12px; align-items: center;
-             flex-wrap: wrap; padding: 12px 14px; background: var(--surface);
-             border: 1px solid var(--line); border-radius: var(--r-sm); margin-bottom: 12px; }
-    .turno.mio { border-color: var(--accent); background: var(--accent-soft); }
-    .turno strong { font-family: var(--fh); font-size: var(--t-lg); font-weight: 600; text-transform: uppercase; }
-    .turno .faint, .cupo { font-size: var(--t-sm); color: var(--text2); }
-    .cupo { margin-left: auto; }
+    .phead .sub { max-width: 66ch; }
 
-    .aviso { padding: 11px 14px; border-radius: var(--r-sm); background: var(--surface);
-             border: 1px solid var(--accent-line); color: var(--text); margin-bottom: 10px; font-size: var(--t-sm); }
-    .aviso.err { border-color: var(--bad); color: var(--bad); cursor: pointer; }
+    .tira { position: sticky; top: 0; z-index: 6; display: flex; align-items: center; gap: 12px;
+      flex-wrap: wrap; padding: 12px 18px; margin-bottom: 16px;
+      background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); }
+    .tira strong { font-family: var(--fh); font-weight: 600; font-size: var(--t-xl);
+      line-height: 1; text-transform: uppercase; }
+    .tira .ronda { margin-left: auto; font-size: var(--t-sm); color: var(--text2); }
+    .tira.mio { background: var(--accent-soft); border-color: var(--accent-line); }
+    .tira.mio strong { color: var(--accent); }
+
+    .kpi .v.falta { color: var(--bad); }
+
+    .nota { padding: 11px 16px; margin: 0 0 12px; font-size: var(--t-sm);
+      border-radius: var(--r-sm); background: var(--surface); border: 1px solid var(--accent-line); }
+    .nota.mal { border-color: var(--bad); color: var(--bad); cursor: pointer; }
 
     .cols { display: grid; grid-template-columns: 1fr 300px; gap: 16px; align-items: start; }
-    .cat, .lat { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 15px; }
-    .buscar { width: 100%; margin-bottom: 10px; }
-    .filtros { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 12px; }
-    .filtros button { background: var(--surface); border: 1px solid var(--line); color: var(--text2);
-      border-radius: var(--pill); padding: 6px 14px; cursor: pointer;
-      font-family: var(--fb); font-weight: 600; font-size: var(--t-sm); }
-    .filtros button.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
 
-    .lista { list-style: none; padding: 0; margin: 0; }
-    .lista li { display: flex; gap: 10px; align-items: center; padding: 9px 4px;
-                border-bottom: 1px solid var(--line); font-size: var(--t-sm); }
-    .lista li:last-child { border-bottom: none; }
-    .lista li.tomado { color: var(--text2); }
-    .lista .nom { flex: 1; font-weight: 700; min-width: 0;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .lista li.tomado .nom { font-weight: 600; text-decoration: line-through; }
-    .lista .pos { flex: 0 0 auto; }
-    .lista .club { flex: 0 0 auto; font-size: var(--t-xs); letter-spacing: .06em; text-transform: uppercase; }
-    .lista .por { flex: 0 0 auto; font-size: var(--t-xs); }
-    .estrella { background: none; border: 0; cursor: pointer; font-size: var(--t-md); padding: 0 2px; color: var(--por); }
-    .lista .btn { padding: 7px 14px; font-size: var(--t-sm); }
+    .barra { display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+      padding: 13px 18px; border-bottom: 1px solid var(--line); }
+    .barra .lb { margin-right: 2px; }
+    .barra button { background: var(--surface); border: 1px solid var(--line); color: var(--text2);
+      border-radius: var(--pill); padding: 6px 14px; cursor: pointer; font-weight: 600;
+      font-size: var(--t-sm); font-family: var(--fb); }
+    .barra button.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+    .barra button.pos-f.on.POR { background: var(--por); border-color: var(--por); }
+    .barra button.pos-f.on.DEF { background: var(--def); border-color: var(--def); }
+    .barra button.pos-f.on.MED { background: var(--med); border-color: var(--med); }
+    .barra button.pos-f.on.DEL { background: var(--del); border-color: var(--del); }
+    .barra .buscar { margin-left: auto; flex: 0 1 210px; padding: 7px 13px;
+      font-size: var(--t-sm); border-radius: var(--pill); }
 
-    .cola, .orden { list-style: none; padding: 0; margin: 0 0 16px; }
-    .cola li, .orden li { display: flex; gap: 7px; align-items: center; padding: 7px 4px;
-                          border-bottom: 1px solid var(--line); font-size: var(--t-sm); }
+    .fila { display: grid; align-items: center; gap: 10px;
+      grid-template-columns: 28px 46px 1.6fr 140px 66px 94px;
+      padding: 8px 18px; border-bottom: 1px solid var(--line); font-size: var(--t-sm); }
+    .fila:last-child { border-bottom: none; }
+    .fila:not(.cab):hover { background: var(--surface2); }
+    .fila.cab { padding: 11px 18px; }
+    .fila.cab > span { font-size: var(--t-xs); font-weight: 700; letter-spacing: .16em;
+      text-transform: uppercase; color: var(--text2); }
+    .fila.res { grid-template-columns: 46px 1.6fr 1fr; }
+    .fila.tomado { color: var(--text2); }
+    .fila.tomado .nom { text-decoration: line-through; font-weight: 600; }
+    .fila.tomado .pos, .fila.tomado .precio { opacity: .5; }
+    .nom { font-weight: 700; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .club { display: flex; align-items: center; gap: 6px; color: var(--text2);
+      font-size: var(--t-xs); letter-spacing: .06em; text-transform: uppercase;
+      min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .club img { width: 16px; height: 16px; object-fit: contain; flex: 0 0 auto; }
+    .precio { color: var(--accent); font-weight: 700; }
+    .fila .btn { padding: 6px 12px; font-size: var(--t-sm); }
+    .fila .chip { justify-self: start; min-width: 0; overflow: hidden;
+      text-overflow: ellipsis; white-space: nowrap; }
+    .estrella { background: none; border: none; padding: 0; cursor: pointer;
+      font-size: var(--t-md); color: var(--text2); line-height: 1; }
+    .estrella.on { color: var(--por); }
+    .vacio { padding: 22px 18px; margin: 0; font-size: var(--t-sm); }
+
+    .lat { display: flex; flex-direction: column; gap: 14px; }
+    .lat .card { padding: 14px 16px; }
+    .lat h3 { margin-bottom: 10px; }
+    .mini { font-size: var(--t-xs); margin: 0; }
+    .prepick { display: flex; gap: 7px; align-items: flex-start; margin-bottom: 10px;
+      font-size: var(--t-xs); color: var(--text2); line-height: 1.35; cursor: pointer; }
+    .prepick input { margin: 1px 0 0; }
+
+    .cola, .orden { list-style: none; padding: 0; margin: 9px 0 0; }
+    .cola li, .orden li { display: grid; align-items: center; gap: 8px;
+      padding: 6px 0; border-bottom: 1px solid var(--line); font-size: var(--t-sm); }
+    .cola li { grid-template-columns: 14px 34px 1fr 22px 22px; }
+    .orden li { grid-template-columns: 16px 1fr 30px; }
     .cola li:last-child, .orden li:last-child { border-bottom: none; }
-    .cola li.tomado { color: var(--text2); text-decoration: line-through; }
-    .cola .nom { flex: 1; font-weight: 600; min-width: 0;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .cola button { background: var(--surface); border: 1px solid var(--line); color: var(--text2);
-      width: 24px; height: 24px; border-radius: 6px; cursor: pointer; flex: 0 0 auto; }
-    .orden li.ahora { font-weight: 700; box-shadow: inset 2px 0 0 var(--accent); padding-left: 8px; }
-    .orden li.yo { color: var(--accent); }
-    .prepick { display: flex; gap: 7px; align-items: center; margin-bottom: 10px;
-               font-size: var(--t-sm); color: var(--text2); }
-    .mas { margin-top: 12px; background: var(--surface); border: 1px solid var(--line);
-      color: var(--text); border-radius: 11px; padding: 10px 18px; cursor: pointer;
-      font-family: var(--fb); font-weight: 600; font-size: var(--t-sm); }
-    h3 { margin: 0 0 9px; }
-    .faint { color: var(--text2); } .muted { color: var(--text2); }
+    .cola li.tomado { color: var(--text2); }
+    .cola li.tomado .nom { text-decoration: line-through; }
+    .cola .p, .orden .p { color: var(--text2); font-size: var(--t-xs); }
+    .cola .pos { font-size: 8.5px; padding: 2px 0; }
+    .mv { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-xs);
+      color: var(--text2); cursor: pointer; font-size: var(--t-xs); line-height: 1; padding: 3px 0; }
+    .mv:hover { border-color: var(--accent); color: var(--accent); }
+    .orden li.ahora { box-shadow: inset 2px 0 0 var(--accent); }
+    .orden li.ahora .nom { font-weight: 700; }
+    .orden li.yo .nom { color: var(--accent); }
+    .orden .r { text-align: right; color: var(--text2); font-size: var(--t-xs); }
 
-    @media (max-width: 860px) {
+    @media (max-width: 900px) {
       .cols { grid-template-columns: 1fr; }
-      .lista .club, .lista .por { display: none; }
+      .fila { grid-template-columns: 26px 40px 1.4fr 60px 88px; padding: 8px 12px; }
+      .fila .club { display: none; }
+      .barra { padding: 11px 12px; }
+      .barra .buscar { flex: 1 1 100%; margin-left: 0; }
+      .tira { padding: 10px 12px; }
     }
   `],
 })
@@ -222,7 +303,7 @@ export class DraftComponent implements OnInit, OnDestroy {
   posFiltro = signal('');
   soloLibres = signal(true);
   soloCola = signal(false);
-  limite = signal(50);
+  limite = signal(30);
   msg = signal('');
   prePick = signal(false);
 
@@ -259,6 +340,11 @@ export class DraftComponent implements OnInit, OnDestroy {
     this.d.desuscribir();
   }
 
+  /** Al volver a la pestaña puede haber picks que no llegaron: reconciliar. */
+  private alVolver = () => {
+    if (!document.hidden) this.d.refrescarPicks();
+  };
+
   private avisar() {
     try {
       const Ctx = window.AudioContext ?? (window as any).webkitAudioContext;
@@ -281,7 +367,7 @@ export class DraftComponent implements OnInit, OnDestroy {
 
     let on = false;
     this.parpadeo = setInterval(() => {
-      document.title = (on = !on) ? '¡TE TOCA! · FALM' : this.tituloBase;
+      document.title = (on = !on) ? '¡TE TOCA! · Draft' : this.tituloBase;
     }, 1000);
   }
 
@@ -293,13 +379,8 @@ export class DraftComponent implements OnInit, OnDestroy {
     document.title = this.tituloBase;
   }
 
-  /** Al volver a la pestaña puede haber picks que no llegaron: reconciliar. */
-  private alVolver = () => {
-    if (!document.hidden) this.d.refrescarPicks();
-  };
-
   abr(p: string) { return ABR[p] ?? p; }
-  togglePos(p: string) { this.posFiltro.set(this.posFiltro() === p ? '' : p); this.limite.set(50); }
+  togglePos(p: string) { this.posFiltro.set(this.posFiltro() === p ? '' : p); this.limite.set(30); }
   nombreEquipo(id?: string | null) { return id ? this.d.equipoPorId().get(id) ?? '—' : '—'; }
   tomado(a: ActivoLibre) { return this.d.tomadoPor().get(a.activo_id) ?? null; }
   enCola(a: ActivoLibre) { return this.d.cola().some((c) => c.activo_id === a.activo_id); }
