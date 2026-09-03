@@ -171,17 +171,20 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
     /* Navegador de jornada: la abierta en el centro, y a los lados la de
        antes y la de después, con su número, para saber a dónde vas. */
     .jnav { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
-      gap: 12px; margin-bottom: 18px; }
+      gap: 12px; margin-bottom: 14px; }
     .jb { justify-self: end; padding: 9px 15px; border: 1px solid var(--line);
       background: var(--surface); color: var(--text2); border-radius: var(--pill); cursor: pointer;
       font-family: var(--fb); font-size: var(--t-sm); font-weight: 600; white-space: nowrap; }
     .jnav .jb:last-child { justify-self: start; }
     .jb:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
     .jb:disabled { opacity: .3; cursor: not-allowed; }
-    .jc { display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; }
+    /* Jornada y fecha en la misma línea: dos renglones ahí arriba le quitaban
+       altura al campo, que es lo que se quiere ver. */
+    .jc { display: flex; align-items: baseline; justify-content: center;
+      gap: 10px; flex-wrap: wrap; text-align: center; }
     .jc strong { font-family: var(--fh); font-size: var(--t-xl); font-weight: 600; text-transform: uppercase; }
     .jf { font-size: var(--t-sm); color: var(--text2); text-transform: capitalize; }
-    .jhoy { margin-top: 3px; background: none; border: none; cursor: pointer; padding: 0;
+    .jhoy { background: none; border: none; cursor: pointer; padding: 0;
       font-family: var(--fb); font-size: var(--t-xs); font-weight: 700; letter-spacing: .1em;
       text-transform: uppercase; color: var(--accent); }
 
