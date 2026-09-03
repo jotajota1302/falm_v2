@@ -1,6 +1,6 @@
 import { Component, OnDestroy, OnInit, computed, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { Agenda, AgendaItem, Alineado, FalmService, ItemPlantilla, RolAlineacion } from '../../core/falm.service';
+import { Agenda, AgendaItem, Alineado, FalmService, ItemPlantilla, PorteroClub, RolAlineacion } from '../../core/falm.service';
 
 const ORDEN = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'] as const;
 /** Las líneas que puede cubrir un suplente: una portería no deja hueco. */
@@ -8,7 +8,7 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
 const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'MED', DELANTERO: 'DEL' };
 
 /** Un titular ya cruzado con su ficha de plantilla. */
-interface EnCampo { pos: string; nombre: string; foto: string | null; escudo: string | null; pts: number | null; }
+interface EnCampo { pos: string; nombre: string; foto: string | null; escudo: string | null; club_id: string | null; pts: number | null; }
 /** Un suplente: quién es, qué líneas cubre y lo que lleva sumado. */
 interface EnBanca extends EnCampo { cubre: string[]; }
 /** La alineación de un equipo en la jornada, lista para pintar. */
@@ -86,7 +86,7 @@ interface Once { equipo: string; formacion: string; campo: EnCampo[]; banca: EnB
                       <img class="fo" [class.es]="!j.foto" [src]="j.foto || j.escudo" alt=""
                            loading="lazy" (error)="j.foto = null" />
                       <span class="nb">{{ j.nombre }}</span>
-                      @if (j.foto && j.escudo) {
+                      @if (j.escudo) {
                         <img class="cl" [src]="j.escudo" alt="" loading="lazy" />
                       } @else { <span></span> }
                       <span class="pts num" [class.cero]="!j.pts">{{ j.pts ?? 0 }}</span>
@@ -349,9 +349,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
     const dentro = (rol: RolAlineacion) => al.jugadores.filter((j: Alineado) => j.rol === rol);
     const datos = (p: ItemPlantilla): EnCampo => ({
       pos: p.posicion, nombre: p.nombre, foto: p.foto ?? null, escudo: p.escudo ?? null,
-      pts: pts[p.activo_id] ?? null,
+      club_id: p.club_id ?? null, pts: pts[p.activo_id] ?? null,
     });
-    return {
+    const once: Once = {
       equipo,
       formacion: al.formacion,
       enviada: true,
@@ -364,6 +364,24 @@ export class DashboardComponent implements OnInit, OnDestroy {
         return p ? [{ ...datos(p), cubre: j.lineas ?? [] }] : [];
       }),
     };
+    await this.caraDeLasPorterias(once);
+    return once;
+  }
+
+  /**
+   * Una portería no tiene retrato: sin esto salía su escudo dos veces, de cara
+   * y en la columna del club. Le ponemos la cara del portero de ese equipo,
+   * que al fin y al cabo es quien para.
+   */
+  private async caraDeLasPorterias(o: Once) {
+    const sinCara = [...o.campo, ...o.banca].filter((j) => !j.foto && j.club_id);
+    if (!sinCara.length) return;
+    const porteros = await this.falm.porterosDeClubes(sinCara.map((j) => j.club_id!))
+      .catch(() => ({} as Record<string, PorteroClub[]>));
+    for (const j of sinCara) {
+      const foto = porteros[j.club_id!]?.find((p) => p.foto)?.foto;
+      if (foto) j.foto = foto;
+    }
   }
 
   async ngOnInit() {
