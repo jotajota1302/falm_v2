@@ -811,20 +811,26 @@ export class AlineacionComponent implements OnInit {
   problema(): string | null {
     const t = this.titulares().length;
     if (t !== 11) {
-      return t < 11
-        ? `Te faltan ${11 - t} titulares: llevas ${t} de 11.`
+      const faltan = 11 - t;
+      return faltan > 0
+        ? `Te falta${faltan === 1 ? '' : 'n'} ${faltan} titular${faltan === 1 ? '' : 'es'}: llevas ${t} de 11.`
         : `Llevas ${t} titulares y solo pueden jugar 11.`;
     }
     const cupos = this.cupos();
     for (const pos of ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO']) {
       const puestos = this.enLinea(pos).length;
       if (puestos !== cupos[pos]) {
-        return `La formación ${this.formacion()} pide ${cupos[pos]} ${this.etiquetaPos(pos).toLowerCase()}(s)`
-             + ` y tienes ${puestos}.`;
+        const n = cupos[pos];
+        const linea = this.etiquetaPos(pos).toLowerCase() + (n === 1 ? '' : 's');
+        return `La formación ${this.formacion()} pide ${n} ${linea} y tienes ${puestos}.`;
       }
     }
     const sinLinea = this.banca().filter((b) => !b.lineas.length).length;
-    if (sinLinea) return `Hay ${sinLinea} suplente(s) sin ninguna línea marcada: no entrarían nunca.`;
+    if (sinLinea) {
+      return sinLinea === 1
+        ? 'Hay un suplente sin ninguna línea marcada: no entraría nunca.'
+        : `Hay ${sinLinea} suplentes sin ninguna línea marcada: no entrarían nunca.`;
+    }
     return this.formacionImposible();
   }
 
