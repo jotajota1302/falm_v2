@@ -91,7 +91,10 @@ import { EquipoSorteo } from './draft-sorteo.component';
     .mini:disabled { opacity: .4; cursor: not-allowed; }
     .mini.inv { padding: 5px 0; }
     @media (max-width: 700px) {
+      /* Los dos equipos y el cambio de localía arriba; guardar, debajo y de
+         lado a lado, que si no cae suelto en una esquina. */
       .cruce { grid-template-columns: 1fr 30px 1fr; }
+      .cruce > :nth-child(4) { grid-column: 1 / -1; }
       .cruce > .mini:last-child { grid-column: 1 / -1; }
     }
   `],

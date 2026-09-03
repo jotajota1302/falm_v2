@@ -548,6 +548,21 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
       .barra .buscar { flex: 1 1 100%; margin-left: 0; }
       .tira { padding: 10px 12px; }
     }
+
+    /* En un teléfono, el catálogo se queda con lo imprescindible: al nombre le
+       quedaban 50px entre el cupo, la estrella y el botón de fichar. */
+    @media (max-width: 620px) {
+      .cat .fila { grid-template-columns: 24px 36px 1fr 76px; gap: 8px; padding: 8px 10px; }
+      .cat .fila > :nth-child(5) { display: none; }
+      .cat .fila .ret { width: 28px; height: 28px; }
+      .fila.pk { grid-template-columns: 28px 40px 1fr 104px; gap: 8px; padding: 8px 10px; }
+      .fila.pk .ops { gap: 5px; }
+      .mini-btn { padding: 6px 8px; font-size: var(--t-xs); }
+      /* El modal de corrección: sin club, que es lo que menos decide. */
+      .candidatos li { grid-template-columns: 40px 1fr 62px; gap: 8px; }
+      .candidatos li > :nth-child(3) { display: none; }
+      .cola li { grid-template-columns: 14px 32px 1fr 22px 22px; gap: 6px; }
+    }
   `],
 })
 export class DraftComponent implements OnInit, OnDestroy {
