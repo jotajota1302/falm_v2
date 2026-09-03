@@ -69,18 +69,24 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
       font-size: var(--t-xs); color: var(--text2); }
     .sline span { white-space: nowrap; }
 
-    /* modo campo (Alineación): la banda ya dice la posición, así que sobra el badge */
+    /* Modo campo. Los retratos de origen no vienen encuadrados igual (unos de
+       busto, otros de plano medio), así que llenar la carta con la foto hacía
+       que unas cabezas salieran el doble que otras. Se recortan en un círculo
+       de tamaño fijo, como en el resto de la app: todas miden lo mismo. */
+    .fut.campo .top { justify-content: center; align-items: center; }
+    .fut.campo .face { width: 62px; height: 62px; max-width: none; max-height: none;
+      border-radius: 50%; object-fit: cover; object-position: center top;
+      background: var(--surface2); border: 1px solid var(--line); }
     .fut.campo .info { position: absolute; top: 4cqw; left: 5cqw; z-index: 3; }
     .fut.campo .val { background: var(--surface2); border: 1px solid var(--line);
       padding: 1px 6px; border-radius: 6px; font-size: var(--t-sm); }
-    .fut.campo .top { justify-content: center; align-items: stretch; }
-    .fut.campo .face { width: 100%; max-width: none; height: 100%;
-      object-fit: cover; object-position: center top; }
-    .fut.campo .face.esc { width: auto; max-width: 58%; height: auto; max-height: 74%;
+    /* La portería lleva escudo, no cara: entra entero y sin círculo. */
+    .fut.campo .face.esc { width: auto; max-width: 62%; height: auto; max-height: 76%;
+      border-radius: 0; border: none; background: none;
       object-fit: contain; object-position: center; }
     /* En una portería la cifra iba encima del escudo: le dejamos su sitio. */
     .fut.campo.solo-escudo .top { padding-top: 16%; }
-    .fut.campo.solo-escudo .face.esc { max-height: 84%; align-self: center; }
+    .fut.campo.solo-escudo .face.esc { max-height: 82%; }
     /* Dos líneas como mucho, y si una palabra no cabe se parte antes que
        comerse el resto del nombre. */
     .fut.campo .n1 { text-align: center; white-space: normal; overflow-wrap: anywhere;
