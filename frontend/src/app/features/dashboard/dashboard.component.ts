@@ -6,9 +6,9 @@ const ORDEN = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'] as const;
 const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'MED', DELANTERO: 'DEL' };
 
 /** Un titular ya cruzado con su ficha de plantilla. */
-interface EnCampo { pos: string; nombre: string; foto: string | null; escudo: string | null; }
-/** Un suplente: quién es y qué líneas cubre. */
-interface EnBanca { nombre: string; pos: string; cubre: string[]; }
+interface EnCampo { pos: string; nombre: string; foto: string | null; escudo: string | null; pts: number | null; }
+/** Un suplente: quién es, qué líneas cubre y lo que lleva sumado. */
+interface EnBanca extends EnCampo { cubre: string[]; }
 /** La alineación de un equipo en la jornada, lista para pintar. */
 interface Once { equipo: string; formacion: string; campo: EnCampo[]; banca: EnBanca[]; enviada: boolean; }
 
@@ -75,18 +75,19 @@ interface Once { equipo: string; formacion: string; campo: EnCampo[]; banca: EnB
                 </div>
 
                 @if (o.enviada) {
+                  <div class="fila j11 cab">
+                    <span></span><span></span><span>Once</span><span></span><span class="der">Pts</span>
+                  </div>
                   @for (j of once(o); track $index) {
                     <div class="fila j11">
                       <span class="p" [class]="abr(j.pos)">{{ abr(j.pos) }}</span>
-                      @if (j.foto) {
-                        <img class="fo" [src]="j.foto" alt="" loading="lazy" (error)="j.foto = null" />
-                      } @else if (j.escudo) {
-                        <img class="fo es" [src]="j.escudo" alt="" loading="lazy" />
-                      } @else { <span class="fo"></span> }
+                      <img class="fo" [class.es]="!j.foto" [src]="j.foto || j.escudo" alt=""
+                           loading="lazy" (error)="j.foto = null" />
                       <span class="nb">{{ j.nombre }}</span>
                       @if (j.foto && j.escudo) {
                         <img class="cl" [src]="j.escudo" alt="" loading="lazy" />
                       } @else { <span></span> }
+                      <span class="pts num">{{ fmt(j.pts) }}</span>
                     </div>
                   }
                   @if (o.banca.length) {
@@ -94,9 +95,14 @@ interface Once { equipo: string; formacion: string; campo: EnCampo[]; banca: EnB
                     @for (b of o.banca; track $index) {
                       <div class="fila j11 sup">
                         <span class="p n">{{ $index + 1 }}</span>
-                        <span class="fo"></span>
-                        <span class="nb">{{ b.nombre }}</span>
-                        <span class="cubre">{{ cubre(b) }}</span>
+                        <img class="fo" [class.es]="!b.foto" [src]="b.foto || b.escudo" alt=""
+                             loading="lazy" (error)="b.foto = null" />
+                        <span class="nb">{{ b.nombre }}
+                          <small>Cubre {{ cubre(b) }}</small></span>
+                        @if (b.foto && b.escudo) {
+                          <img class="cl" [src]="b.escudo" alt="" loading="lazy" />
+                        } @else { <span></span> }
+                        <span class="pts num">{{ fmt(b.pts) }}</span>
                       </div>
                     }
                   }
@@ -173,9 +179,10 @@ interface Once { equipo: string; formacion: string; campo: EnCampo[]; banca: EnB
       min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .barra .f { font-family: var(--fm); font-size: var(--t-sm); color: var(--text2); }
 
-    /* Todas las filas iguales: demarcación, cara, nombre y club. */
+    /* Todas las filas iguales: demarcación, cara, nombre, club y puntos. */
     .tabla .fila { padding: 6px 14px; }
-    .j11 { grid-template-columns: 32px 26px 1fr 18px; gap: 9px; }
+    .j11 { grid-template-columns: 32px 26px 1fr 18px 38px; gap: 9px; }
+    .j11.cab { padding-top: 10px; padding-bottom: 8px; }
     .p { font-size: var(--t-xs); font-weight: 700; letter-spacing: .06em; color: var(--text2); }
     .p.POR { color: var(--por); } .p.DEF { color: var(--def); }
     .p.MED { color: var(--med); } .p.DEL { color: var(--del); }
@@ -185,9 +192,12 @@ interface Once { equipo: string; formacion: string; campo: EnCampo[]; banca: EnB
     .fo.es { object-fit: contain; padding: 3px; background: none; border-radius: 0; }
     .nb { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
     .cl { width: 18px; height: 18px; object-fit: contain; opacity: .85; }
-    /* El banquillo entra por orden, y cada uno cubre las líneas que marcó. */
-    .sup .nb { font-weight: 400; color: var(--text2); }
-    .cubre { font-size: var(--t-xs); color: var(--text2); letter-spacing: .06em; white-space: nowrap; }
+    .pts { font-family: var(--fm); font-size: var(--t-sm); text-align: right; }
+    /* El banquillo entra por orden, y las líneas que cubre van bajo el nombre,
+       que en su columna se cortaban. */
+    .sup .nb { font-weight: 400; }
+    .sup .nb small { display: block; font-size: var(--t-xs); color: var(--text2);
+      letter-spacing: .04em; }
     .esperando { margin: 0; padding: 22px 14px; font-size: var(--t-sm); color: var(--text2); }
 
     .cambiar { display: block; text-align: center; margin: 14px 0 0;
@@ -253,7 +263,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   gane(ac: AgendaItem) { return ac.mis_puntos != null && ac.rival_puntos != null && ac.mis_puntos > ac.rival_puntos; }
   perdi(ac: AgendaItem) { return ac.mis_puntos != null && ac.rival_puntos != null && ac.rival_puntos > ac.mis_puntos; }
   abr(pos: string) { return ABR[pos] ?? pos; }
-  cubre(b: EnBanca) { return (b.cubre.length ? b.cubre : [b.pos]).map((l) => ABR[l] ?? l).join('/'); }
+  cubre(b: EnBanca) { return (b.cubre.length ? b.cubre : [b.pos]).map((l) => ABR[l] ?? l).join(' · '); }
   /** En una línea de once cabe el apellido; una portería se nombra por su club. */
   corto(nombre: string) {
     if (nombre.startsWith('Porter')) return nombre.replace(/^Porter[íi]a\s*/, '');
@@ -290,25 +300,32 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }
   }
 
-  /** Cruza una alineación guardada con la plantilla, que es quien tiene los nombres. */
+  /** Cruza una alineación guardada con la plantilla y con lo que lleva sumado cada uno. */
   private async onceDe(equipoId: string, equipo: string, jornadaId: string): Promise<Once> {
     const vacio: Once = { equipo, formacion: '', campo: [], banca: [], enviada: false };
     const al = await this.falm.getAlineacion(equipoId, jornadaId);
     if (!al) return vacio;
-    const ficha = new Map<string, ItemPlantilla>(
-      (await this.falm.miPlantilla(equipoId)).map((p) => [p.activo_id, p]));
+    const [plantilla, stats] = await Promise.all([
+      this.falm.miPlantilla(equipoId),
+      this.falm.statsEquipo(equipoId).catch(() => ({} as Record<string, any>)),
+    ]);
+    const ficha = new Map<string, ItemPlantilla>(plantilla.map((p) => [p.activo_id, p]));
     const dentro = (rol: RolAlineacion) => al.jugadores.filter((j: Alineado) => j.rol === rol);
+    const datos = (p: ItemPlantilla): EnCampo => ({
+      pos: p.posicion, nombre: p.nombre, foto: p.foto ?? null, escudo: p.escudo ?? null,
+      pts: stats[p.activo_id]?.puntos ?? null,
+    });
     return {
       equipo,
       formacion: al.formacion,
       enviada: true,
       campo: dentro('TITULAR').flatMap<EnCampo>((j) => {
         const p = ficha.get(j.activo_id);
-        return p ? [{ pos: p.posicion, nombre: p.nombre, foto: p.foto ?? null, escudo: p.escudo ?? null }] : [];
+        return p ? [datos(p)] : [];
       }),
       banca: dentro('SUPLENTE').flatMap<EnBanca>((j) => {
         const p = ficha.get(j.activo_id);
-        return p ? [{ nombre: p.nombre, pos: p.posicion, cubre: j.lineas ?? [] }] : [];
+        return p ? [{ ...datos(p), cubre: j.lineas ?? [] }] : [];
       }),
     };
   }
