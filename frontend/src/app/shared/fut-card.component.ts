@@ -55,7 +55,9 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     .pos { min-width: 0; padding: 1.5cqw 4cqw; border-radius: 3cqw; font-size: 7cqw; letter-spacing: .06em; }
 
     .face { height: 100%; max-width: 62%; object-fit: contain; object-position: top right; align-self: stretch; z-index: 1; }
-    .face.esc { max-width: 46%; object-position: center; opacity: 1; align-self: center; }
+    /* El escudo de una portería no es un retrato: ocupa bastante menos. */
+    .face.esc { max-width: 34%; max-height: 60%; object-position: center;
+      opacity: 1; align-self: center; }
     .ph { font-family: var(--fb); font-weight: 700; font-size: 11cqw; color: var(--text2); margin-left: auto; }
 
     .foot { position: relative; z-index: 1; margin-top: 3cqw; }
@@ -72,6 +74,7 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
       padding: 1cqw 3cqw; border-radius: 4cqw; font-size: 14cqw; }
     .fut.campo .top { justify-content: center; align-items: stretch; }
     .fut.campo .face { max-width: 88%; object-position: center bottom; }
+    .fut.campo .face.esc { max-width: 44%; max-height: 62%; object-position: center; }
     .fut.campo .n1 { text-align: center; }
   `],
 })

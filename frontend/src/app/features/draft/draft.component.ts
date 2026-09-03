@@ -98,7 +98,7 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
       @if (msg()) { <p class="nota mal" (click)="msg.set('')">{{ msg() }}</p> }
 
       <div class="cols">
-        <section class="tabla">
+        <section class="tabla cat">
           <div class="barra">
             <span class="lb">Fichables</span>
             <button [class.on]="!posFiltro()" (click)="posFiltro.set(''); limite.set(30)">Todos</button>
@@ -117,7 +117,7 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
           </div>
 
           <div class="fila cab">
-            <span></span><span>Pos</span><span>Jugador</span><span>Club</span>
+            <span></span><span>Pos</span><span>Jugador</span><span class="club">Club</span>
             <span class="der">Cupo</span><span></span>
           </div>
 
@@ -363,8 +363,14 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
 
     @media (max-width: 900px) {
       .cols { grid-template-columns: 1fr; }
-      .fila { grid-template-columns: 26px 40px 1.4fr 60px 88px; padding: 8px 12px; }
-      .fila .club { display: none; }
+      /* Solo el catálogo: la vista general y el resumen tienen otras columnas. */
+      .cat .fila { grid-template-columns: 26px 40px 1.4fr 60px 88px; padding: 8px 12px; }
+      .cat .fila .club { display: none; }
+      /* Vista general: en el móvil se queda en equipo, picks y porterías. */
+      .fila.gl { grid-template-columns: 1.6fr 52px 52px; }
+      .fila.gl > :nth-child(n+4) { display: none; }
+      .fila.res { grid-template-columns: 42px 1.4fr; }
+      .fila.res > :nth-child(3) { display: none; }
       .barra { padding: 11px 12px; }
       .barra .buscar { flex: 1 1 100%; margin-left: 0; }
       .tira { padding: 10px 12px; }
