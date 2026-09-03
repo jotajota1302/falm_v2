@@ -17,10 +17,7 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
         <h1>Mercado</h1>
         <p class="sub">Jugadores sin dueño. Toca una fila para ver la ficha; las peticiones se envían desde Fichajes.</p>
       </div>
-      <div class="acc">
-        <a class="btn-sec" routerLink="/intercambios">Intercambios</a>
-        <a class="btn" routerLink="/fichajes">Pedir fichaje</a>
-      </div>
+      <a class="btn" routerLink="/fichajes">Pedir fichaje</a>
     </header>
 
     @if (cargando()) {
@@ -78,7 +75,6 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
     .phead { display: flex; align-items: flex-end; justify-content: space-between;
       gap: 20px; flex-wrap: wrap; margin-bottom: 18px; }
     .phead .sub { margin: 5px 0 0; color: var(--text2); font-size: var(--t-sm); max-width: 62ch; }
-    .acc { display: flex; gap: 8px; }
 
     /* La caja y las filas salen de styles.css; aquí solo las columnas y lo propio. */
     .barra .lb { font-size: var(--t-xs); font-weight: 700; letter-spacing: .16em;

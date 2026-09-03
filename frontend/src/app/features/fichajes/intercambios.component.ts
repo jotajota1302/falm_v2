@@ -1,5 +1,6 @@
 import { Component, OnInit, WritableSignal, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { NavFichajesComponent } from '../../shared/nav-fichajes.component';
 import { environment } from '../../../environments/environment';
 import { ActivoMini, Equipo, FalmService, ItemPlantilla, OfertaIntercambio } from '../../core/falm.service';
 
@@ -9,7 +10,7 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
 @Component({
   selector: 'app-intercambios',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, NavFichajesComponent],
   template: `
     <header class="phead">
       <div>
@@ -17,6 +18,8 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
         <p class="sub">Cambia jugadores con otro equipo. La oferta se cierra cuando el otro la acepta.</p>
       </div>
     </header>
+
+    <falm-nav-fichajes [pendientes]="pendientes()" />
 
     <div class="tabs">
       <button [class.on]="tab() === 'bandeja'" (click)="tab.set('bandeja')">Bandeja

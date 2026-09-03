@@ -1,5 +1,6 @@
 import { Component, OnInit, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { NavFichajesComponent } from '../../shared/nav-fichajes.component';
 import { RouterLink } from '@angular/router';
 import { environment } from '../../../environments/environment';
 import { ActivoLibre, Equipo, FalmService, ItemPlantilla, JornadaFalm, PuntosJugador } from '../../core/falm.service';
@@ -11,7 +12,7 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
 @Component({
   selector: 'app-fichajes',
   standalone: true,
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, NavFichajesComponent],
   template: `
     <header class="phead">
       <div>
@@ -19,8 +20,9 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
         <p class="sub">Pide hasta dos jugadores por orden de prioridad. Si otro equipo pide al mismo,
           gana quien no fichó la semana pasada; si sigue el empate, el peor clasificado.</p>
       </div>
-      <a class="btn-sec" routerLink="/intercambios">Intercambios</a>
     </header>
+
+    <falm-nav-fichajes />
 
     @if (cargando()) {
       <p class="muted">Cargando…</p>

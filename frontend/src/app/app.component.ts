@@ -258,6 +258,7 @@ export class AppComponent implements AfterViewChecked {
     { path: '/plantilla', label: 'Plantilla', corto: 'Equipo' },
     { path: '/alineacion', label: 'Alineación', corto: 'Once' },
     { path: '/mercado', label: 'Mercado', corto: 'Mercado' },
+    { path: '/fichajes', label: 'Fichajes', corto: 'Fichajes' },
     { path: '/draft', label: 'Draft', corto: 'Draft' },
     { path: '/clasificacion', label: 'Clasificación', corto: 'Clasif.' },
     { path: '/jornadas', label: 'Partidos', corto: 'Jornadas' },
