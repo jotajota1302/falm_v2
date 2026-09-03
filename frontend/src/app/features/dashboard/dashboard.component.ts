@@ -254,7 +254,12 @@ interface Once { equipo: string; formacion: string; campo: EnCampo[]; banca: EnB
       /* Una tabla debajo de la otra: dos no caben en un móvil. */
       .duelo { grid-template-columns: 1fr; }
       .barra strong { font-size: var(--t-md); }
-      .j11 { grid-template-columns: 30px 24px 1fr 18px; }
+      /* Las cinco columnas siguen siendo cinco: si aquí faltaba una, los
+         puntos se caían a una segunda línea. */
+      .j11 { grid-template-columns: 30px 24px 1fr 16px 34px; gap: 7px; }
+      .tabla .fila { padding: 6px 12px; }
+      .cola { grid-template-columns: 30px 1fr; gap: 7px; }
+      .pts.cero, .s em.cero { width: 20px; height: 20px; }
     }
   `],
 })
