@@ -35,20 +35,27 @@ const ETI: Record<string, string> = { PORTERO: 'Porteros', DEFENSA: 'Defensas', 
 
       <div class="tabla">
         <div class="fila cab">
-          <span>Pos</span><span>Jugador</span><span>Club</span><span>Estado</span>
-          <span class="der">Pts</span><span class="der">Media</span>
+          <span>Pos</span><span>Jugador</span><span>Club</span>
+          <span class="der">Pts</span><span class="der">Media</span><span class="der">Precio</span>
         </div>
         @for (j of filas(); track j.activo_id) {
           <button class="fila" (click)="abrir(j)">
             <span class="pos" [class]="abr(j.posicion)">{{ abr(j.posicion) }}</span>
-            <span class="nom">{{ j.nombre }}</span>
+            <span class="quien">
+              <span class="av">
+                @if (j.escudo) { <img class="wm" [src]="j.escudo" alt="" loading="lazy" /> }
+                @if (j.foto) { <img class="pl" [src]="j.foto" alt="" loading="lazy" (error)="j.foto = ''" /> }
+                @else { <span class="ini">{{ j.nombre.charAt(0) }}</span> }
+              </span>
+              <span class="nom">{{ j.nombre }}</span>
+            </span>
             <span class="club">
               @if (j.escudo) { <img [src]="j.escudo" alt="" loading="lazy" /> }
               {{ j.club }}
             </span>
-            <span class="estado" [class.virtual]="j.tipo === 'DEFENSA'">{{ j.tipo === 'DEFENSA' ? 'Virtual' : 'OK' }}</span>
             <span class="der num">{{ puntosDe(j) }}</span>
             <span class="der num media">{{ mediaDe(j) }}</span>
+            <span class="der num precio">{{ j.precio }}</span>
           </button>
         }
       </div>
@@ -79,7 +86,16 @@ const ETI: Record<string, string> = { PORTERO: 'Porteros', DEFENSA: 'Defensas', 
     .fila.cab { cursor: default; font-size: var(--t-xs); font-weight: 700; letter-spacing: .16em;
       text-transform: uppercase; color: var(--text2); padding: 12px 18px; }
     .der { text-align: right; }
-    .nom { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    /* El retrato del jugador, si lo hay, junto a su nombre. */
+    .quien { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .av { position: relative; width: 36px; height: 36px; flex: 0 0 auto; border-radius: 9px;
+      overflow: hidden; background: var(--surface2); border: 1px solid var(--line);
+      display: flex; align-items: flex-end; justify-content: center; }
+    .av .wm { position: absolute; width: 116%; left: 50%; top: 50%;
+      transform: translate(-50%,-50%); opacity: .16; object-fit: contain; }
+    .av .pl { position: relative; z-index: 1; width: 100%; height: 100%; object-fit: contain; }
+    .av .ini { position: relative; z-index: 1; font-weight: 700; color: var(--text2); padding-bottom: 4px; }
+    .nom { font-weight: 700; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .club { display: flex; align-items: center; gap: 6px; color: var(--text2); font-size: var(--t-sm);
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .club img { width: 16px; height: 16px; object-fit: contain; }
@@ -90,8 +106,8 @@ const ETI: Record<string, string> = { PORTERO: 'Porteros', DEFENSA: 'Defensas', 
     .muted { color: var(--text2); } .err { color: var(--bad); }
 
     @media (max-width: 760px) {
-      .fila { grid-template-columns: 40px 1fr 56px 62px; }
-      .fila > :nth-child(3), .fila > :nth-child(4), .fila > :nth-child(6) { display: none; }
+      .fila { grid-template-columns: 40px 1fr 58px 66px; }
+      .fila > :nth-child(3), .fila > :nth-child(5) { display: none; }
     }
   `],
 })
