@@ -80,6 +80,27 @@ export class AdminService {
   }
 
   /** Tareas automáticas: horario, si están activas y cuándo corrieron. */
+  // ---- Copias de seguridad --------------------------------------------------
+  // Restaurar NO está en el panel a propósito: se hace por SQL, que obliga a
+  // pensarlo dos veces. Ver tools/sql/respaldos.sql.
+
+  async respaldos(): Promise<Respaldo[]> {
+    const { data, error } = await this.sb.client.rpc('respaldos');
+    if (error) throw error;
+    return (data ?? []) as Respaldo[];
+  }
+
+  async crearRespaldo(etiqueta: string): Promise<Respaldo> {
+    const { data, error } = await this.sb.client.rpc('respaldo_crear', { p_etiqueta: etiqueta });
+    if (error) throw error;
+    return data as Respaldo;
+  }
+
+  async borrarRespaldo(schema: string): Promise<void> {
+    const { error } = await this.sb.client.rpc('respaldo_borrar', { p_schema: schema });
+    if (error) throw error;
+  }
+
   async estadoCrons(): Promise<CronAdmin[]> {
     const { data, error } = await this.sb.client.rpc('estado_crons');
     if (error) throw error;
@@ -252,6 +273,14 @@ export class AdminService {
       pl: Number(e.puntos_local ?? 0), pv: Number(e.puntos_visitante ?? 0),
     })).sort((a, b) => a.jornada - b.jornada);
   }
+}
+
+export interface Respaldo {
+  schema: string;
+  descripcion: string;
+  tablas: number;
+  filas: number;
+  tamano: string;
 }
 
 export interface AdminTemporada { id: string; nombre: string; anio: number; activa: boolean; }

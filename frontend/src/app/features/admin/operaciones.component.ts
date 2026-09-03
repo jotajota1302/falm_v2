@@ -1,6 +1,6 @@
 import { Component, OnInit, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { AdminService, CronAdmin, JornadaAdmin } from './admin.service';
+import { AdminService, CronAdmin, JornadaAdmin, Respaldo } from './admin.service';
 
 interface Op {
   id: string;
@@ -45,6 +45,49 @@ interface Op {
             </div>
           }
         </div>
+      }
+    </section>
+
+    <section class="card">
+      <h3>Copias de seguridad</h3>
+      <p class="hint">
+        Copia las {{ tablasFalm }} tablas de la liga a un schema aparte de la base. Tarda un
+        segundo y ocupa menos de 1 MB: hazla <b>antes del draft y antes de cualquier cosa
+        que dé miedo</b>. Hay una automática cada día a las 04:15 y se guardan las 7 últimas.
+      </p>
+
+      <div class="form">
+        <label>Motivo
+          <input type="text" placeholder="antes-del-draft" maxlength="30"
+                 [ngModel]="etiqueta()" (ngModelChange)="etiqueta.set($event)" />
+        </label>
+        <button class="btn" [disabled]="respaldando()" (click)="crearRespaldo()">
+          {{ respaldando() ? 'Copiando…' : 'Crear copia ahora' }}
+        </button>
+      </div>
+
+      @if (avisoBk()) { <p class="aviso">{{ avisoBk() }}</p> }
+      @if (errorBk()) { <p class="err">{{ errorBk() }}</p> }
+
+      @if (respaldos().length === 0) {
+        <p class="hint">Todavía no hay ninguna copia.</p>
+      } @else {
+        <div class="lista">
+          @for (r of respaldos(); track r.schema) {
+            <div class="row bk">
+              <span class="nm">{{ etiquetaDe(r.schema) }}</span>
+              <span class="faint">{{ fechaDe(r.schema) }}</span>
+              <span class="faint num">{{ r.tablas }} tablas · {{ r.tamano }}</span>
+              <button class="btn-sec" [disabled]="borrando() === r.schema"
+                      (click)="borrar(r)">Borrar</button>
+            </div>
+          }
+        </div>
+        <p class="hint recuperar">
+          Para <b>recuperar</b> una copia no hay botón a propósito: se hace desde el editor SQL
+          de Supabase, que obliga a pensarlo dos veces. Está explicado en
+          <code>tools/sql/respaldos.sql</code>.
+        </p>
       }
     </section>
 
@@ -107,8 +150,16 @@ interface Op {
     .ds { font-size: var(--t-xs); }
     .aviso { padding: 9px 13px; border-radius: var(--r-sm); background: var(--surface);
       border: 1px solid var(--accent-line); font-size: var(--t-sm); margin: 0 0 10px; }
+    .row.bk { grid-template-columns: 1fr 130px 170px 84px; }
+    .form input { padding: 7px 10px; border: 1px solid var(--line); border-radius: var(--r-xs);
+      background: var(--surface); color: var(--text); font-family: var(--fb);
+      font-size: var(--t-sm); min-width: 180px; }
+    .recuperar { margin: 12px 0 0; }
+    .recuperar code { font-family: var(--fm); font-size: var(--t-xs); }
     @media (max-width: 700px) {
       .row { grid-template-columns: 1fr 1fr; }
+      .row.bk { grid-template-columns: 1fr 84px; }
+      .row.bk > :nth-child(2), .row.bk > :nth-child(3) { display: none; }
       .op { flex-direction: column; align-items: stretch; }
     }
   `],
@@ -120,6 +171,15 @@ export class AdminOperacionesComponent implements OnInit {
   corriendo = signal('');
   aviso = signal('');
   error = signal('');
+
+  // Copias de seguridad
+  readonly tablasFalm = 29;
+  respaldos = signal<Respaldo[]>([]);
+  etiqueta = signal('');
+  respaldando = signal(false);
+  borrando = signal('');
+  avisoBk = signal('');
+  errorBk = signal('');
 
   ops: Op[] = [
     { id: 'fichajes', titulo: 'Procesar fichajes', rpc: 'procesar_fichajes', porJornada: true,
@@ -140,6 +200,55 @@ export class AdminOperacionesComponent implements OnInit {
       this.crons.set(await this.admin.estadoCrons());
     } catch (e: any) {
       this.error.set(e?.message ?? 'No se pudo cargar el estado.');
+    }
+    await this.cargarRespaldos();
+  }
+
+  private async cargarRespaldos() {
+    try {
+      this.respaldos.set(await this.admin.respaldos());
+    } catch (e: any) {
+      this.errorBk.set(e?.message ?? 'No se pudieron leer las copias.');
+    }
+  }
+
+  /** bk_falm_20260903_224735_antes_del_draft -> "antes del draft" */
+  etiquetaDe(schema: string) {
+    const resto = schema.replace(/^bk_falm_\d{8}_\d{6}_?/, '').replace(/_/g, ' ');
+    return resto || 'sin motivo';
+  }
+
+  /** La fecha va dentro del nombre del schema, que es lo que ordena la lista. */
+  fechaDe(schema: string) {
+    const m = schema.match(/^bk_falm_(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})/);
+    return m ? `${m[3]}/${m[2]} ${m[4]}:${m[5]}` : '';
+  }
+
+  async crearRespaldo() {
+    this.avisoBk.set(''); this.errorBk.set('');
+    this.respaldando.set(true);
+    try {
+      const r = await this.admin.crearRespaldo(this.etiqueta().trim() || 'manual');
+      this.avisoBk.set(`Copia hecha: ${r.tablas} tablas y ${r.filas} filas (${r.tamano}).`);
+      this.etiqueta.set('');
+      await this.cargarRespaldos();
+    } catch (e: any) {
+      this.errorBk.set(e?.message ?? 'No se pudo crear la copia.');
+    } finally {
+      this.respaldando.set(false);
+    }
+  }
+
+  async borrar(r: Respaldo) {
+    this.avisoBk.set(''); this.errorBk.set('');
+    this.borrando.set(r.schema);
+    try {
+      await this.admin.borrarRespaldo(r.schema);
+      await this.cargarRespaldos();
+    } catch (e: any) {
+      this.errorBk.set(e?.message ?? 'No se pudo borrar la copia.');
+    } finally {
+      this.borrando.set('');
     }
   }
 
