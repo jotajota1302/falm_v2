@@ -26,7 +26,7 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
         @else { <span class="ph">{{ abr }}</span> }
       </div>
       <div class="foot">
-        <span class="n1">{{ corto }}</span>
+        <span class="n1">{{ campo ? nombre : corto }}</span>
         @if (stats?.length) {
           <div class="sline">@for (s of stats; track s.ico) { <span>{{ s.ico }}{{ s.n }}</span> }</div>
         }
@@ -36,7 +36,7 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
   `,
   styles: [`
     :host { container-type: inline-size; display: block; }
-    .fut { position: relative; width: 100%; aspect-ratio: 1 / 1.08; overflow: hidden; cursor: pointer;
+    .fut { position: relative; width: 100%; aspect-ratio: 1 / 1.22; overflow: hidden; cursor: pointer;
       display: flex; flex-direction: column; padding: 6cqw 6cqw 5cqw;
       background: var(--surface); border: 1px solid var(--line); border-radius: 8cqw;
       border-top: 3px solid var(--c, var(--line)); color: var(--text); }
@@ -79,7 +79,11 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     /* En una portería la cifra iba encima del escudo: le dejamos su sitio. */
     .fut.campo.solo-escudo .top { padding-top: 16%; }
     .fut.campo.solo-escudo .face.esc { max-height: 84%; }
-    .fut.campo .n1 { text-align: center; }
+    /* Dos líneas como mucho, y si una palabra no cabe se parte antes que
+       comerse el resto del nombre. */
+    .fut.campo .n1 { text-align: center; white-space: normal; overflow-wrap: anywhere;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+      line-clamp: 2; }
 
     /* En el móvil la carta es la mitad de ancha: el nombre baja un escalón. */
     @media (max-width: 620px) {
