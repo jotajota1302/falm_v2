@@ -98,17 +98,12 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
       font-family: var(--fm); font-weight: 600; font-size: var(--t-sm); }
     .jchips button.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
 
-    .tabla { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; }
-    .barra { display: flex; align-items: center; gap: 10px; padding: 13px 18px; border-bottom: 1px solid var(--line); }
+    /* La caja, la barra y las filas salen de styles.css. */
     .barra .lb { font-size: var(--t-xs); font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--text2); }
     .barra .buscar { margin-left: auto; flex: 0 1 250px; padding: 7px 13px; font-size: var(--t-sm); border-radius: var(--pill); }
 
-    .fila { width: 100%; display: grid; align-items: center; gap: 12px;
-      grid-template-columns: 28px 42px minmax(0, 1.5fr) minmax(0, 1fr) 90px 52px;
-      padding: 9px 18px; border: none; border-bottom: 1px solid var(--line);
-      background: transparent; text-align: left; font-family: var(--fb); color: var(--text); cursor: pointer; }
-    .fila:last-child { border-bottom: none; }
-    .fila:hover { background: var(--surface2); }
+    .fila { grid-template-columns: 28px 42px minmax(0, 1.5fr) minmax(0, 1fr) 90px 52px;
+      gap: 12px; padding: 9px 18px; }
     .rk { text-align: center; color: var(--text2); font-size: var(--t-sm); }
 
     .av { position: relative; width: 42px; height: 42px; border-radius: 10px; overflow: hidden;
@@ -144,9 +139,11 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
 
     @media (max-width: 900px) { .fila { grid-template-columns: 28px 42px 1fr 90px 52px; } .hechos { display: none; } }
     @media (max-width: 620px) {
-      .fila { grid-template-columns: 24px 38px 1fr 48px; padding: 9px 13px; }
+      .fila { grid-template-columns: 24px 38px 1fr 48px; gap: 10px; padding: 9px 13px; }
       .barra-p { display: none; }
-      .barra .buscar { flex: 1; }
+      .barra .buscar { flex: 1 1 100%; margin-left: 0; }
+      .av { width: 38px; height: 38px; }
+      .pts { font-size: var(--t-md); }
     }
   `],
 })

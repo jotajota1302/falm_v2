@@ -145,7 +145,12 @@ import { colorEquipo } from '../../shared/equipo-colores';
     .muted { color: var(--text2); } .err { color: var(--bad); }
 
     @media (max-width: 560px) {
-      .nm { font-size: var(--t-md); }
+      /* Dos nombres de equipo y el marcador en 393px: el nombre baja un
+         escalón y el partido respira menos por los lados. */
+      .nm { font-size: var(--t-sm); }
+      .match { padding: 13px 12px; gap: 8px; }
+      .centro { padding: 0 2px; }
+      .panel { padding: 18px 15px; }
       .dcols { grid-template-columns: 1fr; }
     }
   `],
@@ -183,12 +188,16 @@ export class JornadasComponent implements OnInit {
 
   async ngOnInit() {
     try {
-      const comps = await this.falm.competiciones();
+      const todas = await this.falm.competiciones();
       // Orden estable: Liga, Champions, Clausura
       const orden = { LIGA: 0, CHAMPIONS: 1, CLAUSURA: 2 } as Record<string, number>;
-      comps.sort((a, b) => (orden[a.tipo] ?? 9) - (orden[b.tipo] ?? 9));
-      this.competiciones.set(comps);
-      const liga = comps.find((c) => c.tipo === 'LIGA') ?? comps[0];
+      todas.sort((a, b) => (orden[a.tipo] ?? 9) - (orden[b.tipo] ?? 9));
+      // Las que aún no tienen calendario no se enseñan: hoy, solo la Liga.
+      const cal = await Promise.all(todas.map((c) => this.falm.jornadas(c.id).catch(() => [])));
+      const comps = todas.filter((c, i) => cal[i].length > 0);
+      const vistas = comps.length ? comps : todas.slice(0, 1);
+      this.competiciones.set(vistas);
+      const liga = vistas.find((c) => c.tipo === 'LIGA') ?? vistas[0];
       if (liga) { this.competicionId.set(liga.id); await this.cargarJornadas(liga.id); }
       else this.cargando.set(false);
     } catch (e: any) { this.error.set(e?.message ?? 'Error'); this.cargando.set(false); }

@@ -1,16 +1,20 @@
 import { Component, OnInit, computed, signal } from '@angular/core';
 import { Competicion, FalmService, FilaClasificacion, RondaEliminatoria } from '../../core/falm.service';
 import { colorEquipo } from '../../shared/equipo-colores';
+import { SubnavComponent, SubnavItem } from '../../shared/subnav.component';
 
 /** Clasificación de la competición elegida, con premios integrados en la tabla. */
 @Component({
   selector: 'app-clasificacion',
   standalone: true,
+  imports: [SubnavComponent],
   template: `
     <header class="phead">
       <h1>Clasificación</h1>
       <p class="sub">{{ subtitulo() }}</p>
     </header>
+
+    <falm-subnav [items]="secciones" />
 
     @if (competiciones().length > 1) {
       <div class="comps">
@@ -134,6 +138,10 @@ import { colorEquipo } from '../../shared/equipo-colores';
   `],
 })
 export class ClasificacionComponent implements OnInit {
+  secciones: SubnavItem[] = [
+    { path: '/clasificacion', label: 'Clasificación' },
+    { path: '/premios', label: 'Premios' },
+  ];
   competiciones = signal<Competicion[]>([]);
   competicionId = signal('');
   filas = signal<FilaClasificacion[]>([]);
@@ -167,8 +175,9 @@ export class ClasificacionComponent implements OnInit {
       // calendario: hasta que lo tengan, no se enseñan y aquí solo hay Liga.
       const calendarios = await Promise.all(todas.map((c) => this.falm.jornadas(c.id).catch(() => [])));
       const comps = todas.filter((c, i) => calendarios[i].length > 0);
-      this.competiciones.set(comps.length ? comps : todas.slice(0, 1));
-      const liga = comps.find((c) => c.tipo === 'LIGA') ?? comps[0];
+      const vistas = comps.length ? comps : todas.slice(0, 1);
+      this.competiciones.set(vistas);
+      const liga = vistas.find((c) => c.tipo === 'LIGA') ?? vistas[0];
       if (liga) { this.competicionId.set(liga.id); await this.cargar(liga); }
       else this.cargando.set(false);
       this.falm.rankingBeneficios().then((r) => this.ranking.set(r)).catch(() => {});

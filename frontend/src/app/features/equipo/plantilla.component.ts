@@ -89,18 +89,9 @@ const ETI: Record<string, string> = { PORTERO: 'Porteros', DEFENSA: 'Defensas', 
     .dato { display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap; }
     .kpi .det { font-size: var(--t-xs); color: var(--text2); }
 
-    /* La plantilla se lee como una clasificación: una fila por jugador. */
-    .tabla { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; }
-    .fila { width: 100%; display: grid; align-items: center; gap: 10px;
-      grid-template-columns: 46px 2fr 150px 74px 78px;
-      padding: 11px 18px; border: none; border-bottom: 1px solid var(--line);
-      background: transparent; text-align: left; font-size: var(--t-sm); color: var(--text);
-      font-family: var(--fb); cursor: pointer; }
-    .fila:last-child { border-bottom: none; }
-    .fila:not(.cab):hover { background: var(--surface2); }
-    .fila.cab { cursor: default; font-size: var(--t-xs); font-weight: 700; letter-spacing: .16em;
-      text-transform: uppercase; color: var(--text2); padding: 12px 18px; }
-    .der { text-align: right; }
+    /* La plantilla se lee como una clasificación: una fila por jugador.
+       La caja y las filas salen de styles.css; aquí solo las columnas. */
+    .fila { grid-template-columns: 46px 2fr 150px 74px 78px; }
     /* El retrato del jugador, si lo hay, junto a su nombre. */
     .quien { display: flex; align-items: center; gap: 10px; min-width: 0; }
     .av { position: relative; width: 36px; height: 36px; flex: 0 0 auto; border-radius: 9px;
@@ -128,8 +119,13 @@ const ETI: Record<string, string> = { PORTERO: 'Porteros', DEFENSA: 'Defensas', 
     .muted { color: var(--text2); } .err { color: var(--bad); }
 
     @media (max-width: 760px) {
-      .fila { grid-template-columns: 40px 1fr 58px 66px; }
+      /* Sin club ni media: quedan tres celdas, y la rejilla tiene que ser de
+         tres o los puntos no llegan al borde. */
+      .fila { grid-template-columns: 38px 1fr 54px; gap: 9px; padding: 10px 13px; }
       .fila > :nth-child(3), .fila > :nth-child(5) { display: none; }
+      /* Las caras de los porteros se comen el nombre en una pantalla estrecha. */
+      .caras { display: none; }
+      .av { width: 32px; height: 32px; }
     }
   `],
 })

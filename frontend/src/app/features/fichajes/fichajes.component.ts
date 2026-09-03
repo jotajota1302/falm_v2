@@ -45,7 +45,7 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
 
           <div class="fila cab">
             <span>Pos</span><span>Jugador</span><span>Club</span>
-            <span class="der">Pts</span><span class="der">Precio</span><span></span>
+            <span class="der">Pts</span><span></span>
           </div>
 
           @if (visibles().length === 0) {
@@ -152,10 +152,9 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
       font-family: var(--fb); font-size: var(--t-md); font-weight: 700; color: var(--text);
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .nom:hover { color: var(--accent); }
-    .club { display: flex; align-items: center; gap: 6px; color: var(--text2); font-size: var(--t-xs);
-      letter-spacing: .06em; text-transform: uppercase;
+    .club { display: flex; align-items: center; gap: 7px; color: var(--text2);
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .club img { width: 16px; height: 16px; object-fit: contain; flex: 0 0 auto; }
+    .club img { width: 18px; height: 18px; object-fit: contain; flex: 0 0 auto; }
     .pedir { background: var(--surface); border: 1px solid var(--line); color: var(--text2);
       border-radius: 8px; padding: 6px 0; cursor: pointer; font-family: var(--fb); font-weight: 700; font-size: var(--t-xs); }
     .pedir:hover { border-color: var(--accent); color: var(--accent); }
@@ -205,9 +204,12 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
     .muted { color: var(--text2); } .err { color: var(--bad); }
 
     @media (max-width: 860px) {
+      /* Lo que has pedido, primero: es a lo que se viene a esta pantalla. */
       .lado { order: -1; }
-      .fila { grid-template-columns: 42px 1fr 56px 86px; }
-      .fila > :nth-child(3), .fila > :nth-child(4) { display: none; }
+      /* Se va el club, no los puntos: quedan cuatro celdas y cuatro columnas. */
+      .fila { grid-template-columns: 38px 1fr 46px 84px; gap: 9px; padding: 9px 13px; }
+      .fila > :nth-child(3) { display: none; }
+      .nom { font-size: var(--t-sm); }
       .barra .buscar { margin-left: 0; flex: 1 1 100%; }
     }
   `],

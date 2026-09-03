@@ -2,11 +2,13 @@ import { Component, OnInit, signal } from '@angular/core';
 import { FalmService } from '../../core/falm.service';
 import { environment } from '../../../environments/environment';
 import { colorEquipo } from '../../shared/equipo-colores';
+import { SubnavComponent, SubnavItem } from '../../shared/subnav.component';
 
 /** Premios: beneficio del equipo + ranking de premios de la liga. */
 @Component({
   selector: 'app-premios',
   standalone: true,
+  imports: [SubnavComponent],
   template: `
     <header class="phead">
       <div>
@@ -14,6 +16,8 @@ import { colorEquipo } from '../../shared/equipo-colores';
         <p class="sub">Lo que llevas ganado esta temporada entre premios de jornada y de competición.</p>
       </div>
     </header>
+
+    <falm-subnav [items]="secciones" />
 
     @if (cargando()) {
       <p class="muted">Cargando…</p>
@@ -58,10 +62,17 @@ import { colorEquipo } from '../../shared/equipo-colores';
     .ben small { font-size: var(--t-xs); opacity: .75; margin-left: 1px; }
     .muted { color: var(--text2); } .err { color: var(--bad); }
 
-    @media (max-width: 480px) { .hero .big { font-size: var(--t-3xl); } }
+    @media (max-width: 620px) {
+      .hero { padding: 20px 15px; }
+      .fila { grid-template-columns: 46px 1fr 92px; gap: 9px; padding: 10px 13px; }
+    }
   `],
 })
 export class PremiosComponent implements OnInit {
+  secciones: SubnavItem[] = [
+    { path: '/clasificacion', label: 'Clasificación' },
+    { path: '/premios', label: 'Premios' },
+  ];
   miBeneficio = signal<number>(0);
   miEquipo = signal<string>(environment.devEquipoNombre || '');
   ranking = signal<{ nombre: string; beneficio: number }[]>([]);

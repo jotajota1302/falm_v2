@@ -1,6 +1,6 @@
-import { Component, Input, OnInit, signal } from '@angular/core';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { Component, Input, OnInit, computed, signal } from '@angular/core';
 import { FalmService } from '../core/falm.service';
+import { SubnavComponent, SubnavItem } from './subnav.component';
 
 /**
  * Las dos maneras de mover jugadores fuera del draft: pedirlos al mercado o
@@ -10,29 +10,15 @@ import { FalmService } from '../core/falm.service';
 @Component({
   selector: 'falm-nav-fichajes',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive],
-  template: `
-    <nav class="subnav">
-      <a routerLink="/fichajes" routerLinkActive="on">Peticiones</a>
-      <a routerLink="/intercambios" routerLinkActive="on">Intercambios
-        @if (cuenta() > 0) { <span class="dot">{{ cuenta() }}</span> }
-      </a>
-    </nav>
-  `,
-  styles: [`
-    .subnav { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
-    .subnav a { display: inline-flex; align-items: center; gap: 7px;
-      padding: 7px 16px; border: 1px solid var(--line); border-radius: var(--pill);
-      font-size: var(--t-sm); font-weight: 600; color: var(--text2); }
-    .subnav a.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
-    /* Ofertas esperando respuesta: la cifra es un dato, va en mono. */
-    .dot { font-family: var(--fm); font-size: var(--t-xs); line-height: 1;
-      padding: 3px 6px; border-radius: var(--pill);
-      background: var(--surface); color: var(--accent); }
-    .subnav a.on .dot { background: var(--accent-ink); }
-  `],
+  imports: [SubnavComponent],
+  template: `<falm-subnav [items]="items()" />`,
 })
 export class NavFichajesComponent implements OnInit {
+  items = computed<SubnavItem[]>(() => [
+    { path: '/fichajes', label: 'Peticiones' },
+    { path: '/intercambios', label: 'Intercambios', badge: this.cuenta() },
+  ]);
+
   /** Si la pantalla ya las tiene contadas, se las pasa y evita la consulta. */
   @Input() set pendientes(n: number) { this.cuenta.set(n); this.propio = true; }
   cuenta = signal(0);
