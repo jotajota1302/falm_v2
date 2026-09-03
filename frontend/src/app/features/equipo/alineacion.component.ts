@@ -133,7 +133,11 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
             }
 
             <div class="bloque otros">
-              <span class="btit">Quién está en el banquillo</span>
+              <button class="btog" (click)="verReparto.set(!verReparto())">
+                <span class="btit">Qué cubre cada uno</span>
+                <span class="chev">{{ verReparto() ? '−' : '+' }}</span>
+              </button>
+              @if (verReparto()) {
               @for (b of banca(); track b.id) {
                 <div class="bfila">
                   <span class="bnm">{{ nombreDe(b.id) }}</span>
@@ -145,6 +149,7 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
                   </div>
                   <button class="rm" (click)="fueraId(b.id)" title="Sacar del banquillo">✕</button>
                 </div>
+              }
               }
             </div>
           }
@@ -274,7 +279,7 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
       background: repeating-linear-gradient(180deg, #e3e9d8 0 52px, #dde4d0 52px 104px);
       border: 1px solid var(--line); border-radius: 14px;
       padding: 26px 14px; display: flex; flex-direction: column; gap: 6px;
-      min-height: 500px; justify-content: space-between; }
+      min-height: 660px; justify-content: space-between; }
     .lineas { position: absolute; inset: 14px; pointer-events: none; z-index: 0;
       border: 2px solid rgba(255,255,255,.8); border-radius: 4px;
       background:
@@ -330,39 +335,42 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
 
     /* Un bloque por línea: la pregunta que se hace uno es "si me falla un
        medio, ¿quién entra?", no "qué suplentes tengo". */
-    .bloque { margin-bottom: 14px; }
+    .bloque { margin-bottom: 11px; }
     .bloque:last-child { margin-bottom: 0; }
     .btit { display: block; margin-bottom: 6px; font-size: var(--t-xs); font-weight: 700;
       letter-spacing: .1em; text-transform: uppercase; color: var(--text2); }
     .bnadie { margin: 0; font-size: var(--t-sm); color: var(--bad); }
-    .bav { width: 28px; height: 28px; flex: 0 0 auto; border-radius: 50%; overflow: hidden;
+    .bav { width: 26px; height: 26px; flex: 0 0 auto; border-radius: 50%; overflow: hidden;
       background: var(--surface); border: 1px solid var(--line);
       display: flex; align-items: center; justify-content: center; }
     .bav img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
     .bini { font-size: var(--t-xs); font-weight: 700; color: var(--text2); }
     /* El último bloque es el que reparte: quién está y qué líneas cubre. */
-    .otros { padding-top: 12px; border-top: 1px solid var(--line); }
+    .otros { padding-top: 10px; border-top: 1px solid var(--line); }
+    .btog { width: 100%; display: flex; align-items: center; justify-content: space-between;
+      background: none; border: none; padding: 0 0 4px; cursor: pointer; }
+    .btog .chev { font-family: var(--fm); color: var(--text2); }
     .otros .bfila { background: transparent; border-color: transparent; padding: 5px 0; }
     .add { background: var(--surface); border: 1px solid var(--line); color: var(--text); border-radius: 11px;
       padding: 8px 13px; cursor: pointer; font-weight: 600; font-size: var(--t-sm); }
     .add:hover { border-color: var(--accent); }
     .sm { font-size: var(--t-xs); } .faint { color: var(--text2); }
-    .bfila { display: flex; align-items: center; gap: 8px; padding: 8px 10px; margin-top: 6px;
-      background: var(--surface2); border: 1px solid var(--line); border-radius: 11px; }
-    .prio { width: 22px; height: 22px; border-radius: 50%; background: var(--surface); border: 1px solid var(--line);
+    .bfila { display: flex; align-items: center; gap: 8px; padding: 5px 9px; margin-top: 5px;
+      background: var(--surface2); border: 1px solid var(--line); border-radius: 10px; }
+    .prio { width: 20px; height: 20px; border-radius: 50%; background: var(--surface); border: 1px solid var(--line);
       display: flex; align-items: center; justify-content: center; font-family: var(--fm);
       font-weight: 700; font-size: var(--t-xs); flex: 0 0 auto; }
-    .bnm { flex: 1; font-weight: 700; font-size: var(--t-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .bnm { flex: 1; font-weight: 700; font-size: var(--t-sm); min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .chips { display: flex; gap: 4px; }
     .ch { width: 28px; padding: 5px 0; border-radius: 6px; border: 1px solid var(--line); background: transparent;
       color: var(--text2); font-weight: 700; font-size: var(--t-xs); cursor: pointer; }
     .ch.on.DEF { background: var(--def); color: var(--accent-ink); border-color: var(--def); }
     .ch.on.MED { background: var(--med); color: var(--accent-ink); border-color: var(--med); }
     .ch.on.DEL { background: var(--del); color: var(--accent-ink); border-color: var(--del); }
-    .mv { width: 26px; padding: 5px 0; border: 1px solid var(--line); background: var(--surface); color: var(--text2);
+    .mv { width: 24px; padding: 3px 0; border: 1px solid var(--line); background: var(--surface); color: var(--text2);
       border-radius: 7px; cursor: pointer; font-size: var(--t-xs); }
     .mv:disabled { opacity: .3; }
-    .rm { width: 26px; padding: 5px 0; border: 1px solid var(--line); background: var(--surface); color: var(--bad);
+    .rm { width: 24px; padding: 3px 0; border: 1px solid var(--line); background: var(--surface); color: var(--bad);
       border-radius: 7px; cursor: pointer; font-size: var(--t-xs); }
 
     /* bottom sheet selector */
@@ -385,7 +393,7 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
     }
 
     @media (max-width: 620px) {
-      .pitch { padding: 14px 8px; min-height: 384px; gap: 8px; }
+      .pitch { padding: 14px 8px; min-height: 470px; gap: 8px; }
       .fila { gap: 6px; padding: 5px 2px 5px 18px; }
       .banda { width: 12px; font-size: var(--t-xs); letter-spacing: .14em; }
       .slot { width: 62px; }
@@ -443,6 +451,8 @@ export class AlineacionComponent implements OnInit {
   titulares = signal<string[]>([]);
   banca = signal<{ id: string; lineas: string[] }[]>([]);
   picker = signal<{ pos?: string; banca?: boolean; reemplazar?: string } | null>(null);
+  /** El reparto de líneas se consulta poco: va plegado. */
+  verReparto = signal(false);
   cargando = signal(true);
   guardando = signal(false);
   aviso = signal('');
