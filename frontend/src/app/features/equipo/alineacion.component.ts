@@ -60,8 +60,6 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
       @if (aviso()) { <p class="aviso">{{ aviso() }}</p> }
 
       <!-- CAMPO: huecos por formación -->
-      <div class="zona">
-       <div class="lado-campo">
       <div class="fbar">
         <div class="formas">
           @for (f of formaciones; track f) {
@@ -70,7 +68,10 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
         </div>
         <span class="cuenta" [class.ok]="titulares().length === 11">{{ titulares().length }} de 11</span>
       </div>
-      <div class="pitch">
+
+      <div class="zona">
+        <div class="lado-campo">
+          <div class="pitch">
         <span class="lineas" aria-hidden="true"></span>
         @for (pos of ['PORTERO','DEFENSA','MEDIO','DELANTERO']; track pos) {
           <div class="fila" [attr.data-linea]="abr(pos)">
@@ -100,12 +101,11 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
             }
           </div>
         }
-      </div>
+          </div>
+        </div>
 
-       </div>
-
-      <!-- BANQUILLO -->
-      <div class="banco">
+        <!-- BANQUILLO -->
+        <div class="banco">
         <div class="bh">
           <h3>Banquillo</h3>
           <button class="add" (click)="abrirBanca()">+ Añadir</button>
@@ -210,7 +210,7 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
 
     /* Formación y recuento de titulares, pegados al campo que gobiernan. */
     .fbar { display: flex; align-items: center; justify-content: center; gap: 14px;
-      flex-wrap: wrap; margin: 0 auto 12px; max-width: 760px; }
+      flex-wrap: wrap; margin: 0 auto 12px; max-width: 1120px; }
     .formas { display: flex; gap: 3px; padding: 3px; background: var(--surface2);
       border: 1px solid var(--line); border-radius: 11px; }
     .forma { font-family: var(--fb); font-size: var(--t-sm); font-weight: 700; padding: 8px 13px;
