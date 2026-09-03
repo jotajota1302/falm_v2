@@ -60,6 +60,8 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
       @if (aviso()) { <p class="aviso">{{ aviso() }}</p> }
 
       <!-- CAMPO: huecos por formación -->
+      <div class="zona">
+       <div class="lado-campo">
       <div class="fbar">
         <div class="formas">
           @for (f of formaciones; track f) {
@@ -100,6 +102,8 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
         }
       </div>
 
+       </div>
+
       <!-- BANQUILLO -->
       <div class="banco">
         <div class="bh">
@@ -121,6 +125,7 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
             <button class="rm" (click)="fueraId(b.id)">✕</button>
           </div>
         }
+      </div>
       </div>
 
       <!-- Barra de envío: lo último de la pantalla y siempre a la vista. -->
@@ -198,7 +203,7 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
        mientras editas, para no tener que subir a buscar el botón. */
     .envio { position: sticky; bottom: 0; z-index: 6;
       display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-      margin: 4px auto 0; max-width: 760px; padding: 13px 16px;
+      margin: 14px auto 0; max-width: 1120px; padding: 13px 16px;
       background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); }
     .envio .est { flex: 1; min-width: 140px; font-size: var(--t-sm); color: var(--bad); font-weight: 600; }
     .envio .est.ok { color: var(--good); }
@@ -223,6 +228,12 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
 
     /* Campo de verdad: césped segado y líneas de cal dibujadas en CSS, sin
        imagen que cargar. La portería arriba, como se ha alineado siempre. */
+    /* En pantalla ancha, el banquillo se pone al lado del campo en vez de
+       obligar a bajar para verlo. */
+    .zona { display: flex; align-items: flex-start; justify-content: center;
+      gap: 18px; max-width: 1120px; margin: 0 auto; }
+    .lado-campo { flex: 1 1 620px; min-width: 0; max-width: 760px; }
+
     .pitch { position: relative; overflow: hidden; max-width: 760px; margin: 0 auto;
       background: repeating-linear-gradient(180deg, #e3e9d8 0 52px, #dde4d0 52px 104px);
       border: 1px solid var(--line); border-radius: 14px;
@@ -275,8 +286,9 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
     .slot.vacio .lb { font-family: var(--fb); font-size: var(--t-xs); font-weight: 700;
       letter-spacing: .08em; color: var(--text); }
 
-    .banco { background: var(--surface); border: 1px solid var(--line); border-radius: 18px;
-      padding: 16px; margin: 14px auto; max-width: 760px; }
+    .banco { flex: 1 1 300px; min-width: 280px;
+      background: var(--surface); border: 1px solid var(--line); border-radius: 18px;
+      padding: 16px; margin: 0; }
     .bh { display: flex; align-items: center; justify-content: space-between; }
     .add { background: var(--surface); border: 1px solid var(--line); color: var(--text); border-radius: 11px;
       padding: 8px 13px; cursor: pointer; font-weight: 600; font-size: var(--t-sm); }
@@ -309,6 +321,12 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
     @media (min-width: 560px) { .back { align-items: center; } .sheet { border-radius: 22px; } }
 
     /* En el teléfono el campo se estrecha para que la línea no se parta en dos. */
+    /* Cuando el banquillo dejaría el campo demasiado estrecho, vuelve abajo. */
+    @media (max-width: 1000px) {
+      .zona { flex-direction: column; align-items: stretch; }
+      .lado-campo, .banco { max-width: 760px; width: 100%; margin: 0 auto; }
+    }
+
     @media (max-width: 760px) {
       .envio { bottom: calc(47px + env(safe-area-inset-bottom)); }
     }
