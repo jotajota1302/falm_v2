@@ -12,7 +12,7 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
   selector: 'falm-fut-card',
   standalone: true,
   template: `
-    <div class="fut" [class.campo]="campo" [attr.data-pos]="abr">
+    <div class="fut" [class.campo]="campo" [class.solo-escudo]="!foto && !!escudo" [attr.data-pos]="abr">
       <!-- La marca de agua solo acompaña a un retrato: en una portería el
            escudo ya es la imagen, y salían dos, uno de ellos en sombra. -->
       @if (escudo && foto) { <img class="wm" [src]="escudo" alt="" loading="lazy" /> }
@@ -76,6 +76,9 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     .fut.campo .top { justify-content: center; align-items: stretch; }
     .fut.campo .face { max-width: 88%; object-position: center bottom; }
     .fut.campo .face.esc { max-width: 58%; max-height: 74%; object-position: center; }
+    /* En una portería la cifra iba encima del escudo: le dejamos su sitio. */
+    .fut.campo.solo-escudo .top { padding-top: 16%; }
+    .fut.campo.solo-escudo .face.esc { max-height: 84%; }
     .fut.campo .n1 { text-align: center; }
 
     /* En el móvil la carta es la mitad de ancha: el nombre baja un escalón. */
