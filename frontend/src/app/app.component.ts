@@ -18,11 +18,8 @@ interface NavItem { path: string; label: string; corto: string; }
     @if (auth.isLoggedIn()) {
       <header class="topbar">
         <a class="brand" routerLink="/dashboard">
-          <span class="logo">F</span>
-          <span class="bt">
-            <span class="bn">FALM</span>
-            <span class="bs">{{ contexto() }}</span>
-          </span>
+          <span class="bn">FALM</span>
+          <span class="bs">{{ contexto() }}</span>
         </a>
 
         <nav class="nav" #navref (scroll)="medir()">
@@ -74,26 +71,25 @@ interface NavItem { path: string; label: string; corto: string; }
     <falm-ficha-jugador />
   `,
   styles: [`
+    /* Tres zonas: la navegación va centrada de verdad, no arrastrada por
+       el ancho de la mancheta ni por el de la cuenta. */
     .topbar {
       position: sticky; top: 0; z-index: 30;
-      display: flex; align-items: center; gap: 22px;
+      display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 22px;
       padding: 11px 24px;
       background: var(--surface);
       border-bottom: 1px solid var(--line);
     }
 
-    /* Mancheta de periódico: sello, cabecera y línea de contexto. */
-    .brand { display: flex; align-items: center; gap: 11px; flex: 0 0 auto; }
-    .logo { width: 34px; height: 34px; border-radius: 10px; flex: 0 0 auto;
-      background: var(--accent); color: var(--accent-ink);
-      display: flex; align-items: center; justify-content: center;
-      font-family: var(--fh); font-size: var(--t-lg); font-weight: 600; }
-    .bt { display: flex; flex-direction: column; line-height: 1.15; }
-    .bn { font-family: var(--fh); font-size: var(--t-md); font-weight: 600;
+    /* Mancheta: cabecera y línea de contexto, sin más. */
+    /* Las dos líneas se centran entre sí: FALM sobre la temporada. */
+    .brand { display: flex; flex-direction: column; align-items: center; text-align: center;
+      line-height: 1.15; justify-self: start; }
+    .bn { font-family: var(--fh); font-size: var(--t-lg); font-weight: 600;
       text-transform: uppercase; letter-spacing: -.01em; }
-    .bs { font-size: var(--t-xs); color: var(--text2); letter-spacing: .15em; text-transform: uppercase; }
+    .bs { font-size: var(--t-xs); color: var(--text2); letter-spacing: .12em; text-transform: uppercase; }
 
-    .nav { display: flex; gap: 4px; flex-wrap: wrap; }
+    .nav { display: flex; gap: 4px; flex-wrap: wrap; justify-content: center; }
     .nav a { padding: 8px 15px; border-radius: var(--pill);
       color: var(--text2); font-weight: 600; font-size: var(--t-sm);
       border: 1px solid transparent; transition: color .14s ease, background .14s ease; }
@@ -103,7 +99,7 @@ interface NavItem { path: string; label: string; corto: string; }
     .nav .masb { display: none; }
     .navf { display: none; }
 
-    .right { display: flex; align-items: center; gap: 14px; margin-left: auto; flex: 0 0 auto; }
+    .right { display: flex; align-items: center; gap: 14px; justify-self: end; }
     .temp { background: var(--surface2); border: 1px solid var(--line); color: var(--text);
       border-radius: 9px; padding: 6px 8px; font-size: var(--t-sm); font-weight: 600; max-width: 150px; }
     .yo { display: flex; align-items: center; gap: 9px; min-width: 0; }
@@ -122,15 +118,15 @@ interface NavItem { path: string; label: string; corto: string; }
 
     /* Ancho intermedio: las ocho pestañas no caben junto a la mancheta, bajan de línea. */
     @media (max-width: 1180px) and (min-width: 761px) {
-      .topbar { flex-wrap: wrap; gap: 12px 18px; }
-      .nav { order: 3; width: 100%; }
+      .topbar { grid-template-columns: 1fr auto; gap: 12px 18px; }
+      .nav { order: 3; grid-column: 1 / -1; justify-content: flex-start; }
     }
 
     /* barra inferior (móvil): la navegación vuelve al pulgar */
     @media (max-width: 760px) {
-      .topbar { padding: 9px 13px; gap: 10px; }
+      .topbar { grid-template-columns: auto 1fr; padding: 9px 13px; gap: 10px; }
       .bs { display: none; }
-      .logo { width: 30px; height: 30px; font-size: var(--t-md); }
+      .bn { font-size: var(--t-md); }
       .right { gap: 10px; }
       .team { display: none; }
       .acc { gap: 10px; padding-left: 10px; }
@@ -250,7 +246,7 @@ export class AppComponent implements AfterViewChecked {
   /** Línea de contexto bajo la marca: qué temporada se está mirando. */
   contexto = computed(() => {
     const t = this.season.actual();
-    return t ? `LaLiga · ${t.nombre}${t.activa ? '' : ' · pruebas'}` : 'Liga Fantasy';
+    return t ? `Liga ${t.nombre}${t.activa ? '' : ' · pruebas'}` : 'Liga Fantasy';
   });
 
   items: NavItem[] = [

@@ -6,7 +6,7 @@ import { AdminJugador, AdminService } from './admin.service';
 const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
 const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'MED', DELANTERO: 'DEL' };
 
-/** Admin · Gestión de jugadores del catálogo (precio, posición). */
+/** Admin · Catálogo de jugadores: edición completa de la ficha. */
 @Component({
   selector: 'app-admin-jugadores',
   standalone: true,
@@ -30,18 +30,51 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
               <span class="nm">{{ j.nombre }}</span>
               <span class="cl">{{ j.club }}</span>
             </div>
-            @if (editId() === j.activoId) {
-              <select class="ed-pos" [ngModel]="edPos()" (ngModelChange)="edPos.set($event)">
-                @for (p of pos; track p) { <option [value]="p">{{ abr(p) }}</option> }
-              </select>
-              <input class="ed-pre" type="number" step="0.5" [ngModel]="edPre()" (ngModelChange)="edPre.set($event)" />
-              <button class="bn ok" (click)="guardar(j)">✓</button>
-              <button class="bn no" (click)="editId.set('')">✕</button>
-            } @else {
+            @if (editId() !== j.activoId) {
+              @if (!j.primerEquipo) { <span class="chip">no fichable</span> }
               <span class="precio num">{{ j.precio }}</span>
               <button class="bn" (click)="editar(j)">✎</button>
             }
           </div>
+
+          @if (editId() === j.activoId) {
+            <div class="editor">
+              <label>Nombre
+                <input [ngModel]="edPila()" (ngModelChange)="edPila.set($event)" />
+              </label>
+              <label>Apellido
+                <input [ngModel]="edApe()" (ngModelChange)="edApe.set($event)" />
+              </label>
+              <label>Posición
+                <select [ngModel]="edPos()" (ngModelChange)="edPos.set($event)">
+                  @for (p of pos; track p) { <option [value]="p">{{ p }}</option> }
+                </select>
+              </label>
+              <label>Club
+                <select [ngModel]="edClub()" (ngModelChange)="edClub.set($event)">
+                  @for (c of clubes(); track c.id) { <option [value]="c.id">{{ c.nombre }}</option> }
+                </select>
+              </label>
+              <label>Dorsal
+                <input type="number" [ngModel]="edDor()" (ngModelChange)="edDor.set($event)" style="width:70px" />
+              </label>
+              <label>Precio
+                <input type="number" step="0.5" [ngModel]="edPre()" (ngModelChange)="edPre.set($event)" style="width:80px" />
+              </label>
+              <label class="check">
+                <input type="checkbox" [ngModel]="edPrim()" (ngModelChange)="edPrim.set($event)" />
+                Primer equipo (si no, no sale en mercado ni draft)
+              </label>
+              <div class="acc">
+                <button class="btn" (click)="guardar(j)">Guardar</button>
+                <button class="bn no" (click)="editId.set('')">✕</button>
+              </div>
+              <p class="nota faint">
+                El scraper sobrescribe nombre, apellido, club y dorsal en la siguiente ingesta
+                del catálogo. Posición, precio y primer equipo son nuestros y se respetan.
+              </p>
+            </div>
+          }
         }
       </div>
       @if (visibles().length > limite()) {
@@ -69,6 +102,16 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     .bn.ok { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
     .bn.no { color: var(--bad); }
     .ed-pos { width: 64px; } .ed-pre { width: 70px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; }
+    .editor { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end;
+      padding: 12px; border-bottom: 1px solid var(--line); background: var(--surface2); }
+    .editor label { display: flex; flex-direction: column; gap: 4px; font-size: var(--t-xs);
+      color: var(--text2); font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
+    .editor input, .editor select { background: var(--surface); border: 1px solid var(--line);
+      border-radius: 8px; padding: 6px 9px; font-size: var(--t-sm); }
+    .editor label.check { flex-direction: row; align-items: center; gap: 7px;
+      text-transform: none; letter-spacing: 0; font-weight: 600; }
+    .editor .acc { display: flex; gap: 7px; align-items: center; }
+    .editor .nota { flex: 1 1 100%; margin: 0; font-size: var(--t-xs); line-height: 1.4; }
     .mas { display: block; margin: 16px auto 0; background: var(--surface); border: 1px solid var(--line);
       color: var(--text); border-radius: 12px; padding: 10px 20px; cursor: pointer; font-weight: 700; }
     .muted { color: var(--text2); }
@@ -85,6 +128,12 @@ export class AdminJugadoresComponent implements OnInit {
   editId = signal('');
   edPos = signal('');
   edPre = signal(0);
+  edPila = signal('');
+  edApe = signal('');
+  edClub = signal('');
+  edDor = signal<number | null>(null);
+  edPrim = signal(true);
+  clubes = signal<{ id: string; nombre: string }[]>([]);
 
   visibles = computed(() => {
     const f = this.filtro().trim().toLowerCase();
@@ -95,12 +144,25 @@ export class AdminJugadoresComponent implements OnInit {
   abr(p: string) { return ABR[p] ?? p; }
 
   async ngOnInit() {
-    try { this.todos.set(await this.admin.jugadores()); }
+    try {
+      this.todos.set(await this.admin.jugadores());
+      this.clubes.set(await this.admin.clubes());
+    }
     catch (e: any) { this.error.set(e?.message ?? 'Error'); }
     finally { this.cargando.set(false); }
   }
 
-  editar(j: AdminJugador) { this.editId.set(j.activoId); this.edPos.set(j.posicion); this.edPre.set(j.precio); this.aviso.set(''); }
+  editar(j: AdminJugador) {
+    this.editId.set(j.activoId);
+    this.edPila.set(j.pila);
+    this.edApe.set(j.apellido);
+    this.edPos.set(j.posicion);
+    this.edClub.set(j.clubId);
+    this.edDor.set(j.dorsal);
+    this.edPre.set(j.precio);
+    this.edPrim.set(j.primerEquipo);
+    this.aviso.set('');
+  }
 
   async guardar(j: AdminJugador) {
     if (environment.devEquipoNombre) {
@@ -109,7 +171,17 @@ export class AdminJugadoresComponent implements OnInit {
       return;
     }
     try {
-      await this.admin.actualizarJugador(j.activoId, j.jugadorLfpId, this.edPre(), this.edPos());
+      await this.admin.actualizarJugador({
+        activoId: j.activoId,
+        jugadorLfpId: j.jugadorLfpId,
+        pila: this.edPila().trim(),
+        apellido: this.edApe().trim(),
+        posicion: this.edPos(),
+        clubId: this.edClub(),
+        dorsal: this.edDor() === null ? null : Number(this.edDor()),
+        primerEquipo: this.edPrim(),
+        precio: Number(this.edPre()),
+      });
       this.todos.set(await this.admin.jugadores());
       this.editId.set('');
       this.aviso.set('Jugador actualizado.');
