@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, computed, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, computed, effect, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivoLibre } from '../../core/falm.service';
 import { DraftService, MIN_PORTERIAS } from './draft.service';
@@ -166,9 +166,25 @@ export class DraftComponent implements OnInit, OnDestroy {
   limite = signal(50);
   msg = signal('');
 
-  constructor(public d: DraftService) {}
+  private eraMiTurno = false;
+  private tituloBase = document.title;
+  private parpadeo: ReturnType<typeof setInterval> | null = null;
+
+  constructor(public d: DraftService) {
+    // En una quedada estás hablando con la gente: el aviso es lo que evita el
+    // "¿me toca a mí?" cada dos minutos.
+    effect(() => {
+      const mio = this.d.esMiTurno();
+      if (mio && !this.eraMiTurno) this.avisar();
+      if (!mio && this.eraMiTurno) this.pararAviso();
+      this.eraMiTurno = mio;
+    });
+  }
 
   async ngOnInit() {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
     await this.d.cargar();
     this.d.suscribir();
     document.addEventListener('visibilitychange', this.alVolver);
@@ -176,7 +192,42 @@ export class DraftComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     document.removeEventListener('visibilitychange', this.alVolver);
+    this.pararAviso();
     this.d.desuscribir();
+  }
+
+  private avisar() {
+    try {
+      const Ctx = window.AudioContext ?? (window as any).webkitAudioContext;
+      const ctx = new Ctx();
+      const osc = ctx.createOscillator();
+      const gan = ctx.createGain();
+      osc.connect(gan);
+      gan.connect(ctx.destination);
+      osc.frequency.value = 880;
+      gan.gain.value = 0.15;
+      osc.start();
+      osc.stop(ctx.currentTime + 0.25);
+    } catch {
+      // Sin audio (permisos del navegador, móvil en silencio): no pasa nada.
+    }
+
+    if ('Notification' in window && Notification.permission === 'granted') {
+      new Notification('FALM — te toca', { body: 'Es tu turno en el draft.' });
+    }
+
+    let on = false;
+    this.parpadeo = setInterval(() => {
+      document.title = (on = !on) ? '🎯 ¡TE TOCA!' : this.tituloBase;
+    }, 1000);
+  }
+
+  private pararAviso() {
+    if (this.parpadeo) {
+      clearInterval(this.parpadeo);
+      this.parpadeo = null;
+    }
+    document.title = this.tituloBase;
   }
 
   /** Al volver a la pestaña puede haber picks que no llegaron: reconciliar. */
