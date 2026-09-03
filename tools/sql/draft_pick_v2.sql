@@ -31,7 +31,7 @@ begin
   if v_estado is null then raise exception 'Draft no encontrado'; end if;
   if v_estado not in ('CREADO','EN_CURSO') then raise exception 'El draft no está en curso'; end if;
 
-  if v_uid is not null and not falm.es_mi_equipo(p_equipo) and not falm.es_gestor() then
+  if not (falm.puede_gestionar() or falm.es_mi_equipo(p_equipo)) then
     raise exception 'No puedes fichar en nombre de otro equipo';
   end if;
 
@@ -85,7 +85,7 @@ declare
   v_estado falm.draft_estado;
   v_pick falm.draft_pick;
 begin
-  if v_uid is not null and not falm.es_gestor() then
+  if not falm.puede_gestionar() then
     raise exception 'Solo un administrador puede deshacer un pick';
   end if;
 

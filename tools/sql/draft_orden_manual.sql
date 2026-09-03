@@ -109,7 +109,7 @@ set search_path to 'public', 'falm'
 as $function$
 declare v_temporada uuid; v_rondas int; v_estado falm.draft_estado; v_picks int;
 begin
-  if auth.uid() is not null and not falm.es_gestor() then
+  if not falm.puede_gestionar() then
     raise exception 'Solo un administrador puede rehacer el orden';
   end if;
 

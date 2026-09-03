@@ -270,7 +270,7 @@ set search_path to 'public', 'falm'
 as $function$
 declare v_jor uuid; v_temp uuid;
 begin
-  if auth.uid() is not null and not falm.es_gestor() then
+  if not falm.puede_gestionar() then
     raise exception 'Solo un administrador puede editar el calendario';
   end if;
   if p_local = p_visitante then raise exception 'Un equipo no puede jugar contra sí mismo'; end if;
@@ -329,7 +329,7 @@ set search_path to 'public', 'falm'
 as $function$
 declare v_temp uuid; v_lfp uuid;
 begin
-  if auth.uid() is not null and not falm.es_gestor() then
+  if not falm.puede_gestionar() then
     raise exception 'Solo un administrador puede editar las jornadas';
   end if;
 
