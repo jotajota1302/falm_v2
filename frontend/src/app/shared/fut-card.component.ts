@@ -12,7 +12,9 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
   standalone: true,
   template: `
     <div class="fut" [class.campo]="campo" [attr.data-pos]="abr">
-      @if (escudo) { <img class="wm" [src]="escudo" alt="" loading="lazy" /> }
+      <!-- La marca de agua solo acompaña a un retrato: en una portería el
+           escudo ya es la imagen, y salían dos, uno de ellos en sombra. -->
+      @if (escudo && foto) { <img class="wm" [src]="escudo" alt="" loading="lazy" /> }
       <div class="top">
         <div class="info">
           @if (num !== null) { <span class="val">{{ num }}@if (unidad) {<small>{{ unidad }}</small>}</span> }
@@ -53,7 +55,7 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     .pos { min-width: 0; padding: 1.5cqw 4cqw; border-radius: 3cqw; font-size: 7cqw; letter-spacing: .06em; }
 
     .face { height: 100%; max-width: 62%; object-fit: contain; object-position: top right; align-self: stretch; z-index: 1; }
-    .face.esc { max-width: 50%; object-position: top; opacity: .9; }
+    .face.esc { max-width: 46%; object-position: center; opacity: 1; align-self: center; }
     .ph { font-family: var(--fb); font-weight: 700; font-size: 11cqw; color: var(--text2); margin-left: auto; }
 
     .foot { position: relative; z-index: 1; margin-top: 3cqw; }
