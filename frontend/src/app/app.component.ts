@@ -87,7 +87,9 @@ interface NavItem { path: string; label: string; corto: string; }
       line-height: 1.15; justify-self: start; }
     .bn { font-family: var(--fh); font-size: var(--t-lg); font-weight: 600;
       text-transform: uppercase; letter-spacing: -.01em; }
-    .bs { font-size: var(--t-xs); color: var(--text2); letter-spacing: .12em; text-transform: uppercase; }
+    /* Altura reservada: si la línea llega vacía, la marca no da un salto. */
+    .bs { min-height: 1.2em; font-size: var(--t-xs); color: var(--text2);
+      letter-spacing: .12em; text-transform: uppercase; }
 
     .nav { display: flex; gap: 4px; flex-wrap: wrap; justify-content: center; }
     .nav a { padding: 8px 15px; border-radius: var(--pill);
@@ -243,10 +245,12 @@ export class AppComponent implements AfterViewChecked {
     return ((p[0]?.[0] ?? '') + (p[1]?.[0] ?? '')).toUpperCase() || '?';
   }
 
-  /** Línea de contexto bajo la marca: qué temporada se está mirando. */
+  /** Línea de contexto bajo la marca: qué temporada se está mirando. Mientras
+   *  llega la consulta se usa la de la última visita, y si no hay, nada: un
+   *  texto de relleno solo sirve para que luego cambie delante del usuario. */
   contexto = computed(() => {
     const t = this.season.actual();
-    return t ? `Liga ${t.nombre}${t.activa ? '' : ' · pruebas'}` : 'Liga Fantasy';
+    return t ? `Liga ${t.nombre}${t.activa ? '' : ' · pruebas'}` : this.season.nombreCache();
   });
 
   items: NavItem[] = [

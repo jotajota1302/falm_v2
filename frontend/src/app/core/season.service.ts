@@ -9,6 +9,9 @@ export class SeasonService {
   temporadas = signal<Temporada[]>([]);
   actualId = signal<string>('');
   actual = computed(() => this.temporadas().find((t) => t.id === this.actualId()) ?? null);
+  /** Nombre de la última temporada usada, guardado para que la cabecera no
+   *  parpadee mientras llega la consulta. Vacío la primera vez. */
+  nombreCache = signal<string>(localStorage.getItem('falm_temp_nombre') ?? '');
   private inited = false;
 
   constructor(private sb: SupabaseService) {}
@@ -23,11 +26,22 @@ export class SeasonService {
     if (ts.length) {
       const saved = localStorage.getItem('falm_temp');
       const def = ts.find((t) => t.id === saved) ?? ts.find((t) => t.activa) ?? ts[0];
-      if (def) this.actualId.set(def.id);
+      if (def) { this.actualId.set(def.id); this.recordar(def); }
       this.inited = true;
     }
     return this.actualId();
   }
 
-  set(id: string) { this.actualId.set(id); localStorage.setItem('falm_temp', id); }
+  set(id: string) {
+    this.actualId.set(id);
+    localStorage.setItem('falm_temp', id);
+    const t = this.temporadas().find((x) => x.id === id);
+    if (t) this.recordar(t);
+  }
+
+  private recordar(t: Temporada) {
+    const txt = `Liga ${t.nombre}${t.activa ? '' : ' · pruebas'}`;
+    this.nombreCache.set(txt);
+    localStorage.setItem('falm_temp_nombre', txt);
+  }
 }
