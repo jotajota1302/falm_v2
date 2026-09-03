@@ -1,6 +1,6 @@
 import { Component, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from './core/auth.service';
 import { FalmService } from './core/falm.service';
 import { SeasonService } from './core/season.service';
@@ -27,11 +27,12 @@ interface NavItem { path: string; label: string; corto: string; }
 
         <nav class="nav">
           @for (item of items; track item.path) {
-            <a class="ni" [routerLink]="item.path" routerLinkActive="active" (click)="mas.set(false)">
+            <a class="ni" [routerLink]="item.path" routerLinkActive="active"
+               (pointerdown)="tocar($event)" (pointerup)="soltar($event, item.path)">
               <span class="lg">{{ item.label }}</span><span class="sm">{{ item.corto }}</span>
             </a>
           }
-          <button class="masb" [class.on]="mas()" (click)="mas.set(!mas())">Más</button>
+          <button class="masb" [class.on]="mas()" (click)="mas.set(!mas())">Cuenta</button>
         </nav>
 
         <div class="right">
@@ -55,14 +56,10 @@ interface NavItem { path: string; label: string; corto: string; }
 
       <main class="content"><router-outlet /></main>
 
-      <!-- Secciones que no caben en la barra del pulgar, más la cuenta. -->
+      <!-- La cuenta no cabe en la cabecera de móvil: vive detrás de este panel. -->
       @if (mas()) {
         <div class="masback" (click)="mas.set(false)"></div>
         <div class="maspanel">
-          @for (item of items.slice(4); track item.path) {
-            <a [routerLink]="item.path" routerLinkActive="on" (click)="mas.set(false)">{{ item.label }}</a>
-          }
-          <div class="massep"></div>
           <a routerLink="/admin" (click)="mas.set(false)">Administración</a>
           <button (click)="logout()">Salir</button>
         </div>
@@ -139,31 +136,40 @@ interface NavItem { path: string; label: string; corto: string; }
          marca y el equipo, sin mezclar navegación con cuenta. */
       .acc { display: none; }
 
-      .content { padding: 16px 14px 92px; }
+      .content { padding: 16px 14px 88px; }
 
-      /* Una sola fila: cuatro destinos y el resto detrás de "Más". Nada de
-         scroll horizontal, que hacía que el navegador cancelara el toque. */
+      /* Una fila que se desliza con el dedo. Las sombras de los lados salen
+         solas cuando queda algo por ver en esa dirección. */
       .nav {
         position: fixed; bottom: 0; left: 0; right: 0; z-index: 50;
-        display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px;
-        padding: 5px 5px calc(5px + env(safe-area-inset-bottom));
+        display: flex; flex-wrap: nowrap; gap: 2px;
+        padding: 5px 0 calc(5px + env(safe-area-inset-bottom));
         border-top: 1px solid var(--line);
-        background: var(--surface);
+        overflow-x: auto; overscroll-behavior-x: contain;
+        scroll-snap-type: x proximity; scrollbar-width: none;
+        touch-action: pan-x;
+        background:
+          linear-gradient(to right, var(--surface) 40%, transparent) left center / 26px 100% no-repeat local,
+          linear-gradient(to left, var(--surface) 40%, transparent) right center / 26px 100% no-repeat local,
+          radial-gradient(farthest-side at 0 50%, rgba(22,19,15,.16), transparent) left center / 13px 100% no-repeat scroll,
+          radial-gradient(farthest-side at 100% 50%, rgba(22,19,15,.16), transparent) right center / 13px 100% no-repeat scroll,
+          var(--surface);
       }
-      .nav .ni:nth-child(n+5) { display: none; }
-      .nav a, .nav .masb { padding: 10px 4px; text-align: center; border-radius: 8px;
+      .nav::-webkit-scrollbar { display: none; }
+      .nav a, .nav .masb { flex: 0 0 auto; min-width: 76px; scroll-snap-align: center;
+        padding: 10px 9px; text-align: center; border-radius: 8px;
         border: none; background: none; cursor: pointer; color: var(--text2);
         font-family: var(--fb); font-size: var(--t-xs); font-weight: 700;
         letter-spacing: .04em; text-transform: uppercase;
-        touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+        -webkit-tap-highlight-color: transparent; }
       .nav a:active, .nav .masb:active { background: var(--surface2); }
       .nav a.active, .nav .masb.on { background: var(--accent-soft); color: var(--accent); }
-      .nav .masb { display: block; }
+      .nav .masb { display: block; margin-right: 4px; }
       .nav .lg { display: none; } .nav .sm { display: inline; }
 
       .masback { position: fixed; inset: 0; z-index: 49; background: rgba(22,19,15,.42); }
       .maspanel { position: fixed; z-index: 51; left: 0; right: 0;
-        bottom: calc(48px + env(safe-area-inset-bottom));
+        bottom: calc(47px + env(safe-area-inset-bottom));
         display: flex; flex-direction: column;
         background: var(--surface); border-top: 1px solid var(--line);
         box-shadow: 0 -1px 0 var(--line); }
@@ -178,8 +184,21 @@ interface NavItem { path: string; label: string; corto: string; }
   `],
 })
 export class AppComponent {
-  /** Panel con las secciones que no caben en la barra inferior (solo móvil). */
+  /** Panel con las opciones de cuenta (solo móvil). */
   mas = signal(false);
+
+  // La barra inferior se desliza, y un contenedor con scroll cancela el clic
+  // en cuanto el dedo se mueve. Así que el toque lo resolvemos nosotros:
+  // si al levantar el dedo apenas se ha movido, es un toque y navegamos.
+  private px = 0;
+  private py = 0;
+  tocar(e: PointerEvent) { this.px = e.clientX; this.py = e.clientY; }
+  soltar(e: PointerEvent, path: string) {
+    if (Math.abs(e.clientX - this.px) < 12 && Math.abs(e.clientY - this.py) < 12) {
+      this.mas.set(false);
+      this.router.navigateByUrl(path);
+    }
+  }
 
   get team() {
     return environment.devEquipoNombre || localStorage.getItem('falm_equipo') ||
@@ -208,7 +227,8 @@ export class AppComponent {
     { path: '/puntuaciones', label: 'Estadísticas', corto: 'Stats' },
   ];
 
-  constructor(public auth: AuthService, public season: SeasonService, falm: FalmService) {
+  constructor(public auth: AuthService, public season: SeasonService,
+              private router: Router, falm: FalmService) {
     season.ensure();
     falm.warmup(); // despierta el dyno del backend al arrancar
   }
