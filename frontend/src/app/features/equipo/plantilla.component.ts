@@ -135,6 +135,10 @@ export class PlantillaComponent implements OnInit {
   });
 
   /** Por posición (POR, DEF, MED, DEL) y dentro por puntos, de más a menos. */
+  /** Lo que costaría hoy la plantilla entera. */
+  valorPlantilla = computed(() =>
+    +this.items().reduce((t, j) => t + Number(j.precio ?? 0), 0).toFixed(1));
+
   filas = computed(() =>
     [...this.items()].sort((a, b) =>
       (ORDEN[a.posicion] - ORDEN[b.posicion]) || (this.puntosDe(b) - this.puntosDe(a))));

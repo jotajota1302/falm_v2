@@ -189,11 +189,7 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
                 <li [class.ahora]="i === 0" [class.yo]="o.equipo_falm_id === d.miEquipoId()">
                   <span class="p num">{{ i === 0 ? '▶' : i }}</span>
                   <span class="nom">{{ nombreEquipo(o.equipo_falm_id) }}</span>
-                  @if (i === 0) {
-                    <span class="ahora-tag">elige</span>
-                  } @else {
-                    <span class="r num">R{{ o.ronda }}</span>
-                  }
+                  <span class="r num">R{{ o.ronda }}</span>
                 </li>
               }
             </ol>
@@ -295,7 +291,8 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     .fila.tomado .nom { text-decoration: line-through; font-weight: 600; }
     .fila.tomado .pos, .fila.tomado .precio { opacity: .5; }
     .nom { font-weight: 700; min-width: 0; display: flex; align-items: center; gap: 9px;
-      white-space: nowrap; overflow: hidden; }
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cola .nom, .orden .nom { display: block; text-overflow: ellipsis; }
     .ret { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; flex: 0 0 auto;
       background: var(--surface2); border: 1px solid var(--line); }
     .ret.esc { object-fit: contain; padding: 4px; background: var(--surface); }
@@ -326,7 +323,8 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
 
     .cola, .orden { list-style: none; padding: 0; margin: 9px 0 0; }
     .cola li, .orden li { display: grid; align-items: center; gap: 8px;
-      padding: 6px 0; border-bottom: 1px solid var(--line); font-size: var(--t-sm); }
+      padding: 6px 7px; border-bottom: 1px solid var(--line); font-size: var(--t-sm);
+      border-radius: var(--r-xs); }
     .cola li { grid-template-columns: 14px 34px 1fr 22px 22px; }
     .orden li { grid-template-columns: 16px 1fr 30px; }
     .cola li:last-child, .orden li:last-child { border-bottom: none; }
@@ -337,14 +335,11 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     .mv { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-xs);
       color: var(--text2); cursor: pointer; font-size: var(--t-xs); line-height: 1; padding: 3px 0; }
     .mv:hover { border-color: var(--accent); color: var(--accent); }
-    .orden li.ahora { background: var(--accent-soft); border-radius: var(--r-xs);
-      box-shadow: inset 3px 0 0 var(--accent); padding: 7px 8px;
+    .orden li.ahora { background: var(--accent-soft); box-shadow: inset 3px 0 0 var(--accent);
       border-bottom-color: transparent; }
     .orden li.ahora .nom { font-weight: 800; color: var(--accent); }
     .orden li.ahora .p { color: var(--accent); }
-    .ahora-tag { font-size: 8.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
-      color: var(--accent-ink); background: var(--accent); border-radius: var(--pill);
-      padding: 3px 8px; line-height: 1; white-space: nowrap; }
+
     .orden li.yo .nom { color: var(--accent); }
     .orden li.yo:not(.ahora) .nom { font-style: italic; }
 
