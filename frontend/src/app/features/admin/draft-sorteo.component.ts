@@ -51,19 +51,19 @@ export interface EquipoSorteo { id: string; nombre: string }
   styles: [`
     .sorteo { padding: 12px; background: var(--surface2); border: 1px solid var(--line);
               border-radius: 10px; margin-bottom: 12px; }
-    .hint { color: var(--text2); font-size: 13.5px; margin: 0 0 10px; }
-    .lb { font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em;
+    .hint { color: var(--text2); font-size: var(--t-sm); margin: 0 0 10px; }
+    .lb { font-size: var(--t-xs); text-transform: uppercase; letter-spacing: .05em;
           color: var(--text2); font-weight: 700; margin: 12px 0 6px; }
     .elegidos { list-style: none; padding: 0; margin: 0; display: flex;
                 flex-direction: column; gap: 4px; }
     .elegidos li { display: flex; gap: 10px; align-items: center; padding: 6px 10px;
                    background: var(--surface); border: 1px solid var(--line); border-radius: 8px; }
-    .elegidos .p { width: 28px; color: var(--text2); font-weight: 700; font-size: 12px; }
-    .elegidos .n { font-weight: 700; font-size: 13.5px; }
+    .elegidos .p { width: 28px; color: var(--text2); font-weight: 700; font-size: var(--t-sm); }
+    .elegidos .n { font-weight: 700; font-size: var(--t-sm); }
     .pend { display: flex; flex-wrap: wrap; gap: 6px; }
     .eq { background: var(--surface); border: 1px solid var(--line); color: var(--text);
           border-radius: 8px; padding: 8px 12px; cursor: pointer; font-weight: 700;
-          font-size: 13px; }
+          font-size: var(--t-sm); }
     .acc { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
     .btn.ghost { background: var(--surface2); color: var(--text); border: 1px solid var(--line); }
   `],

@@ -41,14 +41,14 @@ const COLORES = ['#00e676', '#38bdf8', '#fb7185', '#a3e635', '#ffc24b', '#c084fc
     .av { flex: 0 0 auto; width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center;
       justify-content: center; font-weight: 700; color: var(--accent-ink); }
     .info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-    .info strong { font-size: 15px; }
-    .meta { color: var(--text2); font-size: 12.5px; }
-    .own { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--accent); }
+    .info strong { font-size: var(--t-md); }
+    .meta { color: var(--text2); font-size: var(--t-sm); }
+    .own { font-size: var(--t-xs); font-weight: 700; text-transform: uppercase; color: var(--accent); }
     .own.sin { color: var(--text2); }
     .der { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
-    .ben { font-weight: 700; color: var(--por); } .ben small { font-size: 11px; }
+    .ben { font-weight: 700; color: var(--por); } .ben small { font-size: var(--t-xs); }
     .bn { border: 1px solid var(--line); background: var(--surface2); color: var(--text); border-radius: 8px;
-      padding: 6px 12px; cursor: pointer; font-weight: 700; font-size: 12px; }
+      padding: 6px 12px; cursor: pointer; font-weight: 700; font-size: var(--t-sm); }
   `],
 })
 export class AdminEquiposComponent implements OnInit {

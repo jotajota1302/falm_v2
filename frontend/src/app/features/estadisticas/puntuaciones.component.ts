@@ -76,7 +76,7 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
       </section>
 
       <div class="pie">
-        <span class="muted num">{{ visibles().length }} jugadores</span>
+        <span class="muted">{{ visibles().length }} jugadores</span>
         @if (visibles().length > limite()) {
           <button class="btn-sec" (click)="limite.set(limite() + 30)">Ver 30 más</button>
         }
@@ -85,23 +85,23 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
   `,
   styles: [`
     .phead { margin-bottom: 16px; }
-    .phead .sub { margin: 5px 0 0; color: var(--text2); font-size: 13.5px; }
+    .phead .sub { margin: 5px 0 0; color: var(--text2); font-size: var(--t-sm); }
 
     .modos { display: flex; gap: 8px; margin-bottom: 12px; }
     .modos button { flex: 1; background: var(--surface); border: 1px solid var(--line); color: var(--text2);
-      border-radius: 12px; padding: 10px; cursor: pointer; font-family: var(--fb); font-weight: 700; font-size: 13px; }
+      border-radius: 12px; padding: 10px; cursor: pointer; font-family: var(--fb); font-weight: 700; font-size: var(--t-sm); }
     .modos button.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
 
     .jchips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 12px; }
     .jchips button { flex: 0 0 auto; min-width: 44px; padding: 8px 10px; border: 1px solid var(--line);
       background: var(--surface); color: var(--text2); border-radius: 10px; cursor: pointer;
-      font-family: var(--fm); font-weight: 600; font-size: 12px; }
+      font-family: var(--fm); font-weight: 600; font-size: var(--t-sm); }
     .jchips button.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
 
     .tabla { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; }
     .barra { display: flex; align-items: center; gap: 10px; padding: 13px 18px; border-bottom: 1px solid var(--line); }
-    .barra .lb { font-size: 9px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--text2); }
-    .barra .buscar { margin-left: auto; flex: 0 1 250px; padding: 7px 13px; font-size: 13px; border-radius: var(--pill); }
+    .barra .lb { font-size: var(--t-xs); font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--text2); }
+    .barra .buscar { margin-left: auto; flex: 0 1 250px; padding: 7px 13px; font-size: var(--t-sm); border-radius: var(--pill); }
 
     .fila { width: 100%; display: grid; align-items: center; gap: 12px;
       grid-template-columns: 28px 42px minmax(0, 1.5fr) minmax(0, 1fr) 90px 52px;
@@ -109,23 +109,23 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
       background: transparent; text-align: left; font-family: var(--fb); color: var(--text); cursor: pointer; }
     .fila:last-child { border-bottom: none; }
     .fila:hover { background: var(--surface2); }
-    .rk { text-align: center; color: var(--text2); font-size: 12px; }
+    .rk { text-align: center; color: var(--text2); font-size: var(--t-sm); }
 
     .av { position: relative; width: 42px; height: 42px; border-radius: 10px; overflow: hidden;
       background: var(--surface2); border: 1px solid var(--line);
       display: flex; align-items: flex-end; justify-content: center; }
     .av .wm { position: absolute; width: 118%; left: 50%; top: 50%; transform: translate(-50%,-50%); opacity: .16; object-fit: contain; }
     .av .pl { position: relative; z-index: 1; height: 100%; width: 100%; object-fit: contain; }
-    .av .ini { position: relative; z-index: 1; font-family: var(--fh); font-size: 17px; padding-bottom: 6px; color: var(--text2); }
+    .av .ini { position: relative; z-index: 1; font-family: var(--fh); font-size: var(--t-lg); padding-bottom: 6px; color: var(--text2); }
 
     .who { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-    .nm { font-weight: 700; font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .meta { display: flex; align-items: center; gap: 6px; color: var(--text2); font-size: 11.5px;
+    .nm { font-weight: 700; font-size: var(--t-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .meta { display: flex; align-items: center; gap: 6px; color: var(--text2); font-size: var(--t-xs);
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .meta .pos { min-width: 30px; padding: 2px 5px; font-size: 8px; }
+    .meta .pos { min-width: 30px; padding: 2px 5px; font-size: var(--t-xs); }
 
     /* Los hechos del partido, escritos: se leen mejor que una fila de iconos. */
-    .hechos { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 11.5px; color: var(--text2); min-width: 0; }
+    .hechos { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: var(--t-xs); color: var(--text2); min-width: 0; }
     .hechos b { font-weight: 600; }
     .hechos .est { color: var(--por); }
     .hechos .amar { color: var(--por); } .hechos .roja { color: var(--bad); }
@@ -134,12 +134,12 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
     .barra-p { height: 8px; border-radius: var(--pill); background: var(--surface2); overflow: hidden; }
     .barra-p .rel { display: block; height: 100%; background: var(--accent); }
 
-    .pts { text-align: right; font-size: 19px; font-weight: 700; }
+    .pts { text-align: right; font-size: var(--t-lg); font-weight: 700; }
     .pts.neg { color: var(--bad); }
-    .vacio { padding: 22px 18px; margin: 0; font-size: 13px; }
+    .vacio { padding: 22px 18px; margin: 0; font-size: var(--t-sm); }
 
     .pie { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 14px; }
-    .pie .muted { font-size: 12px; }
+    .pie .muted { font-size: var(--t-sm); }
     .muted { color: var(--text2); } .err { color: var(--bad); }
 
     @media (max-width: 900px) { .fila { grid-template-columns: 28px 42px 1fr 90px 52px; } .hechos { display: none; } }

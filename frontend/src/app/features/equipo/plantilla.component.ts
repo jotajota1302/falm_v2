@@ -65,15 +65,15 @@ const ETI: Record<string, string> = { PORTERO: 'Porteros', DEFENSA: 'Defensas', 
   `,
   styles: [`
     .phead { margin-bottom: 18px; }
-    .phead .sub { margin: 5px 0 0; color: var(--text2); font-size: 13.5px; }
+    .phead .sub { margin: 5px 0 0; color: var(--text2); font-size: var(--t-sm); }
 
     .kpis { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
     .kpi { flex: 1 1 190px; background: var(--surface); border: 1px solid var(--line);
       border-radius: 16px; padding: 15px 17px; }
-    .kpi .lb { display: block; font-size: 9px; font-weight: 700; letter-spacing: .16em;
+    .kpi .lb { display: block; font-size: var(--t-xs); font-weight: 700; letter-spacing: .16em;
       text-transform: uppercase; color: var(--text2); }
-    .kpi .v { display: block; margin-top: 4px; font-family: var(--fh); font-size: 27px; font-weight: 600; }
-    .kpi .v small { font-size: 14px; color: var(--text2); }
+    .kpi .v { display: block; margin-top: 4px; font-family: var(--fh); font-size: var(--t-xl); font-weight: 600; }
+    .kpi .v small { font-size: var(--t-md); color: var(--text2); }
     .kpi .v.neg { color: var(--bad); }
 
     /* La plantilla se lee como una clasificación: una fila por jugador. */
@@ -81,18 +81,18 @@ const ETI: Record<string, string> = { PORTERO: 'Porteros', DEFENSA: 'Defensas', 
     .fila { width: 100%; display: grid; align-items: center; gap: 10px;
       grid-template-columns: 46px 1.7fr 108px 84px 62px 66px 78px;
       padding: 11px 18px; border: none; border-bottom: 1px solid var(--line);
-      background: transparent; text-align: left; font-size: 13px; color: var(--text);
+      background: transparent; text-align: left; font-size: var(--t-sm); color: var(--text);
       font-family: var(--fb); cursor: pointer; }
     .fila:last-child { border-bottom: none; }
     .fila:not(.cab):hover { background: var(--surface2); }
-    .fila.cab { cursor: default; font-size: 9px; font-weight: 700; letter-spacing: .16em;
+    .fila.cab { cursor: default; font-size: var(--t-xs); font-weight: 700; letter-spacing: .16em;
       text-transform: uppercase; color: var(--text2); padding: 12px 18px; }
     .der { text-align: right; }
     .nom { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .club { display: flex; align-items: center; gap: 6px; color: var(--text2); font-size: 12px;
+    .club { display: flex; align-items: center; gap: 6px; color: var(--text2); font-size: var(--t-sm);
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .club img { width: 16px; height: 16px; object-fit: contain; }
-    .estado { font-size: 11.5px; color: var(--text2); }
+    .estado { font-size: var(--t-xs); color: var(--text2); }
     .estado.virtual { color: var(--por); font-weight: 600; }
     .media { color: var(--text2); }
     .precio { color: var(--accent); font-weight: 700; }

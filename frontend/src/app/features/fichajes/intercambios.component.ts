@@ -127,21 +127,21 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     .tabs { display: flex; gap: 8px; margin-bottom: 14px; }
     .tabs button { background: var(--surface); border: 1px solid var(--line); color: var(--text2);
       border-radius: var(--pill); padding: 8px 18px; cursor: pointer;
-      font-family: var(--fb); font-weight: 600; font-size: 12.5px; }
+      font-family: var(--fb); font-weight: 600; font-size: var(--t-sm); }
     .tabs button.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
     .dot { background: var(--bad); color: #fff; border-radius: var(--pill); padding: 0 7px;
-      font-family: var(--fm); font-size: 10px; margin-left: 6px; }
+      font-family: var(--fm); font-size: var(--t-xs); margin-left: 6px; }
 
     .aviso { background: var(--accent-soft); border: 1px solid var(--accent-line); color: var(--accent);
-      padding: 11px 14px; border-radius: var(--r-sm); margin-bottom: 12px; font-size: 13px; }
+      padding: 11px 14px; border-radius: var(--r-sm); margin-bottom: 12px; font-size: var(--t-sm); }
     .err { color: var(--bad); } .muted { color: var(--text2); }
 
     .lista { display: flex; flex-direction: column; gap: 12px; }
     .oferta { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 15px 16px; }
     .ohead { display: flex; align-items: center; justify-content: space-between; gap: 10px;
       padding-bottom: 11px; border-bottom: 1px solid var(--line); margin-bottom: 13px; }
-    .dir { color: var(--text2); font-size: 12.5px; } .dir b { color: var(--text); }
-    .est { font-size: 9px; font-weight: 700; padding: 3px 10px; border-radius: var(--pill);
+    .dir { color: var(--text2); font-size: var(--t-sm); } .dir b { color: var(--text); }
+    .est { font-size: var(--t-xs); font-weight: 700; padding: 3px 10px; border-radius: var(--pill);
       text-transform: uppercase; letter-spacing: .14em; border: 1px solid var(--line); color: var(--text2); }
     .est[data-e=PENDIENTE] { color: var(--por); border-color: color-mix(in oklab, var(--por) 34%, var(--line)); }
     .est[data-e=ACEPTADA] { color: var(--good); border-color: color-mix(in oklab, var(--good) 34%, var(--line)); }
@@ -149,26 +149,26 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
 
     .cambio { display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; align-items: start; }
     .col { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-    .cl { font-size: 9px; text-transform: uppercase; letter-spacing: .16em; color: var(--text2); font-weight: 700; }
-    .swap { align-self: center; font-size: 17px; color: var(--text2); }
+    .cl { font-size: var(--t-xs); text-transform: uppercase; letter-spacing: .16em; color: var(--text2); font-weight: 700; }
+    .swap { align-self: center; font-size: var(--t-lg); color: var(--text2); }
     .mini { display: flex; align-items: center; gap: 8px; background: var(--surface2); border: 1px solid var(--line);
-      border-radius: 9px; padding: 6px 9px; font-size: 12.5px; font-weight: 600; min-width: 0; }
+      border-radius: 9px; padding: 6px 9px; font-size: var(--t-sm); font-weight: 600; min-width: 0; }
     .mini img { width: 22px; height: 22px; border-radius: 6px; object-fit: cover; flex: 0 0 auto; }
     .mini i { width: 26px; padding: 3px 0; border-radius: 5px; text-align: center; flex: 0 0 auto;
-      font-size: 8px; font-weight: 700; letter-spacing: .06em; font-style: normal;
+      font-size: var(--t-xs); font-weight: 700; letter-spacing: .06em; font-style: normal;
       color: #fff; background: var(--text2); }
     .mini[data-pos=POR] i { background: var(--por); } .mini[data-pos=DEF] i { background: var(--def); }
     .mini[data-pos=MED] i { background: var(--med); } .mini[data-pos=DEL] i { background: var(--del); }
-    .coment { margin: 13px 0 0; color: var(--text2); font-size: 12.5px; }
+    .coment { margin: 13px 0 0; color: var(--text2); font-size: var(--t-sm); }
     .acc { display: flex; gap: 8px; margin-top: 14px; }
     .bn { border: 1px solid var(--line); border-radius: 10px; padding: 9px 18px; cursor: pointer;
-      font-family: var(--fb); font-weight: 700; font-size: 12.5px; background: var(--surface); color: var(--text); }
+      font-family: var(--fb); font-weight: 700; font-size: var(--t-sm); background: var(--surface); color: var(--text); }
     .bn.ok { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
     .bn.no, .bn.cancel { color: var(--bad); }
 
     .nueva { display: flex; flex-direction: column; gap: 14px; }
     .campo { display: flex; flex-direction: column; gap: 6px; }
-    .campo span { font-size: 9px; text-transform: uppercase; letter-spacing: .16em; color: var(--text2); font-weight: 700; }
+    .campo span { font-size: var(--t-xs); text-transform: uppercase; letter-spacing: .16em; color: var(--text2); font-weight: 700; }
     .dos { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     .lado { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r);
       padding: 14px; max-height: 420px; overflow-y: auto; }
@@ -177,10 +177,10 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
       background: var(--surface); border: 1px solid var(--line); border-radius: 9px; cursor: pointer; }
     .fila:hover { background: var(--surface2); }
     .fila.sel { border-color: var(--accent); background: var(--accent-soft); }
-    .nm { flex: 1; text-align: left; font-weight: 600; font-size: 12.5px;
+    .nm { flex: 1; text-align: left; font-weight: 600; font-size: var(--t-sm);
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .tick { color: var(--accent); font-weight: 700; }
-    .coment-in { width: 100%; font-family: var(--fb); font-size: 14px; background: var(--surface);
+    .coment-in { width: 100%; font-family: var(--fb); font-size: var(--t-md); background: var(--surface);
       border: 1px solid var(--line); border-radius: var(--r-sm); padding: 11px 14px; resize: vertical; color: var(--text); }
     .enviar { align-self: flex-start; } .enviar:disabled { opacity: .45; cursor: not-allowed; }
 

@@ -53,16 +53,16 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     .aviso { background: color-mix(in oklab, var(--por) 8%, var(--surface)); border: 1px solid color-mix(in oklab, var(--por) 32%, var(--line)); color: var(--por); padding: 10px 14px; border-radius: 10px; margin-bottom: 12px; }
     .err { color: var(--bad); }
     .buscar { width: 100%; margin-bottom: 10px; }
-    .total { margin: 0 0 10px; font-size: 13px; }
+    .total { margin: 0 0 10px; font-size: var(--t-sm); }
     .tabla { overflow: hidden; }
     .fila { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-bottom: 1px solid var(--line); }
     .fila:last-child { border-bottom: none; }
-    .pos { flex: 0 0 auto; width: 34px; padding: 3px 0; text-align: center; border-radius: 6px; font-size: 10.5px; font-weight: 700; color: var(--accent-ink); }
+    .pos { flex: 0 0 auto; width: 34px; padding: 3px 0; text-align: center; border-radius: 6px; font-size: var(--t-xs); font-weight: 700; color: var(--accent-ink); }
     .pos.POR { background: var(--por); } .pos.DEF { background: var(--def); }
     .pos.MED { background: var(--med); } .pos.DEL { background: var(--del); }
     .info { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-    .nm { font-weight: 700; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .cl { color: var(--text2); font-size: 12px; }
+    .nm { font-weight: 700; font-size: var(--t-md); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cl { color: var(--text2); font-size: var(--t-sm); }
     .precio { font-weight: 700; color: var(--por); }
     .bn { border: 1px solid var(--line); background: var(--surface2); color: var(--text2); border-radius: 8px;
       width: 30px; height: 30px; cursor: pointer; font-weight: 700; }

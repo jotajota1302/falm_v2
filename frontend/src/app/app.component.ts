@@ -72,15 +72,15 @@ interface NavItem { path: string; label: string; corto: string; }
     .logo { width: 34px; height: 34px; border-radius: 10px; flex: 0 0 auto;
       background: var(--accent); color: var(--accent-ink);
       display: flex; align-items: center; justify-content: center;
-      font-family: var(--fh); font-size: 17px; font-weight: 600; }
+      font-family: var(--fh); font-size: var(--t-lg); font-weight: 600; }
     .bt { display: flex; flex-direction: column; line-height: 1.15; }
-    .bn { font-family: var(--fh); font-size: 16px; font-weight: 600;
+    .bn { font-family: var(--fh); font-size: var(--t-md); font-weight: 600;
       text-transform: uppercase; letter-spacing: -.01em; }
-    .bs { font-size: 9px; color: var(--text2); letter-spacing: .15em; text-transform: uppercase; }
+    .bs { font-size: var(--t-xs); color: var(--text2); letter-spacing: .15em; text-transform: uppercase; }
 
     .nav { display: flex; gap: 4px; flex-wrap: wrap; }
     .nav a { padding: 8px 15px; border-radius: var(--pill);
-      color: var(--text2); font-weight: 600; font-size: 13px;
+      color: var(--text2); font-weight: 600; font-size: var(--t-sm);
       border: 1px solid transparent; transition: color .14s ease, background .14s ease; }
     .nav a:hover { color: var(--text); background: var(--surface2); }
     .nav a.active { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
@@ -88,16 +88,16 @@ interface NavItem { path: string; label: string; corto: string; }
 
     .right { display: flex; align-items: center; gap: 14px; margin-left: auto; flex: 0 0 auto; }
     .temp { background: var(--surface2); border: 1px solid var(--line); color: var(--text);
-      border-radius: 9px; padding: 6px 8px; font-size: 12px; font-weight: 600; max-width: 150px; }
+      border-radius: 9px; padding: 6px 8px; font-size: var(--t-sm); font-weight: 600; max-width: 150px; }
     .yo { display: flex; align-items: center; gap: 9px; min-width: 0; }
     .ava { width: 30px; height: 30px; border-radius: 50%; flex: 0 0 auto;
       background: var(--surface2); border: 1px solid var(--line); color: var(--text2);
       display: flex; align-items: center; justify-content: center;
-      font-family: var(--fm); font-size: 11px; font-weight: 700; }
-    .team { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      font-family: var(--fm); font-size: var(--t-xs); font-weight: 700; }
+    .team { font-size: var(--t-sm); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .acc { display: flex; align-items: center; gap: 12px; padding-left: 14px; border-left: 1px solid var(--line); }
     .tlink { background: none; border: none; padding: 0; cursor: pointer;
-      font-family: var(--fb); font-size: 10px; font-weight: 700; letter-spacing: .14em;
+      font-family: var(--fb); font-size: var(--t-xs); font-weight: 700; letter-spacing: .14em;
       text-transform: uppercase; color: var(--text2); white-space: nowrap; }
     .tlink:hover { color: var(--accent); }
 
@@ -113,12 +113,12 @@ interface NavItem { path: string; label: string; corto: string; }
     @media (max-width: 760px) {
       .topbar { padding: 9px 13px; gap: 10px; }
       .bs { display: none; }
-      .logo { width: 30px; height: 30px; font-size: 15px; }
+      .logo { width: 30px; height: 30px; font-size: var(--t-md); }
       .right { gap: 10px; }
       .team { display: none; }
       .acc { gap: 10px; padding-left: 10px; }
-      .tlink { font-size: 9px; letter-spacing: .1em; }
-      .temp { max-width: 104px; font-size: 11px; padding: 5px 6px; }
+      .tlink { font-size: var(--t-xs); letter-spacing: .1em; }
+      .temp { max-width: 104px; font-size: var(--t-xs); padding: 5px 6px; }
 
       .content { padding: 16px 14px 96px; }
       .nav {
@@ -132,7 +132,7 @@ interface NavItem { path: string; label: string; corto: string; }
       }
       .nav::-webkit-scrollbar { display: none; }
       .nav a { flex: 0 0 auto; min-width: 62px; padding: 11px 8px; text-align: center; border-radius: 8px;
-        font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+        font-size: var(--t-xs); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
       .nav a.active { background: transparent; border-color: transparent;
         color: var(--accent); box-shadow: inset 0 2px 0 var(--accent); }
       .nav .lg { display: none; } .nav .sm { display: inline; }

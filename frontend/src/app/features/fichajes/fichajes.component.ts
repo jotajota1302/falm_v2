@@ -71,7 +71,7 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
           <div class="caja">
             <div class="ch">
               <h2>Mis peticiones</h2>
-              <span class="num sm">{{ p2() ? 2 : p1() ? 1 : 0 }} de 2</span>
+              <span class="sm">{{ p2() ? 2 : p1() ? 1 : 0 }} de 2</span>
             </div>
             @for (s of [1, 2]; track s) {
               @if (sel(s); as a) {
@@ -134,7 +134,7 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
       </div>
 
       <div class="pie">
-        <span class="muted num">{{ visibles().length }} libres</span>
+        <span class="muted">{{ visibles().length }} libres</span>
         @if (visibles().length > limite()) {
           <button class="btn-sec" (click)="limite.set(limite() + 30)">Ver 30 más</button>
         }
@@ -146,61 +146,61 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
     .tabla { flex: 1 1 560px; min-width: 0; }
     .lado { flex: 1 1 300px; min-width: 280px; display: flex; flex-direction: column; gap: 14px; }
 
-    .barra .buscar { margin-left: auto; flex: 0 1 220px; padding: 7px 13px; font-size: 13px; border-radius: var(--pill); }
+    .barra .buscar { margin-left: auto; flex: 0 1 220px; padding: 7px 13px; font-size: var(--t-sm); border-radius: var(--pill); }
     .fila { grid-template-columns: 46px 1.6fr 110px 56px 62px 92px; }
     /* Lo pedido se marca en el papel, para no perderlo al desplazar la lista. */
     .fila.pedido { background: var(--accent-soft); }
     .nom { background: none; border: none; padding: 0; text-align: left; cursor: pointer;
-      font-family: var(--fb); font-size: 13px; font-weight: 700; color: var(--text);
+      font-family: var(--fb); font-size: var(--t-sm); font-weight: 700; color: var(--text);
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .nom:hover { color: var(--accent); }
-    .club { display: flex; align-items: center; gap: 6px; color: var(--text2); font-size: 11.5px;
+    .club { display: flex; align-items: center; gap: 6px; color: var(--text2); font-size: var(--t-xs);
       letter-spacing: .06em; text-transform: uppercase;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .club img { width: 16px; height: 16px; object-fit: contain; flex: 0 0 auto; }
     .precio { color: var(--accent); font-weight: 700; }
     .pedir { background: var(--surface); border: 1px solid var(--line); color: var(--text2);
-      border-radius: 8px; padding: 6px 0; cursor: pointer; font-family: var(--fb); font-weight: 700; font-size: 11.5px; }
+      border-radius: 8px; padding: 6px 0; cursor: pointer; font-family: var(--fb); font-weight: 700; font-size: var(--t-xs); }
     .pedir:hover { border-color: var(--accent); color: var(--accent); }
     .pedir.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
-    .vacio { padding: 22px 18px; margin: 0; font-size: 13px; }
+    .vacio { padding: 22px 18px; margin: 0; font-size: var(--t-sm); }
 
     .caja { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 16px; }
     .ch { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px; }
-    .ch .sm { font-size: 12px; color: var(--text2); }
+    .ch .sm { font-size: var(--t-sm); color: var(--text2); }
 
     .slot { display: flex; align-items: center; gap: 10px; padding: 10px 12px; margin-bottom: 8px;
       border: 1px dashed var(--line); border-radius: 12px; }
     .slot.lleno { border-style: solid; background: var(--surface2); }
     .prio { width: 22px; height: 22px; border-radius: 50%; flex: 0 0 auto;
-      display: flex; align-items: center; justify-content: center; font-size: 11px;
+      display: flex; align-items: center; justify-content: center; font-size: var(--t-xs);
       background: var(--surface); border: 1px solid var(--line); color: var(--text2); }
     .slot.lleno .prio { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
     .sw { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-    .sn { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .smeta { font-size: 10.5px; color: var(--text2); }
-    .vacia { color: var(--text2); font-size: 12.5px; }
+    .sn { font-size: var(--t-sm); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .smeta { font-size: var(--t-xs); color: var(--text2); }
+    .vacia { color: var(--text2); font-size: var(--t-sm); }
     .rm { background: transparent; border: 1px solid var(--line); color: var(--bad);
-      width: 26px; height: 26px; border-radius: 7px; cursor: pointer; font-size: 11px; flex: 0 0 auto; }
+      width: 26px; height: 26px; border-radius: 7px; cursor: pointer; font-size: var(--t-xs); flex: 0 0 auto; }
 
     .pieCaja { display: flex; align-items: center; justify-content: space-between; gap: 12px;
       margin-top: 14px; padding-top: 13px; border-top: 1px solid var(--line); }
-    .pieCaja strong { display: block; margin-top: 2px; font-size: 17px; font-weight: 700; }
+    .pieCaja strong { display: block; margin-top: 2px; font-size: var(--t-lg); font-weight: 700; }
     .pieCaja strong.neg { color: var(--bad); }
-    .pieCaja strong small { font-size: 11px; color: var(--text2); }
+    .pieCaja strong small { font-size: var(--t-xs); color: var(--text2); }
 
     .aviso { margin: 0; background: var(--accent-soft); border: 1px solid var(--accent-line);
-      color: var(--accent); padding: 11px 14px; border-radius: var(--r-sm); font-size: 13px; }
+      color: var(--accent); padding: 11px 14px; border-radius: var(--r-sm); font-size: var(--t-sm); }
 
     .lhead { width: 100%; display: flex; align-items: center; justify-content: space-between;
       background: none; border: none; padding: 0; cursor: pointer; color: var(--text); }
-    .lhead .chev { color: var(--text2); font-family: var(--fm); font-size: 15px; }
-    .lhint { margin: 12px 0; color: var(--text2); font-size: 12.5px; }
+    .lhead .chev { color: var(--text2); font-family: var(--fm); font-size: var(--t-md); }
+    .lhint { margin: 12px 0; color: var(--text2); font-size: var(--t-sm); }
     .lrow { display: flex; align-items: center; gap: 10px; padding: 8px 10px; margin-bottom: 7px;
       background: var(--surface2); border: 1px solid var(--line); border-radius: 9px; }
-    .lrow .ln { flex: 1; font-weight: 700; font-size: 12.5px; }
-    .lurl { color: var(--accent); font-size: 11.5px; }
-    .lest { font-size: 9px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--good); }
+    .lrow .ln { flex: 1; font-weight: 700; font-size: var(--t-sm); }
+    .lurl { color: var(--accent); font-size: var(--t-xs); }
+    .lest { font-size: var(--t-xs); font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--good); }
     .lest.usado { color: var(--text2); }
     .lform { display: flex; flex-direction: column; gap: 8px; }
     .lform select, .lform input { width: 100%; }

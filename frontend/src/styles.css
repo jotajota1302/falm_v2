@@ -28,10 +28,32 @@
 
   --pitch: repeating-linear-gradient(0deg, #e6e1d4 0 46px, #dfd9ca 46px 92px);
 
-  /* ---- tipografía ---- */
+  /* ---- tipografía ----
+     Tres familias con un papel fijo cada una:
+       fh  titulares y nombres propios (condensada)
+       fb  todo el texto de interfaz
+       fm  SOLO cifras: marcadores, puntos, precios, tablas.
+           Nunca frases; una fecha o una cuenta atrás son texto.
+     ------------------------------------------------------------------ */
   --fh: 'Oswald', 'Archivo', Helvetica, sans-serif;             /* titulares */
   --fb: 'Source Sans 3', 'Archivo', Helvetica, sans-serif;      /* cuerpo / UI */
   --fm: 'IBM Plex Mono', ui-monospace, SFMono-Regular, monospace; /* cifras */
+
+  /* ---- escala: seis pasos, y ninguno por debajo de 11px ----
+     xs  rótulos en versalitas y metadatos
+     sm  celdas de tabla y texto secundario
+     md  cuerpo y botones
+     lg  cifras destacadas y subtitulares
+     xl  titulares de bloque
+     2xl h1     3xl la cifra única de una pantalla
+     ------------------------------------------------------------------ */
+  --t-xs: 11px;
+  --t-sm: 13px;
+  --t-md: 15px;
+  --t-lg: 20px;
+  --t-xl: 27px;
+  --t-2xl: 34px;
+  --t-3xl: 44px;
 
   /* ---- forma ---- */
   --r: 18px;
@@ -48,21 +70,21 @@ body {
   color: var(--text);
   background: var(--bg);
   -webkit-font-smoothing: antialiased;
-  font-size: 14px;
-  line-height: 1.45;
+  font-size: var(--t-md);
+  line-height: 1.5;
 }
 a { color: inherit; text-decoration: none; }
 
 /* Titulares condensados en versalitas: el tono de portada deportiva. */
 h1 {
-  font-family: var(--fh); font-weight: 600; font-size: 34px;
+  font-family: var(--fh); font-weight: 600; font-size: var(--t-2xl);
   text-transform: uppercase; letter-spacing: -.02em; line-height: 1.05; margin: 0;
 }
 h2 {
-  font-family: var(--fh); font-weight: 600; font-size: 15px;
+  font-family: var(--fh); font-weight: 600; font-size: var(--t-md);
   text-transform: uppercase; letter-spacing: .01em; margin: 0;
 }
-h3 { font-family: var(--fh); font-weight: 500; font-size: 13.5px; text-transform: uppercase; margin: 0; }
+h3 { font-family: var(--fh); font-weight: 500; font-size: var(--t-sm); text-transform: uppercase; margin: 0; }
 
 /* ------------------------------------------------------------------
    Piezas de página compartidas. Viven aquí para que todas las pantallas
@@ -75,11 +97,11 @@ h3 { font-family: var(--fh); font-weight: 500; font-size: 13.5px; text-transform
   display: flex; align-items: flex-end; justify-content: space-between;
   gap: 20px; flex-wrap: wrap; margin-bottom: 18px;
 }
-.phead .sub { margin: 5px 0 0; color: var(--text2); font-size: 13.5px; max-width: 68ch; }
+.phead .sub { margin: 5px 0 0; color: var(--text2); font-size: var(--t-sm); max-width: 68ch; }
 
 /* rótulo de columna o de bloque */
 .lb {
-  font-size: 9px; font-weight: 700; letter-spacing: .16em;
+  font-size: var(--t-xs); font-weight: 700; letter-spacing: .14em;
   text-transform: uppercase; color: var(--text2);
 }
 
@@ -90,15 +112,15 @@ h3 { font-family: var(--fh); font-weight: 500; font-size: 13.5px; text-transform
   border: 1px solid var(--line); border-radius: 16px; padding: 15px 17px;
 }
 .kpi .lb { display: block; }
-.kpi .v { display: block; margin-top: 4px; font-family: var(--fh); font-size: 27px; font-weight: 600; }
-.kpi .v small { font-size: 14px; color: var(--text2); }
+.kpi .v { display: block; margin-top: 4px; font-family: var(--fh); font-size: var(--t-xl); font-weight: 600; }
+.kpi .v small { font-size: var(--t-md); color: var(--text2); }
 
 /* filtros en píldora */
 .chips { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .chips button, .chip-btn {
   background: var(--surface); border: 1px solid var(--line); color: var(--text2);
   border-radius: var(--pill); padding: 6px 14px; cursor: pointer;
-  font-family: var(--fb); font-weight: 600; font-size: 12px;
+  font-family: var(--fb); font-weight: 600; font-size: var(--t-sm);
 }
 .chips button.on, .chip-btn.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
 
@@ -111,7 +133,7 @@ h3 { font-family: var(--fh); font-weight: 500; font-size: 13.5px; text-transform
 .tabla .fila {
   width: 100%; display: grid; align-items: center; gap: 10px;
   padding: 11px 18px; border: none; border-bottom: 1px solid var(--line);
-  background: transparent; text-align: left; font-size: 13px;
+  background: transparent; text-align: left; font-size: var(--t-sm);
   color: var(--text); font-family: var(--fb);
 }
 .tabla .fila:last-child { border-bottom: none; }
@@ -119,14 +141,14 @@ h3 { font-family: var(--fh); font-weight: 500; font-size: 13.5px; text-transform
 .tabla button.fila:hover { background: var(--surface2); }
 .tabla .fila.cab {
   cursor: default; padding: 12px 18px;
-  font-size: 9px; font-weight: 700; letter-spacing: .16em;
+  font-size: var(--t-xs); font-weight: 700; letter-spacing: .14em;
   text-transform: uppercase; color: var(--text2);
 }
 .der { text-align: right; }
 
 /* pie de lista: recuento a la izquierda, "ver más" a la derecha */
 .pie { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 14px; flex-wrap: wrap; }
-.pie .muted { font-size: 12px; }
+.pie .muted { font-size: var(--t-sm); }
 
 /* ---- utilidades ---- */
 .card {
@@ -147,7 +169,7 @@ h3 { font-family: var(--fh); font-weight: 500; font-size: 13.5px; text-transform
 .chip {
   display: inline-flex; align-items: center; gap: 5px;
   padding: 3px 10px; border-radius: var(--pill);
-  font-size: 11px; font-weight: 700; letter-spacing: .01em;
+  font-size: var(--t-xs); font-weight: 700; letter-spacing: .01em;
   border: 1px solid var(--line);
 }
 .chip-gold { background: color-mix(in oklab, var(--por) 14%, var(--surface)); color: var(--por); border-color: color-mix(in oklab, var(--por) 35%, var(--line)); }
@@ -158,8 +180,8 @@ h3 { font-family: var(--fh); font-weight: 500; font-size: 13.5px; text-transform
 .pos {
   display: inline-flex; align-items: center; justify-content: center;
   min-width: 34px; padding: 3px 7px; border-radius: 6px;
-  font-family: var(--fb); font-size: 9px; font-weight: 700;
-  letter-spacing: .08em; text-transform: uppercase;
+  font-family: var(--fb); font-size: var(--t-xs); font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase;
   color: #fff;
 }
 .pos.POR { background: var(--por); }
@@ -173,10 +195,10 @@ h3 { font-family: var(--fh); font-weight: 500; font-size: 13.5px; text-transform
 
 /* tabla base */
 table.falm { width: 100%; border-collapse: collapse; }
-table.falm th, table.falm td { padding: 11px 8px; text-align: center; font-size: 13px; }
+table.falm th, table.falm td { padding: 11px 8px; text-align: center; font-size: var(--t-sm); }
 table.falm thead th {
-  color: var(--text2); font-weight: 700; font-size: 9px;
-  text-transform: uppercase; letter-spacing: .16em;
+  color: var(--text2); font-weight: 700; font-size: var(--t-xs);
+  text-transform: uppercase; letter-spacing: .14em;
   border-bottom: 1px solid var(--line);
 }
 table.falm tbody tr { border-bottom: 1px solid var(--line); }
@@ -190,7 +212,7 @@ input, select {
   border-radius: var(--r-sm);
   color: var(--text);
   padding: 11px 14px;
-  font-size: 14px;
+  font-size: var(--t-md);
 }
 input::placeholder { color: var(--text2); opacity: .75; }
 input:focus, select:focus { outline: none; border-color: var(--accent); }
@@ -199,7 +221,7 @@ input:focus, select:focus { outline: none; border-color: var(--accent); }
 .btn {
   border: none; cursor: pointer; font-family: var(--fb);
   font-weight: 700; border-radius: 11px;
-  padding: 11px 22px; font-size: 13.5px;
+  padding: 11px 22px; font-size: var(--t-md);
   background: var(--accent); color: var(--accent-ink);
   transition: opacity .12s ease;
 }
@@ -209,7 +231,7 @@ input:focus, select:focus { outline: none; border-color: var(--accent); }
 /* botón secundario */
 .btn-sec {
   cursor: pointer; font-family: var(--fb); font-weight: 600;
-  border-radius: 11px; padding: 10px 15px; font-size: 13px;
+  border-radius: 11px; padding: 10px 15px; font-size: var(--t-sm);
   background: var(--surface); color: var(--text);
   border: 1px solid var(--line);
   transition: border-color .12s ease;
@@ -238,17 +260,16 @@ input:focus, select:focus { outline: none; border-color: var(--accent); }
 @media (max-width: 620px) {
   /* 16px evita que iOS haga zoom al enfocar un campo. */
   input, select, textarea { font-size: 16px; padding: 12px 14px; }
-  h1 { font-size: 27px; }
+  h1 { font-size: var(--t-xl); }
   .phead { gap: 12px; margin-bottom: 15px; }
-  .phead .sub { font-size: 13px; }
   .kpis { gap: 8px; }
   .kpi { flex: 1 1 calc(50% - 4px); padding: 12px 13px; }
-  .kpi .v { font-size: 22px; }
+  .kpi .v { font-size: var(--t-lg); }
   .tabla .fila { padding: 11px 13px; gap: 8px; }
   .tabla .fila.cab { padding: 11px 13px; }
   .tabla .barra { padding: 12px 13px; }
   /* Píldoras y botones: alto de dedo, no de ratón. */
-  .chips button, .chip-btn { padding: 9px 15px; font-size: 12.5px; }
+  .chips button, .chip-btn { padding: 9px 15px; font-size: var(--t-sm); }
   .btn { padding: 13px 22px; }
   .btn-sec { padding: 12px 16px; }
 }

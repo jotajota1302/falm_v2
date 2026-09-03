@@ -64,7 +64,7 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
       </section>
 
       <div class="pie">
-        <span class="muted num">{{ visibles().length }} libres · {{ mostrados() }} en pantalla</span>
+        <span class="muted">{{ visibles().length }} libres · {{ mostrados() }} en pantalla</span>
         @if (visibles().length > limite()) {
           <button class="btn-sec" (click)="limite.set(limite() + 30)">Ver 30 más</button>
         }
@@ -74,7 +74,7 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
   styles: [`
     .phead { display: flex; align-items: flex-end; justify-content: space-between;
       gap: 20px; flex-wrap: wrap; margin-bottom: 18px; }
-    .phead .sub { margin: 5px 0 0; color: var(--text2); font-size: 13.5px; max-width: 62ch; }
+    .phead .sub { margin: 5px 0 0; color: var(--text2); font-size: var(--t-sm); max-width: 62ch; }
     .acc { display: flex; gap: 8px; }
 
     .tabla { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; }
@@ -82,42 +82,42 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
     /* Filtros y buscador viven en la cabecera de la tabla, no sueltos sobre el papel. */
     .barra { display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
       padding: 13px 18px; border-bottom: 1px solid var(--line); }
-    .barra .lb { font-size: 9px; font-weight: 700; letter-spacing: .16em;
+    .barra .lb { font-size: var(--t-xs); font-weight: 700; letter-spacing: .16em;
       text-transform: uppercase; color: var(--text2); margin-right: 2px; }
     .barra button { background: var(--surface); border: 1px solid var(--line); color: var(--text2);
-      border-radius: var(--pill); padding: 6px 14px; cursor: pointer; font-weight: 600; font-size: 12px;
+      border-radius: var(--pill); padding: 6px 14px; cursor: pointer; font-weight: 600; font-size: var(--t-sm);
       font-family: var(--fb); }
     .barra button.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
     .barra button.pos-f.on.POR { background: var(--por); border-color: var(--por); }
     .barra button.pos-f.on.DEF { background: var(--def); border-color: var(--def); }
     .barra button.pos-f.on.MED { background: var(--med); border-color: var(--med); }
     .barra button.pos-f.on.DEL { background: var(--del); border-color: var(--del); }
-    .barra .buscar { margin-left: auto; flex: 0 1 250px; padding: 7px 13px; font-size: 13px; border-radius: var(--pill); }
+    .barra .buscar { margin-left: auto; flex: 0 1 250px; padding: 7px 13px; font-size: var(--t-sm); border-radius: var(--pill); }
 
     .fila { width: 100%; display: grid; align-items: center; gap: 10px;
       grid-template-columns: 46px 1.7fr 150px 74px 82px;
       padding: 10px 18px; border: none; border-bottom: 1px solid var(--line);
-      background: transparent; text-align: left; font-size: 13px; color: var(--text);
+      background: transparent; text-align: left; font-size: var(--t-sm); color: var(--text);
       font-family: var(--fb); cursor: pointer; }
     .fila:last-child { border-bottom: none; }
     .fila:not(.cab):hover { background: var(--surface2); }
     .fila.cab { cursor: default; padding: 11px 18px; }
-    .fila.cab > span, .ord { font-size: 9px; font-weight: 700; letter-spacing: .16em;
+    .fila.cab > span, .ord { font-size: var(--t-xs); font-weight: 700; letter-spacing: .16em;
       text-transform: uppercase; color: var(--text2); }
     .ord { background: none; border: none; padding: 0; cursor: pointer; font-family: var(--fb); }
     .ord.on { color: var(--accent); }
     .der { text-align: right; }
     .nom { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .club { display: flex; align-items: center; gap: 6px; color: var(--text2); font-size: 11.5px;
+    .club { display: flex; align-items: center; gap: 6px; color: var(--text2); font-size: var(--t-xs);
       letter-spacing: .06em; text-transform: uppercase;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .club img { width: 16px; height: 16px; object-fit: contain; flex: 0 0 auto; }
     .precio { color: var(--accent); font-weight: 700; }
-    .vacio { padding: 22px 18px; margin: 0; font-size: 13px; }
+    .vacio { padding: 22px 18px; margin: 0; font-size: var(--t-sm); }
 
     .pie { display: flex; align-items: center; justify-content: space-between;
       gap: 12px; margin-top: 14px; flex-wrap: wrap; }
-    .pie .muted { font-size: 12px; }
+    .pie .muted { font-size: var(--t-sm); }
 
     @media (max-width: 760px) {
       .fila { grid-template-columns: 40px 1fr 58px 66px; }

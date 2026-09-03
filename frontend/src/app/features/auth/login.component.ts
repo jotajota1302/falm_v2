@@ -37,17 +37,17 @@ import { AuthService } from '../../core/auth.service';
     .caja { width: 360px; max-width: 100%; padding: 32px 28px; display: flex; flex-direction: column; gap: 14px;
       background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); }
     /* Cabecera de portada: antetítulo, cabecera y entradilla. */
-    .cab { font-size: 9px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--accent); }
-    h1 { font-size: 42px; margin: -2px 0 0; }
-    .sub { margin: 0 0 8px; color: var(--text2); font-size: 13.5px; }
-    label { display: flex; flex-direction: column; gap: 6px; font-size: 9px; text-transform: uppercase;
+    .cab { font-size: var(--t-xs); font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--accent); }
+    h1 { font-size: var(--t-3xl); margin: -2px 0 0; }
+    .sub { margin: 0 0 8px; color: var(--text2); font-size: var(--t-sm); }
+    label { display: flex; flex-direction: column; gap: 6px; font-size: var(--t-xs); text-transform: uppercase;
       letter-spacing: .16em; color: var(--text2); font-weight: 700; }
     input { width: 100%; text-transform: none; letter-spacing: normal; }
     button[type=submit] { padding: 13px; border: none; border-radius: 11px; background: var(--accent);
-      color: var(--accent-ink); font-family: var(--fb); font-weight: 700; cursor: pointer; font-size: 14px; margin-top: 4px; }
+      color: var(--accent-ink); font-family: var(--fb); font-weight: 700; cursor: pointer; font-size: var(--t-md); margin-top: 4px; }
     button:disabled { opacity: .55; cursor: not-allowed; }
-    .err { color: var(--bad); font-size: 13px; margin: 0; }
-    .hint { margin: 2px 0 0; color: var(--text2); font-size: 11.5px; }
+    .err { color: var(--bad); font-size: var(--t-sm); margin: 0; }
+    .hint { margin: 2px 0 0; color: var(--text2); font-size: var(--t-xs); }
   `],
 })
 export class LoginComponent {

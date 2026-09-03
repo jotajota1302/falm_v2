@@ -52,18 +52,18 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
     .aviso { background: color-mix(in oklab, var(--por) 8%, var(--surface)); border: 1px solid color-mix(in oklab, var(--por) 32%, var(--line)); color: var(--por); padding: 10px 14px; border-radius: 10px; margin-bottom: 12px; }
     .err { color: var(--bad); }
     .barra { display: flex; gap: 10px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
-    .barra label { font-size: 13px; color: var(--text2); font-weight: 700; display: flex; gap: 6px; align-items: center; }
+    .barra label { font-size: var(--t-sm); color: var(--text2); font-weight: 700; display: flex; gap: 6px; align-items: center; }
     .buscar { flex: 1; min-width: 140px; }
     .tabla { overflow: hidden; }
     .fila { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-bottom: 1px solid var(--line); }
     .fila:last-child { border-bottom: none; }
-    .pos { flex: 0 0 auto; width: 34px; padding: 3px 0; text-align: center; border-radius: 6px; font-size: 10.5px; font-weight: 700; color: var(--accent-ink); }
+    .pos { flex: 0 0 auto; width: 34px; padding: 3px 0; text-align: center; border-radius: 6px; font-size: var(--t-xs); font-weight: 700; color: var(--accent-ink); }
     .pos.POR { background: var(--por); } .pos.DEF { background: var(--def); }
     .pos.MED { background: var(--med); } .pos.DEL { background: var(--del); }
     .info { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-    .nm { font-weight: 700; font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .cl { color: var(--text2); font-size: 12px; }
-    .st { font-size: 12px; color: var(--text2); }
+    .nm { font-weight: 700; font-size: var(--t-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cl { color: var(--text2); font-size: var(--t-sm); }
+    .st { font-size: var(--t-sm); color: var(--text2); }
     .pts { font-weight: 700; color: var(--accent); min-width: 34px; text-align: right; }
     .ed { width: 64px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; }
     .bn { border: 1px solid var(--line); background: var(--surface2); color: var(--text2); border-radius: 8px; width: 30px; height: 30px; cursor: pointer; font-weight: 700; }

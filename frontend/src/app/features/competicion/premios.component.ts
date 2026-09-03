@@ -44,10 +44,10 @@ import { colorEquipo } from '../../shared/equipo-colores';
     /* La cifra propia manda: es la única de este tamaño en toda la app. */
     .hero { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r);
       padding: 24px 20px; margin-bottom: 16px; }
-    .hero .big { display: block; margin-top: 4px; font-size: 46px; font-weight: 700;
+    .hero .big { display: block; margin-top: 4px; font-size: var(--t-3xl); font-weight: 700;
       color: var(--good); letter-spacing: -.02em; line-height: 1; }
     .hero .big.neg { color: var(--bad); }
-    .hero .big small { font-size: 20px; margin-left: 2px; }
+    .hero .big small { font-size: var(--t-lg); margin-left: 2px; }
 
     .fila { grid-template-columns: 60px 1fr 110px; }
     .fila.yo { background: var(--accent-soft); box-shadow: inset 2px 0 0 var(--accent); }
@@ -55,10 +55,10 @@ import { colorEquipo } from '../../shared/equipo-colores';
     .marca { width: 3px; height: 20px; border-radius: 2px; flex: 0 0 auto; }
     .nm { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .ben { font-weight: 700; color: var(--good); } .ben.neg { color: var(--bad); }
-    .ben small { font-size: 10px; opacity: .75; margin-left: 1px; }
+    .ben small { font-size: var(--t-xs); opacity: .75; margin-left: 1px; }
     .muted { color: var(--text2); } .err { color: var(--bad); }
 
-    @media (max-width: 480px) { .hero .big { font-size: 38px; } }
+    @media (max-width: 480px) { .hero .big { font-size: var(--t-3xl); } }
   `],
 })
 export class PremiosComponent implements OnInit {

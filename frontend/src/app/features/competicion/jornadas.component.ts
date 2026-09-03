@@ -97,7 +97,7 @@ import { colorEquipo } from '../../shared/equipo-colores';
     .jchips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 14px; }
     .jchips button { flex: 0 0 auto; min-width: 44px; padding: 8px 10px; border: 1px solid var(--line);
       background: var(--surface); color: var(--text2); border-radius: 10px; cursor: pointer;
-      font-family: var(--fm); font-weight: 600; font-size: 12px; }
+      font-family: var(--fm); font-weight: 600; font-size: var(--t-sm); }
     .jchips button.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
 
     .lista { display: flex; flex-direction: column; gap: 10px; }
@@ -108,13 +108,13 @@ import { colorEquipo } from '../../shared/equipo-colores';
     .lado { display: flex; align-items: center; gap: 10px; min-width: 0; }
     .lado.izq { justify-content: flex-end; } .lado.der { justify-content: flex-start; }
     .marca { width: 3px; height: 24px; border-radius: 2px; flex: 0 0 auto; }
-    .nm { font-family: var(--fh); font-size: 16px; font-weight: 500; text-transform: uppercase;
+    .nm { font-family: var(--fh); font-size: var(--t-md); font-weight: 500; text-transform: uppercase;
       color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .lado.gana .nm { color: var(--text); font-weight: 600; }
     .centro { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 0 8px; }
-    .marcador { font-size: 21px; font-weight: 700; white-space: nowrap; }
+    .marcador { font-size: var(--t-lg); font-weight: 700; white-space: nowrap; }
     .marcador i { color: var(--text2); margin: 0 6px; font-style: normal; }
-    .est { font-size: 9px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+    .est { font-size: var(--t-xs); font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
       color: var(--text2); white-space: nowrap; }
 
     .back { position: fixed; inset: 0; z-index: 60; background: rgba(22,19,15,.42);
@@ -124,28 +124,28 @@ import { colorEquipo } from '../../shared/equipo-colores';
       border-radius: 22px 22px 0 0; padding: 22px; }
     @media (min-width: 680px) { .back { align-items: center; } .panel { border-radius: 22px; } }
     .x { position: absolute; top: 14px; right: 14px; background: var(--surface2); border: 1px solid var(--line);
-      color: var(--text2); width: 32px; height: 32px; border-radius: 9px; cursor: pointer; font-size: 13px; z-index: 1; }
+      color: var(--text2); width: 32px; height: 32px; border-radius: 9px; cursor: pointer; font-size: var(--t-sm); z-index: 1; }
     .pad { padding: 18px 0; }
     .dmarcador { display: grid; grid-template-columns: 1fr auto 1fr; align-items: baseline; gap: 12px;
       margin-bottom: 18px; padding-right: 40px; }
-    .de { font-family: var(--fh); font-size: 15px; font-weight: 600; text-transform: uppercase; }
+    .de { font-family: var(--fh); font-size: var(--t-md); font-weight: 600; text-transform: uppercase; }
     .dmarcador .de:last-child { text-align: right; }
-    .dm { font-size: 22px; font-weight: 700; text-align: center; color: var(--accent); white-space: nowrap; }
+    .dm { font-size: var(--t-lg); font-weight: 700; text-align: center; color: var(--accent); white-space: nowrap; }
     .dcols { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .dcol { display: flex; flex-direction: column; gap: 4px; }
     .dj { display: grid; grid-template-columns: 32px 1fr auto; align-items: center; gap: 8px; padding: 6px 8px;
-      background: var(--surface); border: 1px solid var(--line); border-radius: 8px; font-size: 12px; }
+      background: var(--surface); border: 1px solid var(--line); border-radius: 8px; font-size: var(--t-sm); }
     .dj.supl { border-style: dashed; }
     .dj.nojugo { color: var(--text2); }
     .dj.nojugo .dp { color: var(--text2); }
-    .dj .pos { min-width: 30px; padding: 2px 4px; font-size: 8px; }
+    .dj .pos { min-width: 30px; padding: 2px 4px; font-size: var(--t-xs); }
     .dn { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
     .dp { font-weight: 700; color: var(--accent); } .dp.neg { color: var(--bad); }
-    .dleg { margin: 14px 0 0; font-size: 11px; color: var(--text2); }
+    .dleg { margin: 14px 0 0; font-size: var(--t-xs); color: var(--text2); }
     .muted { color: var(--text2); } .err { color: var(--bad); }
 
     @media (max-width: 560px) {
-      .nm { font-size: 13.5px; }
+      .nm { font-size: var(--t-sm); }
       .dcols { grid-template-columns: 1fr; }
     }
   `],

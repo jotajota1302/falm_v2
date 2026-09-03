@@ -84,20 +84,20 @@ import { colorEquipo } from '../../shared/equipo-colores';
   `,
   styles: [`
     .phead { margin-bottom: 18px; }
-    .phead .sub { margin: 5px 0 0; color: var(--text2); font-size: 13.5px; }
+    .phead .sub { margin: 5px 0 0; color: var(--text2); font-size: var(--t-sm); }
 
     .comps { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
     .comps button { background: var(--surface); border: 1px solid var(--line); color: var(--text2);
       border-radius: var(--pill); padding: 7px 16px; cursor: pointer; font-family: var(--fb);
-      font-weight: 600; font-size: 12.5px; }
+      font-weight: 600; font-size: var(--t-sm); }
     .comps button.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
 
     .tabla { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; }
     .fila { display: grid; align-items: center; gap: 10px;
       grid-template-columns: 52px 1.9fr 46px 46px 46px 74px 84px 96px;
-      padding: 11px 18px; border-bottom: 1px solid var(--line); font-size: 13.5px; }
+      padding: 11px 18px; border-bottom: 1px solid var(--line); font-size: var(--t-sm); }
     .fila:last-child { border-bottom: none; }
-    .fila.cab { font-size: 9px; font-weight: 700; letter-spacing: .16em;
+    .fila.cab { font-size: var(--t-xs); font-weight: 700; letter-spacing: .16em;
       text-transform: uppercase; color: var(--text2); padding: 12px 18px; }
     /* Los tres primeros cobran el premio: el papel se tiñe, sin medallas. */
     .fila.podio { background: var(--accent-soft); }
@@ -109,20 +109,20 @@ import { colorEquipo } from '../../shared/equipo-colores';
     .pts { font-weight: 700; }
     .ben { font-weight: 700; color: var(--good); }
     .ben.neg { color: var(--bad); }
-    .ben small { font-size: 10px; opacity: .75; margin-left: 1px; }
-    .nota { margin: 12px 2px 0; font-size: 11.5px; color: var(--text2); }
+    .ben small { font-size: var(--t-xs); opacity: .75; margin-left: 1px; }
+    .nota { margin: 12px 2px 0; font-size: var(--t-xs); color: var(--text2); }
 
     .bracket { display: flex; flex-direction: column; gap: 20px; }
     .ronda { display: flex; flex-direction: column; gap: 10px; }
     .ronda h2 { color: var(--accent); }
     .llave { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 13px 15px; }
     .eq { display: flex; align-items: center; gap: 10px; padding: 5px 0; color: var(--text2); }
-    .eq .nm { flex: 1; font-size: 13.5px; }
-    .eq .ag { font-size: 17px; font-weight: 700; }
+    .eq .nm { flex: 1; font-size: var(--t-sm); }
+    .eq .ag { font-size: var(--t-lg); font-weight: 700; }
     .eq.gana { color: var(--text); }
     .eq.gana .ag { color: var(--accent); }
     .legs { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 9px; padding-top: 9px; border-top: 1px solid var(--line); }
-    .leg { font-size: 11.5px; color: var(--text2); }
+    .leg { font-size: var(--t-xs); color: var(--text2); }
     .muted { color: var(--text2); } .err { color: var(--bad); }
 
     @media (max-width: 720px) {

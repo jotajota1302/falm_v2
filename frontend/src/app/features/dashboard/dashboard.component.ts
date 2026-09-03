@@ -38,7 +38,7 @@ import { Agenda, AgendaItem, FalmService } from '../../core/falm.service';
         <section class="next">
           <div class="nh">
             <span class="jlbl">Jornada {{ pr.numero }} · {{ etiqueta(pr.comp) }}</span>
-            <span class="fecha num">{{ fechaLarga(pr.fecha) }}</span>
+            <span class="fecha">{{ fechaLarga(pr.fecha) }}</span>
           </div>
           <div class="match">
             <span class="tn">{{ nombre() }}</span>
@@ -69,7 +69,7 @@ import { Agenda, AgendaItem, FalmService } from '../../core/falm.service';
       <section class="accion">
         <div class="cd2">
           <span class="lb">Cierre de fichajes</span>
-          <strong class="num">{{ cuenta() }}</strong>
+          <strong>{{ cuenta() }}</strong>
         </div>
         <a class="btn-sec" routerLink="/fichajes">Pedir fichaje</a>
       </section>
@@ -78,13 +78,13 @@ import { Agenda, AgendaItem, FalmService } from '../../core/falm.service';
   styles: [`
     .phead { display: flex; align-items: flex-end; justify-content: space-between;
       gap: 20px; flex-wrap: wrap; margin-bottom: 18px; }
-    .phead .sub { margin: 5px 0 0; color: var(--text2); font-size: 13.5px; }
+    .phead .sub { margin: 5px 0 0; color: var(--text2); font-size: var(--t-sm); }
 
     .live { display: flex; align-items: center; gap: 12px; padding: 13px 17px; margin-bottom: 14px;
       background: var(--accent-soft); border: 1px solid var(--accent-line); border-radius: var(--r-sm); }
     .live .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--accent); flex: 0 0 auto; }
-    .live .lt { flex: 1; } .live strong { display: block; color: var(--accent); font-size: 13.5px; }
-    .live p { margin: 2px 0 0; font-size: 12.5px; color: var(--text2); }
+    .live .lt { flex: 1; } .live strong { display: block; color: var(--accent); font-size: var(--t-sm); }
+    .live p { margin: 2px 0 0; font-size: var(--t-sm); color: var(--text2); }
 
     /* El duelo de la semana es la portada: se lee de lejos. */
     .next { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r);
@@ -92,37 +92,37 @@ import { Agenda, AgendaItem, FalmService } from '../../core/falm.service';
     .next.vacio { padding: 26px; text-align: center; }
     .nh { display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
       padding-bottom: 14px; border-bottom: 1px solid var(--line); margin-bottom: 20px; }
-    .jlbl { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .16em; color: var(--accent); }
-    .fecha { font-size: 12px; color: var(--text2); text-transform: capitalize; }
+    .jlbl { font-size: var(--t-xs); font-weight: 700; text-transform: uppercase; letter-spacing: .16em; color: var(--accent); }
+    .fecha { font-size: var(--t-sm); color: var(--text2); text-transform: capitalize; }
     .match { display: flex; align-items: center; justify-content: center; gap: 16px; }
-    .match .tn { flex: 1; min-width: 0; text-align: center; font-family: var(--fh); font-size: 22px;
+    .match .tn { flex: 1; min-width: 0; text-align: center; font-family: var(--fh); font-size: var(--t-lg);
       font-weight: 600; text-transform: uppercase; letter-spacing: -.01em;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .match .vs { flex: 0 0 auto; font-size: 11px; font-weight: 700; text-transform: uppercase;
+    .match .vs { flex: 0 0 auto; font-size: var(--t-xs); font-weight: 700; text-transform: uppercase;
       letter-spacing: .1em; color: var(--text2); padding: 4px 10px;
       border: 1px solid var(--line); border-radius: var(--pill); }
-    .cd { text-align: center; color: var(--text2); font-size: 12.5px; margin: 16px 0 18px; }
+    .cd { text-align: center; color: var(--text2); font-size: var(--t-sm); margin: 16px 0 18px; }
     .btn { display: block; text-align: center; }
 
     .actual { display: block; background: var(--surface); border: 1px solid var(--line);
       border-radius: var(--r); padding: 15px 17px; margin-bottom: 14px; }
     .actual .ah { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-    .actual .al { font-size: 9px; text-transform: uppercase; letter-spacing: .16em; color: var(--text2); font-weight: 700; }
-    .actual .go { color: var(--accent); font-size: 12px; font-weight: 600; }
+    .actual .al { font-size: var(--t-xs); text-transform: uppercase; letter-spacing: .16em; color: var(--text2); font-weight: 700; }
+    .actual .go { color: var(--accent); font-size: var(--t-sm); font-weight: 600; }
     .actual .amatch { display: flex; align-items: center; justify-content: center; gap: 12px; }
-    .actual .t { flex: 1; text-align: center; font-weight: 600; font-size: 13.5px; color: var(--text2);
+    .actual .t { flex: 1; text-align: center; font-weight: 600; font-size: var(--t-sm); color: var(--text2);
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .actual .t.win { color: var(--text); font-weight: 700; }
-    .actual .sc { flex: 0 0 auto; font-size: 21px; font-weight: 700; color: var(--accent); }
+    .actual .sc { flex: 0 0 auto; font-size: var(--t-lg); font-weight: 700; color: var(--accent); }
     .actual .sc i { color: var(--text2); font-style: normal; margin: 0 5px; }
 
     .accion { display: flex; align-items: center; gap: 14px; padding: 14px 17px;
       background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--por);
       border-radius: var(--r-sm); }
     .accion .cd2 { flex: 1; }
-    .accion .lb { display: block; font-size: 9px; font-weight: 700; letter-spacing: .16em;
+    .accion .lb { display: block; font-size: var(--t-xs); font-weight: 700; letter-spacing: .16em;
       text-transform: uppercase; color: var(--text2); }
-    .accion strong { display: block; margin-top: 2px; font-size: 16px; }
+    .accion strong { display: block; margin-top: 2px; font-size: var(--t-md); }
     .muted { color: var(--text2); }
   `],
 })

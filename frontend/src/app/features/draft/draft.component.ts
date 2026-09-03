@@ -159,12 +159,12 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
              flex-wrap: wrap; padding: 12px 14px; background: var(--surface);
              border: 1px solid var(--line); border-radius: var(--r-sm); margin-bottom: 12px; }
     .turno.mio { border-color: var(--accent); background: var(--accent-soft); }
-    .turno strong { font-family: var(--fh); font-size: 17px; font-weight: 600; text-transform: uppercase; }
-    .turno .faint, .cupo { font-size: 12px; color: var(--text2); }
+    .turno strong { font-family: var(--fh); font-size: var(--t-lg); font-weight: 600; text-transform: uppercase; }
+    .turno .faint, .cupo { font-size: var(--t-sm); color: var(--text2); }
     .cupo { margin-left: auto; }
 
     .aviso { padding: 11px 14px; border-radius: var(--r-sm); background: var(--surface);
-             border: 1px solid var(--accent-line); color: var(--text); margin-bottom: 10px; font-size: 13px; }
+             border: 1px solid var(--accent-line); color: var(--text); margin-bottom: 10px; font-size: var(--t-sm); }
     .aviso.err { border-color: var(--bad); color: var(--bad); cursor: pointer; }
 
     .cols { display: grid; grid-template-columns: 1fr 300px; gap: 16px; align-items: start; }
@@ -173,26 +173,26 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     .filtros { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 12px; }
     .filtros button { background: var(--surface); border: 1px solid var(--line); color: var(--text2);
       border-radius: var(--pill); padding: 6px 14px; cursor: pointer;
-      font-family: var(--fb); font-weight: 600; font-size: 12px; }
+      font-family: var(--fb); font-weight: 600; font-size: var(--t-sm); }
     .filtros button.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
 
     .lista { list-style: none; padding: 0; margin: 0; }
     .lista li { display: flex; gap: 10px; align-items: center; padding: 9px 4px;
-                border-bottom: 1px solid var(--line); font-size: 13px; }
+                border-bottom: 1px solid var(--line); font-size: var(--t-sm); }
     .lista li:last-child { border-bottom: none; }
     .lista li.tomado { color: var(--text2); }
     .lista .nom { flex: 1; font-weight: 700; min-width: 0;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .lista li.tomado .nom { font-weight: 600; text-decoration: line-through; }
     .lista .pos { flex: 0 0 auto; }
-    .lista .club { flex: 0 0 auto; font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; }
-    .lista .por { flex: 0 0 auto; font-size: 11.5px; }
-    .estrella { background: none; border: 0; cursor: pointer; font-size: 15px; padding: 0 2px; color: var(--por); }
-    .lista .btn { padding: 7px 14px; font-size: 12.5px; }
+    .lista .club { flex: 0 0 auto; font-size: var(--t-xs); letter-spacing: .06em; text-transform: uppercase; }
+    .lista .por { flex: 0 0 auto; font-size: var(--t-xs); }
+    .estrella { background: none; border: 0; cursor: pointer; font-size: var(--t-md); padding: 0 2px; color: var(--por); }
+    .lista .btn { padding: 7px 14px; font-size: var(--t-sm); }
 
     .cola, .orden { list-style: none; padding: 0; margin: 0 0 16px; }
     .cola li, .orden li { display: flex; gap: 7px; align-items: center; padding: 7px 4px;
-                          border-bottom: 1px solid var(--line); font-size: 12.5px; }
+                          border-bottom: 1px solid var(--line); font-size: var(--t-sm); }
     .cola li:last-child, .orden li:last-child { border-bottom: none; }
     .cola li.tomado { color: var(--text2); text-decoration: line-through; }
     .cola .nom { flex: 1; font-weight: 600; min-width: 0;
@@ -202,10 +202,10 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     .orden li.ahora { font-weight: 700; box-shadow: inset 2px 0 0 var(--accent); padding-left: 8px; }
     .orden li.yo { color: var(--accent); }
     .prepick { display: flex; gap: 7px; align-items: center; margin-bottom: 10px;
-               font-size: 12.5px; color: var(--text2); }
+               font-size: var(--t-sm); color: var(--text2); }
     .mas { margin-top: 12px; background: var(--surface); border: 1px solid var(--line);
       color: var(--text); border-radius: 11px; padding: 10px 18px; cursor: pointer;
-      font-family: var(--fb); font-weight: 600; font-size: 13px; }
+      font-family: var(--fb); font-weight: 600; font-size: var(--t-sm); }
     h3 { margin: 0 0 9px; }
     .faint { color: var(--text2); } .muted { color: var(--text2); }
 

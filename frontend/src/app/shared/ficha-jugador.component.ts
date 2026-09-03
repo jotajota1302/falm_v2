@@ -75,7 +75,7 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
     .panel[data-pos=MED] { --c: var(--med); } .panel[data-pos=DEL] { --c: var(--del); }
 
     .x { position: absolute; top: 14px; right: 14px; background: var(--surface2); border: 1px solid var(--line);
-      color: var(--text2); width: 32px; height: 32px; border-radius: 9px; cursor: pointer; font-size: 13px; }
+      color: var(--text2); width: 32px; height: 32px; border-radius: 9px; cursor: pointer; font-size: var(--t-sm); }
 
     .head { display: flex; gap: 16px; align-items: center; margin-bottom: 18px; }
     .av { position: relative; width: 84px; height: 84px; border-radius: 16px; overflow: hidden; flex: 0 0 auto;
@@ -83,24 +83,24 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
       display: flex; align-items: flex-end; justify-content: center; }
     .av .wm { position: absolute; width: 124%; left: 50%; top: 50%; transform: translate(-50%,-50%); opacity: .16; object-fit: contain; }
     .av .pl { position: relative; z-index: 1; width: 100%; height: 100%; object-fit: contain; object-position: bottom; }
-    .av .ini { position: relative; z-index: 1; font-family: var(--fh); font-size: 34px; padding-bottom: 6px; color: var(--text2); }
-    .meta h2 { margin: 5px 0; font-size: 24px; letter-spacing: -.01em; }
-    .eq { display: flex; align-items: center; gap: 6px; color: var(--text2); font-size: 12px;
+    .av .ini { position: relative; z-index: 1; font-family: var(--fh); font-size: var(--t-2xl); padding-bottom: 6px; color: var(--text2); }
+    .meta h2 { margin: 5px 0; font-size: var(--t-xl); letter-spacing: -.01em; }
+    .eq { display: flex; align-items: center; gap: 6px; color: var(--text2); font-size: var(--t-sm);
       letter-spacing: .06em; text-transform: uppercase; }
     .esc { width: 18px; height: 18px; object-fit: contain; }
 
     .acum { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; margin-bottom: 20px;
       background: var(--line); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
     .acum .s { background: var(--surface); padding: 12px 10px; text-align: center; }
-    .acum .s b { display: block; font-family: var(--fm); font-size: 21px; font-weight: 700; }
-    .acum .s span { font-size: 9px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--text2); }
+    .acum .s b { display: block; font-family: var(--fm); font-size: var(--t-lg); font-weight: 700; }
+    .acum .s span { font-size: var(--t-xs); font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--text2); }
 
-    h3 { margin: 0 0 12px; color: var(--text2); letter-spacing: .16em; font-size: 9px; font-weight: 700; }
+    h3 { margin: 0 0 12px; color: var(--text2); letter-spacing: .16em; font-size: var(--t-xs); font-weight: 700; }
     .chart { display: flex; align-items: flex-end; gap: 5px; height: 118px; overflow-x: auto; padding-bottom: 4px; }
     .bar { flex: 0 0 17px; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 4px; }
     .fill { width: 100%; min-height: 2px; background: var(--accent); border-radius: 4px 4px 0 0; }
     .fill.neg { background: var(--bad); }
-    .jl { font-size: 9px; color: var(--text2); font-weight: 600; }
+    .jl { font-size: var(--t-xs); color: var(--text2); font-weight: 600; }
     .muted { color: var(--text2); }
   `],
 })

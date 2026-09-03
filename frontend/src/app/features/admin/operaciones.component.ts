@@ -31,15 +31,15 @@ interface Op { id: string; titulo: string; desc: string; rpc: string; cron?: str
     </div>
   `,
   styles: [`
-    .intro { font-size: 13.5px; margin: 0 0 14px; }
+    .intro { font-size: var(--t-sm); margin: 0 0 14px; }
     .res { background: var(--accent-soft); border: 1px solid var(--accent-line); color: var(--accent); padding: 10px 14px; border-radius: 10px; margin-bottom: 12px; }
     .err { color: var(--bad); }
     .grid { display: flex; flex-direction: column; gap: 10px; }
     .op { display: flex; align-items: center; gap: 14px; padding: 14px 16px; }
     .op .txt { flex: 1; min-width: 0; }
     .op .txt strong { display: block; }
-    .op .txt p { margin: 2px 0 0; color: var(--text2); font-size: 13px; }
-    .op .cron { display: inline-block; margin-top: 7px; font-size: 9px; color: var(--por);
+    .op .txt p { margin: 2px 0 0; color: var(--text2); font-size: var(--t-sm); }
+    .op .cron { display: inline-block; margin-top: 7px; font-size: var(--t-xs); color: var(--por);
       font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
   `],
 })
