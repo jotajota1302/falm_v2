@@ -30,25 +30,33 @@
 -- public queda con 6 tablas, todas con RLS y politicas.
 
 -- ---------------------------------------------------------------------------
--- 3. Schemas de proyectos antiguos: INTENTADO Y REVERTIDO
+-- 3. Schemas de proyectos antiguos: a medias, y con una leccion cara
 -- ---------------------------------------------------------------------------
--- Se renombraron a bk_<x>_20260903 los ocho schemas parados (skills_registry,
--- teatro, ai_agents, n8n_workflows, mcp_shield, taxes, university, csv_ai) y
--- SE CAYO LA API ENTERA: PGRST002, "Could not query the database for the schema
--- cache".
+-- Renombrar un schema que PostgREST tiene en su lista de expuestos TUMBA LA API
+-- ENTERA: PGRST002, "Could not query the database for the schema cache", y deja
+-- de responder todo el proyecto, FALM incluida. Paso dos veces.
 --
--- Causa: la lista de "Exposed schemas" de la API (Settings -> API) seguia
--- nombrando esos schemas. PostgREST no encuentra uno de su lista, no puede
--- construir el cache y deja de responder a TODO el proyecto, FALM incluida.
--- Borrar tablas de un schema expuesto no da problema; renombrar el schema, si.
+-- La lista que manda NO es solo la del dashboard: es un parametro del rol
+-- authenticator. Se lee asi:
 --
--- Revertido: los ocho vuelven a su nombre y a sus permisos originales.
+--   select rolname, rolconfig from pg_roles where rolname = 'authenticator';
 --
--- El orden correcto, para cuando se retome:
---   1. Settings -> API -> Exposed schemas: dejar solo public y falm.
---      (Ahora mismo la API expone schemas de proyectos muertos.)
---   2. Comprobar que la API sigue viva.
---   3. Entonces si, renombrar o borrar.
+-- El 2026-09-03 valia "public, storage, ai_agents, falm, cuentos, comic", con
+-- ai_agents dentro aunque en el dashboard ya se habia quitado. Por eso archivar
+-- taxes (fuera de la lista) fue bien y archivar ai_agents volvio a tirar la API.
+--
+-- Receta antes de renombrar o borrar CUALQUIER schema:
+--   1. Mirar rolconfig de authenticator y comprobar que no esta en la lista.
+--   2. Si esta, quitarlo (dashboard: Settings -> API -> Exposed schemas) y
+--      verificar que rolconfig ya no lo nombra.
+--   3. Renombrar de uno en uno, comprobando la API entre medias:
+--        curl -s -X POST ".../rest/v1/rpc/nombre_de_equipo" --          -H "apikey: <anon>" -H "Content-Profile: falm" --          -H "Content-Type: application/json" -d '{"p_nombre":"BABUSIANOS"}'
+--      Tiene que devolver "BABUSIANOS", no PGRST002.
+--   4. Si se cae: renombrar de vuelta. Se recupera en segundos.
+--
+-- Estado: archivado solo bk_taxes_20260903. Siguen con su nombre original
+-- skills_registry, teatro, university, mcp_shield, n8n_workflows, ai_agents y
+-- csv_ai, con los permisos que tenian.
 
 -- ---------------------------------------------------------------------------
 -- 4. PENDIENTE: dos triggers ajenos colgando de auth.users
