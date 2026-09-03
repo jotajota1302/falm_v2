@@ -39,16 +39,32 @@ export class AuthService {
     if (error) throw error;
   }
 
-  /** Login por NOMBRE DE EQUIPO: resuelve el email del usuario y entra con la contraseña. */
+  /**
+   * Login por NOMBRE DE EQUIPO. El nombre se busca sin distinguir mayúsculas ni
+   * espacios, pero lo que se guarda es el nombre canónico: "mi equipo" se
+   * resuelve comparando ese texto con la base, así que guardar lo que tecleó el
+   * usuario dejaba la sesión sin equipo.
+   */
   async loginEquipo(nombre: string, password: string) {
     const eq = nombre.trim();
     const { data, error } = await this.sb.client.rpc('email_de_equipo', { p_nombre: eq });
     if (error) throw error;
-    // Mismo mensaje que una contraseña mala: no confirmamos qué equipos existen.
-    if (!data) throw new Error('Invalid login credentials');
-    await this.signIn(data as string, password);
-    // El nombre solo alimenta la cabecera; el equipo de verdad se resuelve por usuario_id.
-    localStorage.setItem('falm_equipo', eq);
+    if (!data) throw new Error('No hay ningún equipo con ese nombre.');
+
+    const { data: canonico } = await this.sb.client.rpc('nombre_de_equipo', { p_nombre: eq });
+    const nombreReal = (canonico as string) ?? eq;
+
+    try {
+      await this.signIn(data as string, password);
+    } catch (e: any) {
+      // La contraseña es el nombre del equipo, y Supabase distingue mayúsculas.
+      // Si escribió el nombre pero con otra caja, se reintenta con el canónico.
+      const quisoElNombre = password.trim().toLowerCase() === nombreReal.toLowerCase();
+      if (!quisoElNombre) throw new Error('Contraseña incorrecta.');
+      await this.signIn(data as string, nombreReal);
+    }
+
+    localStorage.setItem('falm_equipo', nombreReal);
   }
 
   /**

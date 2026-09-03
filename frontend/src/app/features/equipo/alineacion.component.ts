@@ -162,7 +162,8 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
           {{ titulares().length }} de 11 titulares@if (banca().length) { · {{ banca().length }} en el banquillo }
         </span>
         <button class="btn-sec" (click)="repetirUltima()">Repetir última</button>
-        <button class="btn" (click)="guardar()" [disabled]="guardando()">{{ guardando() ? 'Enviando…' : 'Enviar alineación' }}</button>
+        <button class="btn" (click)="guardar()" [disabled]="guardando()"
+                [title]="problema() ?? 'Enviar la alineación'">{{ guardando() ? 'Enviando…' : 'Enviar alineación' }}</button>
       </div>
     }
 
@@ -735,8 +736,102 @@ export class AlineacionComponent implements OnInit {
     else this.aviso.set('No hay alineación de Liga de ese fin de semana.');
   }
 
+  /**
+   * Un suplente ocupa el hueco del titular que falló, pero juega con su
+   * posición de verdad: si un delantero cubre la línea de medio, el equipo
+   * acaba con un medio menos y un delantero más. Con dos de esas en un 4-4-2
+   * se sale un 4-2-4, que no es formación legal y luego da problemas.
+   *
+   * Aquí se recorren todas las combinaciones de bajas y entradas posibles y se
+   * comprueba que ninguna deje al equipo, ya completo, en una formación que no
+   * existe. Devuelve un ejemplo del problema, o null si no lo hay.
+   */
+  private formacionImposible(): string | null {
+    const cupos = this.cupos();
+    const base: Record<string, number> = {
+      DEFENSA: cupos['DEFENSA'], MEDIO: cupos['MEDIO'], DELANTERO: cupos['DELANTERO'],
+    };
+    const supl = this.banca().map((b) => ({
+      nombre: this.nombreDe(b.id),
+      pos: this.plantilla().find((p) => p.activo_id === b.id)?.posicion ?? 'MEDIO',
+      lineas: b.lineas,
+    }));
+    if (!supl.length) return null;
+
+    const legales = new Set(FORMACIONES);
+    let fallo: string | null = null;
+
+    // Cada combinación de bajas por línea: cuántos defensas, medios y
+    // delanteros del once podrían no llegar a jugar.
+    for (let bd = 0; bd <= base['DEFENSA'] && !fallo; bd++) {
+      for (let bm = 0; bm <= base['MEDIO'] && !fallo; bm++) {
+        for (let bl = 0; bl <= base['DELANTERO'] && !fallo; bl++) {
+          const huecos = [
+            ...Array(bd).fill('DEFENSA'), ...Array(bm).fill('MEDIO'), ...Array(bl).fill('DELANTERO'),
+          ];
+          if (!huecos.length || huecos.length > supl.length) continue;
+
+          // Todas las formas en que los suplentes pueden tapar esos huecos.
+          const probar = (i: number, libres: string[], dentro: typeof supl): void => {
+            if (fallo) return;
+            if (!libres.length) {
+              // Equipo completo otra vez: ¿en qué formación queda?
+              const real = {
+                DEFENSA: base['DEFENSA'] - bd, MEDIO: base['MEDIO'] - bm, DELANTERO: base['DELANTERO'] - bl,
+              } as Record<string, number>;
+              for (const e of dentro) real[e.pos] = (real[e.pos] ?? 0) + 1;
+              const f = `${real['DEFENSA']}-${real['MEDIO']}-${real['DELANTERO']}`;
+              if (!legales.has(f)) {
+                const quien = dentro.map((e) => e.nombre).join(' y ');
+                fallo = `Si te fallan ${huecos.length} y entra${dentro.length > 1 ? 'n' : ''} ${quien},`
+                      + ` el equipo queda en ${f}, que no es una formación permitida.`
+                      + ` Revisa qué líneas cubre${dentro.length > 1 ? 'n' : ''}.`;
+              }
+              return;
+            }
+            if (i >= supl.length) return;   // quedan huecos sin tapar: eso sí vale
+            probar(i + 1, libres, dentro);  // este suplente no entra
+            const j = libres.findIndex((l) => supl[i].lineas.includes(l));
+            if (j >= 0) {
+              probar(i + 1, libres.filter((_, k) => k !== j), [...dentro, supl[i]]);
+            }
+          };
+          probar(0, huecos, []);
+        }
+      }
+    }
+    return fallo;
+  }
+
+  /**
+   * Qué falta para poder enviar. Devuelve null si la alineación es válida.
+   * Se comprueba por líneas y no solo el total, porque al cambiar de formación
+   * puede quedar el número correcto de jugadores mal repartido.
+   */
+  problema(): string | null {
+    const t = this.titulares().length;
+    if (t !== 11) {
+      return t < 11
+        ? `Te faltan ${11 - t} titulares: llevas ${t} de 11.`
+        : `Llevas ${t} titulares y solo pueden jugar 11.`;
+    }
+    const cupos = this.cupos();
+    for (const pos of ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO']) {
+      const puestos = this.enLinea(pos).length;
+      if (puestos !== cupos[pos]) {
+        return `La formación ${this.formacion()} pide ${cupos[pos]} ${this.etiquetaPos(pos).toLowerCase()}(s)`
+             + ` y tienes ${puestos}.`;
+      }
+    }
+    const sinLinea = this.banca().filter((b) => !b.lineas.length).length;
+    if (sinLinea) return `Hay ${sinLinea} suplente(s) sin ninguna línea marcada: no entrarían nunca.`;
+    return this.formacionImposible();
+  }
+
   async guardar() {
     this.aviso.set('');
+    const falla = this.problema();
+    if (falla) { this.aviso.set(falla); return; }
     const eq = this.equipo(); const jor = this.jornada(); if (!eq || !jor) return;
     const jugadores: Alineado[] = [
       ...this.titulares().map((id) => ({ activo_id: id, rol: 'TITULAR' as const, lineas: [], orden: 0 })),
