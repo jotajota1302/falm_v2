@@ -61,17 +61,17 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     .ph { font-family: var(--fb); font-weight: 700; font-size: 11cqw; color: var(--text2); margin-left: auto; }
 
     .foot { position: relative; z-index: 1; margin-top: 3cqw; }
-    .n1 { display: block; font-family: var(--fb); font-weight: 700; font-size: 10cqw;
-      letter-spacing: 0;
+    .n1 { display: block; font-family: var(--fb); font-weight: 700; font-size: var(--t-sm);
+      letter-spacing: 0; line-height: 1.2;
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .sline { display: flex; gap: 5cqw; margin-top: 1cqw; font-family: var(--fm);
-      font-size: 8cqw; color: var(--text2); }
+      font-size: var(--t-xs); color: var(--text2); }
     .sline span { white-space: nowrap; }
 
     /* modo campo (Alineación): la banda ya dice la posición, así que sobra el badge */
     .fut.campo .info { position: absolute; top: 4cqw; left: 5cqw; z-index: 3; }
     .fut.campo .val { background: var(--surface2); border: 1px solid var(--line);
-      padding: 1cqw 3cqw; border-radius: 4cqw; font-size: 14cqw; }
+      padding: 1px 5px; border-radius: 6px; font-size: var(--t-xs); }
     .fut.campo .top { justify-content: center; align-items: stretch; }
     .fut.campo .face { max-width: 88%; object-position: center bottom; }
     .fut.campo .face.esc { max-width: 44%; max-height: 62%; object-position: center; }
