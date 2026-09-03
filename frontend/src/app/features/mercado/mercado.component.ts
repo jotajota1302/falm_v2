@@ -145,9 +145,12 @@ export class MercadoComponent implements OnInit {
       .filter((a) =>
         (!p || a.posicion === p) &&
         (!f || a.nombre.toLowerCase().includes(f) || a.club.toLowerCase().includes(f)))
-      .sort((a, b) => o === 'pts'
+      // Con precios o puntos empatados (pretemporada) manda el alfabético,
+      // que si no la lista sale agrupada por posición sin querer.
+      .sort((a, b) => (o === 'pts'
         ? this.ptsDe(b) - this.ptsDe(a)
-        : Number(b.precio_mercado ?? 0) - Number(a.precio_mercado ?? 0));
+        : Number(b.precio_mercado ?? 0) - Number(a.precio_mercado ?? 0))
+        || a.nombre.localeCompare(b.nombre, 'es'));
   });
 
   mostrados = computed(() => Math.min(this.limite(), this.visibles().length));

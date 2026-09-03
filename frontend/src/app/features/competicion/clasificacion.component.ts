@@ -66,7 +66,7 @@ const COLORES = ['#a32b3f', '#1f6fa8', '#5c8a1f', '#b8791a', '#7b4f9d',
         </div>
         @for (f of filas(); track f.equipo_falm_id; let i = $index) {
           <div class="fila" [class.podio]="i < 3">
-            <span class="pos">
+            <span class="puesto">
               <span class="marca" [style.background]="color(f.equipo_nombre)"></span>
               <span class="num">{{ f.posicion || i + 1 }}</span>
             </span>
@@ -105,7 +105,7 @@ const COLORES = ['#a32b3f', '#1f6fa8', '#5c8a1f', '#b8791a', '#7b4f9d',
     /* Los tres primeros cobran el premio: el papel se tiñe, sin medallas. */
     .fila.podio { background: var(--accent-soft); }
     .der { text-align: right; }
-    .pos { display: flex; align-items: center; gap: 8px; }
+    .puesto { display: flex; align-items: center; gap: 8px; }
     .marca { width: 3px; height: 20px; border-radius: 2px; flex: 0 0 auto; }
     .nm { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .sec { color: var(--text2); }
