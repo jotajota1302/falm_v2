@@ -95,10 +95,17 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
           {{ minPorterias - d.misPorterias() }} porterías: solo puedes elegir portería.
         </p>
       }
-      @if (d.soyGestor() && !d.esMiTurno()) {
-        <p class="nota">
-          Modo administrador: al fichar lo harás en nombre de
-          <strong>{{ nombreEquipo(d.turno()?.equipo_falm_id) }}</strong>.
+      @if (d.soyGestor()) {
+        <p class="nota" [class.admin]="modoAdmin()">
+          <label class="swadmin">
+            <input type="checkbox" [ngModel]="modoAdmin()" (ngModelChange)="modoAdmin.set($event)" />
+            Fichar en nombre de otro equipo
+          </label>
+          @if (modoAdmin()) {
+            <span>· al fichar lo harás por <strong>{{ nombreEquipo(d.turno()?.equipo_falm_id) }}</strong></span>
+          } @else {
+            <span class="faint">· ahora mismo juegas como {{ nombreEquipo(d.miEquipoId()) }}</span>
+          }
         </p>
       }
       @if (msg()) { <p class="nota mal" (click)="msg.set('')">{{ msg() }}</p> }
@@ -133,7 +140,16 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
                   {{ enCola(a) ? '★' : '☆' }}
                 </button>
                 <span class="pos" [class]="abr(a.posicion)">{{ abr(a.posicion) }}</span>
-                <span class="nom">{{ a.nombre }}</span>
+                <span class="nom">
+                  @if (a.foto) {
+                    <img class="ret" [src]="a.foto" alt="" loading="lazy" />
+                  } @else if (a.escudo) {
+                    <img class="ret esc" [src]="a.escudo" alt="" loading="lazy" />
+                  } @else {
+                    <span class="ret sin">{{ a.nombre.charAt(0) }}</span>
+                  }
+                  {{ a.nombre }}
+                </span>
                 <span class="club">
                   @if (a.escudo) { <img [src]="a.escudo" alt="" loading="lazy" /> }
                   {{ a.club }}
@@ -250,7 +266,15 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     .fila.tomado { color: var(--text2); }
     .fila.tomado .nom { text-decoration: line-through; font-weight: 600; }
     .fila.tomado .pos, .fila.tomado .precio { opacity: .5; }
-    .nom { font-weight: 700; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .nom { font-weight: 700; min-width: 0; display: flex; align-items: center; gap: 9px;
+      white-space: nowrap; overflow: hidden; }
+    .ret { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; flex: 0 0 auto;
+      background: var(--surface2); border: 1px solid var(--line); }
+    .ret.esc { object-fit: contain; padding: 4px; background: var(--surface); }
+    .ret.sin { display: flex; align-items: center; justify-content: center;
+      font-size: var(--t-xs); color: var(--text2); font-weight: 700; }
+    .swadmin { display: inline-flex; gap: 7px; align-items: center; cursor: pointer; }
+    .nota.admin { border-color: var(--accent); }
     .club { display: flex; align-items: center; gap: 6px; color: var(--text2);
       font-size: var(--t-xs); letter-spacing: .06em; text-transform: uppercase;
       min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -311,6 +335,8 @@ export class DraftComponent implements OnInit, OnDestroy {
   limite = signal(30);
   msg = signal('');
   prePick = signal(false);
+  /** Solo para admins: fichar por el equipo al que le toca. Apagado por defecto. */
+  modoAdmin = signal(false);
 
   private eraMiTurno = false;
   private tituloBase = document.title;
@@ -398,7 +424,7 @@ export class DraftComponent implements OnInit, OnDestroy {
   /** El equipo que se llevaría el pick: el mío, o el del turno si soy admin. */
   equipoObjetivo(): string | null {
     if (this.d.esMiTurno()) return this.d.miEquipoId();
-    if (this.d.soyGestor()) return this.d.turno()?.equipo_falm_id ?? null;
+    if (this.d.soyGestor() && this.modoAdmin()) return this.d.turno()?.equipo_falm_id ?? null;
     return this.d.miEquipoId();
   }
 
@@ -417,7 +443,7 @@ export class DraftComponent implements OnInit, OnDestroy {
     if (this.tomado(a) || !this.d.turno()) return false;
     if (this.clubLleno(a)) return false;
     if (this.d.esMiTurno()) return !this.d.debeElegirPorteria() || a.tipo === 'DEFENSA';
-    return this.d.soyGestor();
+    return this.d.soyGestor() && this.modoAdmin();
   }
 
   readonly visibles = computed(() => {
@@ -505,7 +531,7 @@ export class DraftComponent implements OnInit, OnDestroy {
 
   async fichar(a: ActivoLibre) {
     const mio = this.d.esMiTurno();
-    const equipoTurno = this.d.turno()?.equipo_falm_id ?? null;
+    const equipoTurno = this.modoAdmin() ? (this.d.turno()?.equipo_falm_id ?? null) : null;
     const para = mio ? '' : ` para ${this.nombreEquipo(equipoTurno)}`;
     if (!confirm(`¿Fichar a ${a.nombre}${para}?`)) return;
     this.msg.set('');
