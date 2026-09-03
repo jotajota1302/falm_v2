@@ -240,7 +240,7 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
       align-items: center; gap: 10px; flex-wrap: wrap; padding: 4px; }
 
     .slot { background: none; border: none; cursor: pointer; width: 88px; padding: 0; }
-    .slot.vacio { min-height: 104px; border-radius: 13px; display: flex;
+    .slot.vacio { min-height: 112px; border-radius: 13px; display: flex;
       flex-direction: column; align-items: center; justify-content: center; gap: 6px;
       border: 1.5px dashed rgba(255,255,255,.9);
       background: rgba(255,255,255,.28); }
@@ -251,19 +251,18 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
     .col { display: flex; flex-direction: column; align-items: center; gap: 1px; }
     .slot.vacio .mas { display: flex; align-items: center; justify-content: center;
       width: 28px; height: 28px; border-radius: 50%; font-size: var(--t-md); line-height: 1;
-      background: var(--surface); color: var(--c); }
+      background: var(--surface); color: var(--text2); }
     .fig { position: relative; display: flex; align-items: center; justify-content: center; }
-    .fig svg { width: 32px; height: 31px; fill: var(--c); opacity: .5; }
-    .fig .q { position: absolute; top: 57%; left: 50%; transform: translate(-50%, -50%);
-      font-family: var(--fb); font-size: var(--t-xs); font-weight: 700; letter-spacing: .02em;
+    /* Una sola camiseta para todos los huecos: el color ya lo dice la etiqueta
+       de debajo, y cuatro tonos en el campo eran ruido. */
+    .fig svg { width: 46px; height: 44px; fill: var(--text2); opacity: .45; }
+    .fig .q { position: absolute; top: 58%; left: 50%; transform: translate(-50%, -50%);
+      font-family: var(--fb); font-size: var(--t-sm); font-weight: 700; letter-spacing: .02em;
       color: var(--surface); }
     /* El color de la posición vive aquí, en el hueco, no en franjas de fondo. */
-    .slot.vacio { --c: var(--text2); }
-    .slot.vacio[data-pos=POR] { --c: var(--por); }
-    .slot.vacio[data-pos=DEF] { --c: var(--def); }
-    .slot.vacio[data-pos=MED] { --c: var(--med); }
-    .slot.vacio[data-pos=DEL] { --c: var(--del); }
-    .slot.vacio .lb { font-size: var(--t-xs); font-weight: 700; letter-spacing: .12em; color: var(--text); }
+
+    .slot.vacio .lb { font-family: var(--fb); font-size: var(--t-xs); font-weight: 700;
+      letter-spacing: .08em; color: var(--text); }
 
     .banco { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 16px; margin-bottom: 14px; }
     .bh { display: flex; align-items: center; justify-content: space-between; }
