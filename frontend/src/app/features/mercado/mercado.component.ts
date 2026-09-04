@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ActivoLibre, FalmService, PuntosJugador } from '../../core/falm.service';
 import { FichaService } from '../../shared/ficha.service';
+import { carasDePorterias } from '../../shared/caras-libres';
 
 const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
 
@@ -174,19 +175,6 @@ export class MercadoComponent implements OnInit {
   /** Si el archivo no carga, esa fila se queda con el escudo. */
   sinFoto(a: ActivoLibre) { const r = new Set(this.rotas()); r.add(a.activo_id); this.rotas.set(r); }
 
-  /** Un portero conocido por club, para las porterías del mercado. */
-  private async carasDeLasPorterias(libres: ActivoLibre[]) {
-    const clubes = libres.filter((a) => !a.foto && a.club_id).map((a) => a.club_id!);
-    if (!clubes.length) return;
-    const porteros = await this.falm.porterosDeClubes(clubes).catch(() => ({}));
-    const caras: Record<string, string> = {};
-    for (const [club, ps] of Object.entries(porteros)) {
-      const f = ps.find((p) => p.foto)?.foto;
-      if (f) caras[club] = f;
-    }
-    this.caras.set(caras);
-  }
-
   async ngOnInit() {
     try {
       const [libres, acum] = await Promise.all([this.falm.mercadoLibre(), this.falm.puntuacionesAcumuladas()]);
@@ -194,7 +182,7 @@ export class MercadoComponent implements OnInit {
       const m: Record<number, PuntosJugador> = {};
       for (const p of acum) m[p.jugador.id] = p;
       this.acum.set(m);
-      await this.carasDeLasPorterias(libres);
+      this.caras.set(await carasDePorterias(this.falm, libres));
     } catch (e: any) { this.error.set(e?.message ?? 'Error cargando el mercado'); }
     finally { this.cargando.set(false); }
   }

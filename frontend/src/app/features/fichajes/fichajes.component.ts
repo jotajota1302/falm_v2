@@ -4,6 +4,7 @@ import { NavFichajesComponent } from '../../shared/nav-fichajes.component';
 import { RouterLink } from '@angular/router';
 import { environment } from '../../../environments/environment';
 import { ActivoLibre, Equipo, FalmService, ItemPlantilla, JornadaFalm, PuntosJugador } from '../../core/falm.service';
+import { carasDePorterias } from '../../shared/caras-libres';
 import { FichaService } from '../../shared/ficha.service';
 
 const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
@@ -44,7 +45,7 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
           </div>
 
           <div class="fila cab">
-            <span>Pos</span><span>Jugador</span><span>Club</span>
+            <span>Pos</span><span></span><span>Jugador</span><span>Club</span>
             <span class="der">Pts</span><span></span>
           </div>
 
@@ -54,12 +55,17 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
             @for (a of visibles().slice(0, limite()); track a.activo_id) {
               <div class="fila" [class.pedido]="prioridadDe(a)">
                 <span class="pos" [class]="abr(a.posicion)">{{ abr(a.posicion) }}</span>
+                @if (foto(a)) {
+                  <img class="fo" [src]="foto(a)" alt="" loading="lazy" (error)="sinFoto(a)" />
+                } @else if (a.escudo) {
+                  <img class="fo es" [src]="a.escudo" alt="" loading="lazy" />
+                } @else { <span class="fo"></span> }
                 <button class="nom" (click)="verFicha(a)">{{ a.nombre }}</button>
                 <span class="club">
                   @if (a.escudo) { <img [src]="a.escudo" alt="" loading="lazy" /> }
                   {{ a.club }}
                 </span>
-                <span class="der num">{{ ptsDe(a) }}</span>
+                <span class="pts num" [class.cero]="!ptsDe(a)">{{ ptsDe(a) }}</span>
                 <button class="pedir" [class.on]="prioridadDe(a)" (click)="toggle(a)">
                   {{ prioridadDe(a) ? prioridadDe(a) + 'ª opción' : 'Pedir' }}
                 </button>
@@ -145,7 +151,15 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
     .lado { flex: 1 1 300px; min-width: 280px; display: flex; flex-direction: column; gap: 14px; }
 
     .barra .buscar { margin-left: auto; flex: 0 1 220px; padding: 7px 13px; font-size: var(--t-sm); border-radius: var(--pill); }
-    .fila { grid-template-columns: 46px 1.8fr 130px 62px 92px; }
+    .fila { grid-template-columns: 46px 26px 1.8fr 130px 56px 92px; padding: 7px 18px; }
+    /* Misma cara, mismo escudo y misma cifra que en Mercado: es la misma lista. */
+    .fo { width: 26px; height: 26px; border-radius: 50%; object-fit: cover;
+      object-position: top center; background: var(--surface2); }
+    .fo.es { object-fit: contain; padding: 3px; border: 1px solid var(--line); }
+    .pts { font-family: var(--fm); text-align: right; }
+    .pts.cero { display: inline-flex; align-items: center; justify-content: center;
+      margin-left: auto; width: 22px; height: 22px; color: var(--text2);
+      border: 1px solid var(--line); border-radius: 50%; }
     /* Lo pedido se marca en el papel, para no perderlo al desplazar la lista. */
     .fila.pedido { background: var(--accent-soft); }
     .nom { background: none; border: none; padding: 0; text-align: left; cursor: pointer;
@@ -206,9 +220,9 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
     @media (max-width: 860px) {
       /* Lo que has pedido, primero: es a lo que se viene a esta pantalla. */
       .lado { order: -1; }
-      /* Se va el club, no los puntos: quedan cuatro celdas y cuatro columnas. */
-      .fila { grid-template-columns: 38px 1fr 46px 84px; gap: 9px; padding: 9px 13px; }
-      .fila > :nth-child(3) { display: none; }
+      /* Se va el club, no los puntos: quedan cinco celdas y cinco columnas. */
+      .fila { grid-template-columns: 36px 26px 1fr 44px 82px; gap: 8px; padding: 8px 13px; }
+      .fila > :nth-child(4) { display: none; }
       .nom { font-size: var(--t-sm); }
       .barra .buscar { margin-left: 0; flex: 1 1 100%; }
     }
@@ -219,6 +233,8 @@ export class FichajesComponent implements OnInit {
   equipo = signal<Equipo | null>(null);
   jornada = signal<JornadaFalm | null>(null);
   mercado = signal<ActivoLibre[]>([]);
+  private caras = signal<Record<string, string>>({});
+  private rotas = signal<Set<string>>(new Set());
   acum = signal<Record<number, PuntosJugador>>({});
   p1 = signal<ActivoLibre | null>(null);
   p2 = signal<ActivoLibre | null>(null);
@@ -252,6 +268,13 @@ export class FichajesComponent implements OnInit {
   abr(p: string) { return ({ PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'MED', DELANTERO: 'DEL' } as Record<string, string>)[p] ?? p; }
   sel(s: number) { return s === 1 ? this.p1() : this.p2(); }
   ptsDe(a: ActivoLibre) { return a.ext_id != null ? Number(this.acum()[a.ext_id]?.puntosTotales ?? 0) : 0; }
+
+  /** La cara del activo; una portería lleva la del portero de ese club. */
+  foto(a: ActivoLibre): string | null {
+    if (this.rotas().has(a.activo_id)) return null;
+    return a.foto ?? (a.club_id ? this.caras()[a.club_id] ?? null : null);
+  }
+  sinFoto(a: ActivoLibre) { const r = new Set(this.rotas()); r.add(a.activo_id); this.rotas.set(r); }
   prioridadDe(a: ActivoLibre): number | null {
     if (this.p1()?.activo_id === a.activo_id) return 1;
     if (this.p2()?.activo_id === a.activo_id) return 2;
@@ -283,6 +306,7 @@ export class FichajesComponent implements OnInit {
       const m: Record<number, PuntosJugador> = {};
       for (const p of acum) m[p.jugador.id] = p;
       this.acum.set(m);
+      this.caras.set(await carasDePorterias(this.falm, merc));
       if (eq) {
         const [mp, ex] = await Promise.all([this.falm.miPlantilla(eq.id), this.falm.fichajesExtra(eq.id)]);
         this.miPlantilla.set(mp); this.extras.set(ex);
