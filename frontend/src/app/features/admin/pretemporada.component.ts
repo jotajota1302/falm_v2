@@ -166,18 +166,18 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
                   </div>
                 </div>
               } @else {
+                <!-- Siempre el mismo nombre: cambiarlo según el caso hacía que no
+                     se encontrara el botón que se venía buscando. -->
                 <button class="btn ghost peligro" (click)="empezarDeCero()">
-                  @if (draft().picks_hechos > 0) {
-                    Reiniciar el draft y sortear de nuevo
-                  } @else {
-                    Sortear el orden otra vez
-                  }
+                  Empezar el draft de cero
                 </button>
                 <p class="hint mini">
                   @if (draft().picks_hechos > 0) {
-                    Borra las {{ draft().picks_hechos }} elecciones hechas y vuelve a repartir el orden.
+                    Borra las {{ draft().picks_hechos }} elecciones hechas y vuelve a repartir el orden
+                    del sorteo. Pedirá confirmación.
                   } @else {
-                    El draft está vacío: puedes repartir el orden las veces que quieras.
+                    El draft está vacío: esto solo vuelve a repartir el orden del sorteo, que ahora
+                    empieza por {{ primerEquipo() || '—' }}.
                   }
                 </p>
               }
@@ -461,6 +461,9 @@ export class AdminPretemporadaComponent implements OnInit {
    * Deshacer el último pick. En la quedada presencial alguien dicta mal un
    * nombre y hay que poder arreglarlo sin tocar la base a mano.
    */
+  /** Quién abre el draft con el orden actual: se dice en el botón de reinicio. */
+  primerEquipo() { return this.draft()?.turno?.equipo ?? ''; }
+
   /** Un único camino: si hay elecciones, primero se confirma; si no, al sorteo. */
   empezarDeCero() {
     const d = this.draft();
