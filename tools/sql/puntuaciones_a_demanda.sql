@@ -105,3 +105,47 @@ revoke execute on function falm.jornadas_lfp_validas() from anon;
 --   curl -s -X POST ".../rest/v1/rpc/ingestar_jornada_ff" \
 --     -H "apikey: <anon>" -H "Content-Profile: falm" \
 --     -H "Content-Type: application/json" -d '{"p_jornada":3}'
+
+-- ---------------------------------------------------------------------------
+-- El cron de puntuaciones, configurable desde el panel
+-- ---------------------------------------------------------------------------
+-- Paso de cada hora a cada 2. Por que no una ventana "solo cuando se juega":
+-- las jornadas no caben en un fin de semana. Con partidos aplazados se estiran
+-- (la 1 de esta temporada va del 15 al 27 de agosto y la 6 del 3 al 17 de
+-- septiembre), asi que una ventana fija se perderia justo los partidos raros.
+--
+-- Y por consumo no hacia falta tocar nada: medido en cron.job_run_details, una
+-- ejecucion sin trabajo tarda 0,12 s y no llama a ninguna API. Solo gasta red
+-- cuando hay de verdad una jornada terminada y sin puntuar.
+
+create or replace function falm.configurar_cron_puntuaciones(
+  p_cada_horas integer default 2, p_activo boolean default true)
+returns jsonb
+language plpgsql
+security definer
+set search_path to 'public', 'falm'
+as $function$
+declare v_sched text;
+begin
+  if not falm.puede_gestionar() then
+    raise exception 'Solo un administrador puede cambiar las tareas programadas';
+  end if;
+  if p_cada_horas < 1 or p_cada_horas > 24 then
+    raise exception 'El intervalo tiene que estar entre 1 y 24 horas';
+  end if;
+
+  v_sched := case when p_cada_horas = 1 then '25 * * * *'
+                  else format('25 */%s * * *', p_cada_horas) end;
+
+  perform cron.schedule('falm-procesar-jornada', v_sched,
+                        'select falm.procesar_jornada_auto()');
+  perform cron.alter_job((select jobid from cron.job where jobname = 'falm-procesar-jornada'),
+                         active => p_activo);
+
+  return jsonb_build_object('horario', v_sched, 'cada_horas', p_cada_horas, 'activo', p_activo);
+end $function$;
+
+grant execute on function falm.configurar_cron_puntuaciones(integer, boolean) to authenticated;
+revoke execute on function falm.configurar_cron_puntuaciones(integer, boolean) from public, anon;
+
+-- Aplicado: select falm.configurar_cron_puntuaciones(2, true);

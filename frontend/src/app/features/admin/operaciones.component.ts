@@ -51,9 +51,10 @@ interface Op {
     <section class="card">
       <h3>Puntuaciones de LaLiga</h3>
       <p class="hint">
-        Normalmente esto lo hace solo el sistema cada hora, en cuanto termina una jornada.
-        Esto es el <b>hazlo ahora</b>: para cuando falle, o para releer una jornada si la
-        prensa cambia una valoración. Las jornadas 1 a 4 no cuentan para la liga.
+        El sistema lo hace solo: cada pocas horas mira si hay alguna jornada terminada
+        (último partido más 3 horas) y sin puntuar. Esto es el <b>hazlo ahora</b>, para
+        cuando falle o para releer una jornada si la prensa cambia una valoración.
+        Las jornadas 1 a 4 quedan fuera de la liga y no las procesa nunca.
       </p>
 
       <div class="form">
@@ -76,6 +77,28 @@ interface Op {
         <button class="btn" [disabled]="leyendo() || !jornadaLfp()" (click)="leerPuntuaciones()">
           {{ leyendo() ? 'Leyendo…' : 'Leer puntuaciones' }}
         </button>
+      </div>
+
+      <div class="form auto">
+        <label>Comprobar solo
+          <select [ngModel]="cadaHoras()" (ngModelChange)="cadaHoras.set($event)">
+            <option [value]="1">cada hora</option>
+            <option [value]="2">cada 2 horas</option>
+            <option [value]="4">cada 4 horas</option>
+            <option [value]="8">cada 8 horas</option>
+            <option [value]="24">una vez al día</option>
+          </select>
+        </label>
+        <label class="chk">
+          <input type="checkbox" [ngModel]="cronActivo()" (ngModelChange)="cronActivo.set($event)" />
+          Activado
+        </label>
+        <button class="btn-sec" [disabled]="guardandoCron()" (click)="guardarCron()">
+          {{ guardandoCron() ? 'Guardando…' : 'Guardar' }}
+        </button>
+        <span class="faint">
+          Si lo apagas, las puntuaciones solo entran con el botón de arriba.
+        </span>
       </div>
 
       @if (avisoPt()) { <p class="aviso">{{ avisoPt() }}</p> }
@@ -202,6 +225,8 @@ interface Op {
     .row.bk { grid-template-columns: 1fr 130px 170px 84px; }
     .row.nc { grid-template-columns: 1fr 1fr; }
     .form .chk { display: flex; gap: 7px; align-items: center; cursor: pointer; }
+    .form.auto { padding: 10px 12px; background: var(--surface2); border: 1px solid var(--line);
+      border-radius: var(--r-xs); }
     .form input { padding: 7px 10px; border: 1px solid var(--line); border-radius: var(--r-xs);
       background: var(--surface); color: var(--text); font-family: var(--fb);
       font-size: var(--t-sm); min-width: 180px; }
@@ -231,6 +256,9 @@ export class AdminOperacionesComponent implements OnInit {
   avisoPt = signal('');
   errorPt = signal('');
   sinCasar = signal<{ equipo: string; jugador: string; slug: string | null }[]>([]);
+  cadaHoras = signal(2);
+  cronActivo = signal(true);
+  guardandoCron = signal(false);
 
   // Copias de seguridad
   readonly tablasFalm = 29;
@@ -258,11 +286,38 @@ export class AdminOperacionesComponent implements OnInit {
     try {
       this.jornadas.set(await this.admin.jornadasFalm());
       this.crons.set(await this.admin.estadoCrons());
+      this.sincronizarCron();
     } catch (e: any) {
       this.error.set(e?.message ?? 'No se pudo cargar el estado.');
     }
     await this.cargarRespaldos();
     await this.cargarJornadasLfp();
+  }
+
+  /** Lee del propio cron cada cuánto está puesto, para no enseñar un valor inventado. */
+  private sincronizarCron() {
+    const c = this.crons().find((x) => x.nombre === 'falm-procesar-jornada');
+    if (!c) return;
+    this.cronActivo.set(c.activo);
+    const m = c.horario.match(/^\d+ \*\/(\d+)/);
+    this.cadaHoras.set(m ? Number(m[1]) : 1);
+  }
+
+  async guardarCron() {
+    this.avisoPt.set(''); this.errorPt.set('');
+    this.guardandoCron.set(true);
+    try {
+      await this.admin.configurarCronPuntuaciones(Number(this.cadaHoras()), this.cronActivo());
+      this.crons.set(await this.admin.estadoCrons());
+      this.sincronizarCron();
+      this.avisoPt.set(this.cronActivo()
+        ? `Comprobará si hay jornada que puntuar cada ${this.cadaHoras()} h.`
+        : 'Comprobación automática apagada: las puntuaciones solo entran a mano.');
+    } catch (e: any) {
+      this.errorPt.set(e?.message ?? 'No se pudo cambiar la tarea programada.');
+    } finally {
+      this.guardandoCron.set(false);
+    }
   }
 
   private async cargarJornadasLfp() {

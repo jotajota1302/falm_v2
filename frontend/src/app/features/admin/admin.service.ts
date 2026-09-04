@@ -84,6 +84,15 @@ export class AdminService {
   // Normalmente lo hace el cron cada hora. Esto es el "hazlo ahora" para cuando
   // falla, o para releer una jornada si la prensa cambió una valoración.
 
+  /** Cada cuántas horas mira el sistema si hay jornada que puntuar (0 = parado). */
+  async configurarCronPuntuaciones(cadaHoras: number, activo: boolean): Promise<void> {
+    const { error } = await this.sb.client.rpc('configurar_cron_puntuaciones', {
+      p_cada_horas: cadaHoras,
+      p_activo: activo,
+    });
+    if (error) throw error;
+  }
+
   async estadoJornadasLfp(): Promise<JornadaLfpEstado[]> {
     const { data, error } = await this.sb.client.rpc('estado_jornadas_lfp');
     if (error) throw error;
