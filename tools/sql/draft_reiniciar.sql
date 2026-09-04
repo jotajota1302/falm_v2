@@ -5,10 +5,13 @@
 -- panel esconde el sorteo, asi que no habia forma de volver a repartir el orden
 -- sin deshacer los picks uno a uno.
 --
--- Que hace: borra TODOS los picks, reabre todos los turnos y deja el draft en
--- CREADO, listo para rehacer el sorteo. Lo que NO toca es el orden actual: si
--- solo se quiere repetir el reparto con el mismo orden, vale con reiniciar; para
--- cambiarlo, despues se llama a draft_reordenar, que ya vuelve a estar permitido.
+-- Que hace: borra TODOS los picks Y el orden del sorteo, y deja el draft en
+-- CREADO. Queda literalmente en blanco: draft_estado devuelve turno nulo y
+-- picks_totales 0, y hay que sortear (draft_reordenar) para poder empezar.
+--
+-- Al principio conservaba el orden, y la pantalla seguia diciendo que el turno 1
+-- era de tal equipo cuando ya no se habia sorteado nada: parecia un resto de la
+-- partida anterior. Empezar de cero tiene que dejarlo de cero.
 --
 -- Precauciones, porque esto no se deshace:
 --   * Solo administrador.
@@ -28,6 +31,7 @@ declare
   v_estado falm.draft_estado;
   v_nombre text;
   v_picks int;
+  v_turnos int;
   v_copia jsonb;
 begin
   if not falm.puede_gestionar() then
@@ -41,9 +45,10 @@ begin
   end if;
 
   select count(*) into v_picks from falm.draft_pick where draft_id = p_draft;
+  select count(*) into v_turnos from falm.draft_orden where draft_id = p_draft;
 
   if not p_confirmar then
-    raise exception 'Reiniciar borra los % picks del draft "%": hay que llamarlo con p_confirmar := true',
+    raise exception 'Reiniciar borra los % picks y el orden del draft "%": hay que llamarlo con p_confirmar := true',
       v_picks, v_nombre;
   end if;
 
@@ -51,13 +56,14 @@ begin
   v_copia := falm.respaldo_crear('antes_de_reiniciar_draft');
 
   delete from falm.draft_pick where draft_id = p_draft;
-  update falm.draft_orden set completado = false where draft_id = p_draft;
+  delete from falm.draft_orden where draft_id = p_draft;
   update falm.draft set estado = 'CREADO' where id = p_draft;
 
   return jsonb_build_object(
     'reiniciado', true,
     'draft', v_nombre,
     'picks_borrados', v_picks,
+    'turnos_borrados', v_turnos,
     'respaldo', v_copia->>'schema',
     'estado', falm.draft_estado(p_draft)
   );

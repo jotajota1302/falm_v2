@@ -126,29 +126,37 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
             <span class="dnombre">{{ draft().nombre }}</span>
             <span class="badge" [attr.data-e]="draft().estado">{{ draft().estado }}</span>
           </div>
-          <div class="prog">
-            <div class="bar"><span [style.width.%]="pct()"></span></div>
-            <span class="pcttxt">{{ draft().picks_hechos }} / {{ draft().picks_totales }} picks</span>
-          </div>
+          @if (draft().picks_totales > 0) {
+            <div class="prog">
+              <div class="bar"><span [style.width.%]="pct()"></span></div>
+              <span class="pcttxt">{{ draft().picks_hechos }} / {{ draft().picks_totales }} picks</span>
+            </div>
+          } @else {
+            <p class="hint sinorden">
+              <b>Todavía no hay orden.</b> Sortéalo aquí abajo y el draft queda listo para empezar.
+            </p>
+          }
           <!-- Un solo camino para volver a empezar: vacía las elecciones (si las
                hay) y lleva al sorteo. Antes había dos botones que hacían cosas
                parecidas y no se entendía cuál tocaba. -->
           @if (draft().estado !== 'CONSOLIDADO') {
             <div class="dacc">
-              @if (sorteoAbierto()) {
+              @if (sorteoAbierto() || draft().picks_totales === 0) {
                 <p class="hint">Pulsa los equipos en el orden que salga en el sorteo.</p>
                 <admin-draft-sorteo
                   [equipos]="equipos()"
                   etiqueta="Guardar este orden"
                   (confirmado)="rehacerOrden($event)" />
-                <button class="btn ghost" (click)="sorteoAbierto.set(false)">Cancelar</button>
+                @if (draft().picks_totales > 0) {
+                  <button class="btn ghost" (click)="sorteoAbierto.set(false)">Cancelar</button>
+                }
               } @else if (reinicioAbierto()) {
                 <div class="reinicio">
                   <p class="rtit"><b>Vas a borrar los {{ draft().picks_hechos }} picks del draft.</b></p>
                   <p class="hint">
-                    Todos los equipos se quedan sin elecciones y, al terminar, se abre el
-                    sorteo para repartir el orden otra vez. <b>Esto no se deshace</b>, aunque
-                    se guarda una copia de seguridad automática antes de borrar.
+                    Se borran las elecciones <b>y el orden del sorteo</b>: el draft se queda
+                    en blanco y hay que volver a sortear para empezar. <b>Esto no se deshace</b>,
+                    aunque se guarda una copia de seguridad automática antes de borrar.
                   </p>
                   <label class="rconf">
                     Escribe <b>BORRAR</b> para confirmar
@@ -173,11 +181,11 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
                 </button>
                 <p class="hint mini">
                   @if (draft().picks_hechos > 0) {
-                    Borra las {{ draft().picks_hechos }} elecciones hechas y vuelve a repartir el orden
-                    del sorteo. Pedirá confirmación.
+                    Borra las {{ draft().picks_hechos }} elecciones y el orden del sorteo, y lo deja
+                    todo listo para sortear otra vez. Pedirá confirmación.
                   } @else {
-                    El draft está vacío: esto solo vuelve a repartir el orden del sorteo, que ahora
-                    empieza por {{ primerEquipo() || '—' }}.
+                    Borra el orden del sorteo, que ahora empieza por {{ primerEquipo() || '—' }},
+                    para repartirlo de nuevo.
                   }
                 </p>
               }
@@ -244,6 +252,7 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     .btn.peligro:disabled { opacity: .45; }
     .reinicio { border: 1px solid var(--bad); border-radius: var(--r-sm);
       padding: 13px 15px; margin: 10px 0; background: var(--surface2); }
+    .sinorden { margin: 10px 0 0; }
     .dacc { margin: 16px 0 6px; padding-top: 14px; border-top: 1px solid var(--line); }
     .dacc .hint.mini { margin: 7px 0 0; font-size: var(--t-xs); }
     .rtit { margin: 0 0 6px; font-size: var(--t-sm); }
