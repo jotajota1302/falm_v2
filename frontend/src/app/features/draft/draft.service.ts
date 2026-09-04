@@ -48,6 +48,7 @@ export interface PickDetalle {
   nombre: string;
   posicion: string;
   club: string;
+  escudo: string | null;
   es_porteria: boolean;
 }
 
@@ -240,8 +241,9 @@ export class DraftService {
     const { data, error } = await this.sb.client
       .from('draft_pick')
       .select('id, activo_id, equipo_falm_id, ronda, orden_seleccion, ' +
-        'activo:activo_id (tipo, equipo_lfp:equipo_lfp_id (nombre), ' +
-        'jugador_lfp:jugador_lfp_id (nombre, apellido, posicion, equipo_lfp:equipo_lfp_id (nombre)))')
+        'activo:activo_id (tipo, equipo_lfp:equipo_lfp_id (nombre, escudo), ' +
+        'jugador_lfp:jugador_lfp_id (nombre, apellido, posicion, ' +
+        'equipo_lfp:equipo_lfp_id (nombre, escudo)))')
       .eq('draft_id', d.id)
       .order('orden_seleccion', { ascending: true });
     if (error) return;
@@ -259,6 +261,7 @@ export class DraftService {
           : `${a?.jugador_lfp?.nombre ?? ''} ${a?.jugador_lfp?.apellido ?? ''}`.trim(),
         posicion: esPorteria ? 'PORTERO' : (a?.jugador_lfp?.posicion ?? ''),
         club: esPorteria ? (a?.equipo_lfp?.nombre ?? '') : (a?.jugador_lfp?.equipo_lfp?.nombre ?? ''),
+        escudo: esPorteria ? (a?.equipo_lfp?.escudo ?? null) : (a?.jugador_lfp?.equipo_lfp?.escudo ?? null),
         es_porteria: esPorteria,
       } as PickDetalle;
     }));

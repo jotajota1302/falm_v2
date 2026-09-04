@@ -121,7 +121,8 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
 
           <div class="fila cab">
             <span title="Marca a quien quieras vigilar: si otro se te adelanta, lo verás tacharse al instante">★</span>
-            <span>Pos</span><span>Jugador</span><span class="club">Club</span>
+            <span>Pos</span><span>Jugador</span>
+            <span class="club"><span class="cl-txt">Club</span></span>
             <span class="der" title="Máximo 2 jugadores del Madrid, Barcelona o Atlético, y 3 de cualquier otro club">Cupo</span>
             <span></span>
           </div>
@@ -148,7 +149,7 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
                 </span>
                 <span class="club">
                   @if (a.escudo) { <img [src]="a.escudo" alt="" loading="lazy" /> }
-                  {{ a.club }}
+                  <span class="cl-txt">{{ a.club }}</span>
                 </span>
                 <span class="der num cupo" [class.lleno]="clubLleno(a)"
                       [title]="'Máximo ' + (a.limite_club ?? 3) + ' de ' + a.club">
@@ -252,7 +253,8 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
             } @else {
               <div class="fila cab pk">
                 <span class="der">#</span><span>Equipo</span><span>Pos</span>
-                <span>Jugador</span><span class="club">Club</span><span></span>
+                <span>Jugador</span>
+                <span class="club"><span class="cl-txt">Club</span></span><span></span>
               </div>
               @for (p of picksRecientes(); track p.id) {
                 <div class="fila pk">
@@ -260,7 +262,10 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
                   <span class="nom eq">{{ nombreEquipo(p.equipo_falm_id) }}</span>
                   <span class="pos" [class]="abr(p.posicion)">{{ abr(p.posicion) }}</span>
                   <span class="nom">{{ p.nombre }}</span>
-                  <span class="club">{{ p.club }}</span>
+                  <span class="club">
+                    @if (p.escudo) { <img [src]="p.escudo" alt="" loading="lazy" /> }
+                    <span class="cl-txt">{{ p.club }}</span>
+                  </span>
                   <span class="ops">
                     <button class="mini-btn" (click)="abrirCambio(p)">Cambiar</button>
                     <button class="mini-btn peligro" (click)="anulando.set(p)">Anular</button>
@@ -324,7 +329,10 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
                 <li>
                   <span class="pos" [class]="abr(a.posicion)">{{ abr(a.posicion) }}</span>
                   <span class="nom">{{ a.nombre }}</span>
-                  <span class="club">{{ a.club }}</span>
+                  <span class="club">
+                    @if (a.escudo) { <img [src]="a.escudo" alt="" loading="lazy" /> }
+                    <span class="cl-txt">{{ a.club }}</span>
+                  </span>
                   <button class="mini-btn" [disabled]="guardando()"
                           (click)="confirmarCambio(a)">Poner</button>
                 </li>
@@ -441,6 +449,7 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
       font-size: var(--t-xs); letter-spacing: .06em; text-transform: uppercase;
       min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .club img { width: 16px; height: 16px; object-fit: contain; flex: 0 0 auto; }
+    .cl-txt { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
     .cupo { color: var(--text2); font-size: var(--t-xs); }
     .cupo.lleno { color: var(--bad); font-weight: 700; }
     .fila .btn { padding: 6px 12px; font-size: var(--t-sm); }
@@ -542,14 +551,19 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     @media (max-width: 900px) {
       .cols { grid-template-columns: 1fr; }
       /* Solo el catálogo: la vista general y el resumen tienen otras columnas. */
-      .cat .fila { grid-template-columns: 26px 40px 1.4fr 60px 88px; padding: 8px 12px; }
-      .cat .fila .club { display: none; }
+      .cat .fila { grid-template-columns: 26px 40px 1.4fr 24px 56px 88px; padding: 8px 12px; }
+      /* El club se queda en el escudo: el nombre no cabe y el escudo se lee igual. */
+      .cl-txt { display: none; }
+      .cat .fila .club, .fila.pk .club, .candidatos .club { justify-content: center; }
+      .cat .fila .club img, .fila.pk .club img, .candidatos .club img {
+        width: 18px; height: 18px; }
       /* Vista general: en el móvil se queda en equipo, picks y porterías. */
       .fila.gl { grid-template-columns: 1.6fr 52px 52px; }
       .fila.gl > :nth-child(n+4) { display: none; }
-      /* Picks: turno, jugador y los dos botones; el club y el equipo se caen. */
-      .fila.pk { grid-template-columns: 34px 46px 1fr 140px; }
-      .fila.pk > :nth-child(2), .fila.pk > .club { display: none; }
+      /* Picks: turno, jugador, escudo y los dos botones; el equipo se cae. */
+      .fila.pk { grid-template-columns: 34px 46px 1fr 24px 140px; }
+      .fila.pk > :nth-child(2) { display: none; }
+      .candidatos li { grid-template-columns: 46px 1fr 24px 62px; }
       .fila.res { grid-template-columns: 42px 1.4fr; }
       .fila.res > :nth-child(3) { display: none; }
       .barra { padding: 11px 12px; }
@@ -560,15 +574,13 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     /* En un teléfono, el catálogo se queda con lo imprescindible: al nombre le
        quedaban 50px entre el cupo, la estrella y el botón de fichar. */
     @media (max-width: 620px) {
-      .cat .fila { grid-template-columns: 24px 36px 1fr 76px; gap: 8px; padding: 8px 10px; }
+      .cat .fila { grid-template-columns: 24px 34px 1fr 22px 74px; gap: 8px; padding: 8px 10px; }
       .cat .fila > :nth-child(5) { display: none; }
       .cat .fila .ret { width: 28px; height: 28px; }
-      .fila.pk { grid-template-columns: 28px 40px 1fr 104px; gap: 8px; padding: 8px 10px; }
+      .fila.pk { grid-template-columns: 28px 38px 1fr 22px 100px; gap: 8px; padding: 8px 10px; }
       .fila.pk .ops { gap: 5px; }
       .mini-btn { padding: 6px 8px; font-size: var(--t-xs); }
-      /* El modal de corrección: sin club, que es lo que menos decide. */
-      .candidatos li { grid-template-columns: 40px 1fr 62px; gap: 8px; }
-      .candidatos li > :nth-child(3) { display: none; }
+      .candidatos li { grid-template-columns: 40px 1fr 22px 58px; gap: 8px; }
       .cola li { grid-template-columns: 14px 32px 1fr 22px 22px; gap: 6px; }
     }
   `],
