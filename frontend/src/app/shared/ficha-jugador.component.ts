@@ -16,10 +16,13 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
           <button class="x" (click)="ficha.close()" aria-label="Cerrar ficha">✕</button>
 
           <div class="head">
-            <span class="av">
+            <span class="av" [class.solo-escudo]="(!j.foto || sinFoto()) && !!j.escudo">
               @if (j.escudo) { <img class="wm" [src]="j.escudo" alt="" /> }
               @if (j.foto) { <img class="pl" [src]="j.foto" alt="" (error)="sinFoto.set(true)" [style.display]="sinFoto() ? 'none':'block'" /> }
-              @if (!j.foto || sinFoto()) { <span class="ini">{{ (j.nombre || '?').charAt(0) }}</span> }
+              <!-- Sin retrato manda el escudo del club, que ya está de fondo: la
+                   inicial solo aparece si tampoco hay escudo (una "P" de Portería
+                   no dice nada). -->
+              @if ((!j.foto || sinFoto()) && !j.escudo) { <span class="ini">{{ (j.nombre || '?').charAt(0) }}</span> }
             </span>
             <div class="meta">
               <span class="pos" [class]="abr(j.posicion)">{{ abr(j.posicion) }}</span>
@@ -92,6 +95,9 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
       background: var(--surface2); border: 1px solid var(--line);
       display: flex; align-items: flex-end; justify-content: center; }
     .av .wm { position: absolute; width: 124%; left: 50%; top: 50%; transform: translate(-50%,-50%); opacity: .16; object-fit: contain; }
+    /* Una portería no tiene cara: su escudo deja de ser marca de agua y pasa a
+       ser la imagen, entero y centrado. */
+    .av.solo-escudo .wm { width: 72%; opacity: 1; }
     .av .pl { position: relative; z-index: 1; width: 100%; height: 100%; object-fit: contain; object-position: bottom; }
     .av .ini { position: relative; z-index: 1; font-family: var(--fb); font-weight: 700; font-size: var(--t-xl); padding-bottom: 6px; color: var(--text2); }
     .meta h2 { margin: 5px 0; font-size: var(--t-xl); letter-spacing: -.01em; }
