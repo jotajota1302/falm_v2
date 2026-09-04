@@ -131,6 +131,8 @@ export interface Alineado {
 export interface AlineacionGuardada {
   formacion: string;
   jugadores: Alineado[];
+  /** Solo en ultimaAlineacion: de qué jornada se copió, para poder decirlo. */
+  desdeJornada?: number;
 }
 
 export const FORMACIONES = ['5-4-1', '5-3-2', '4-5-1', '4-4-2', '4-3-3', '3-4-3', '3-5-2'];
@@ -596,7 +598,8 @@ export class FalmService {
     if (filas.length === 0) return null;
     filas.sort((a, b) => (b.jornada_falm?.numero ?? 0) - (a.jornada_falm?.numero ?? 0));
     const top = filas[0];
-    return { formacion: top.formacion, jugadores: this.aMapa(top.alineacion_activo) };
+    return { formacion: top.formacion, jugadores: this.aMapa(top.alineacion_activo),
+             desdeJornada: top.jornada_falm?.numero };
   }
 
   /**

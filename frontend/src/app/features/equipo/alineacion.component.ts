@@ -58,6 +58,21 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
           <button class="atajo" (click)="copiarDeLiga()">Copiar de Liga</button>
         </div>
       }
+
+      <!-- Lo que se ve puede ser el once ya mandado o una copia del anterior.
+           Sin decirlo, parecía que ya estaba enviado y no lo estaba. -->
+      @if (jornada()) {
+        @if (enviada()) {
+          <p class="estado ok">Once enviado para esta jornada.</p>
+        } @else if (copiadaDe() !== null) {
+          <p class="estado borrador">
+            <b>Todavía no has mandado once para esta jornada.</b>
+            Esto es una copia del de la jornada {{ copiadaDe() }}: revísala y dale a guardar.
+          </p>
+        } @else {
+          <p class="estado borrador">Todavía no has mandado once para esta jornada.</p>
+        }
+      }
       @if (aviso()) { <p class="aviso">{{ aviso() }}</p> }
 
       <!-- CAMPO: huecos por formación -->
@@ -274,6 +289,14 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
     .aviso { background: var(--surface); border: 1px solid var(--accent); color: var(--accent);
       padding: 10px 15px; border-radius: 11px; margin-bottom: 12px; font-size: var(--t-sm); font-weight: 600; }
 
+    /* Si el once está mandado o es solo un borrador copiado. */
+    .estado { padding: 9px 15px; border-radius: 11px; margin: 0 0 12px;
+      font-size: var(--t-sm); line-height: 1.5; border: 1px solid var(--line); }
+    .estado.ok { color: var(--text2); background: var(--surface2); }
+    .estado.borrador { color: var(--text); background: var(--surface2);
+      border-color: var(--accent-line); }
+    .estado.borrador b { color: var(--accent); }
+
     /* Campo de verdad: césped segado y líneas de cal dibujadas en CSS, sin
        imagen que cargar. La portería arriba, como se ha alineado siempre. */
     /* En pantalla ancha, el banquillo se pone al lado del campo en vez de
@@ -456,6 +479,10 @@ export class AlineacionComponent implements OnInit {
   /** Calendario de cada competición, ya consultado al arrancar. */
   private cacheJornadas = new Map<string, JornadaFalm[]>();
   jornada = signal<JornadaFalm | null>(null);
+  /** ¿Hay alineación guardada para la jornada abierta? */
+  enviada = signal(false);
+  /** Si no la hay, de qué jornada se ha copiado el borrador que se está viendo. */
+  copiadaDe = signal<number | null>(null);
   plantilla = signal<ItemPlantilla[]>([]);
   puntos = signal<Record<string, number>>({});
   titulares = signal<string[]>([]);
@@ -713,11 +740,14 @@ export class AlineacionComponent implements OnInit {
   }
   async seleccionarJornada(j: JornadaFalm) {
     this.jornada.set(j); this.aviso.set('');
+    this.enviada.set(false); this.copiadaDe.set(null);
     const eq = this.equipo(); if (!eq) return;
     const ali = await this.falm.getAlineacion(eq.id, j.id);
-    if (ali) { this.aplicar(ali); return; }
+    if (ali) { this.aplicar(ali); this.enviada.set(true); return; }
+    // Sin once propio se precarga el anterior, pero como borrador: hay que
+    // guardarlo para que cuente.
     const prev = await this.falm.ultimaAlineacion(eq.id, this.competicionId(), j.numero);
-    if (prev) { this.aplicar(prev); }
+    if (prev) { this.aplicar(prev); this.copiadaDe.set(prev.desdeJornada ?? null); }
     else this.limpiar();
   }
   private limpiar() { this.titulares.set([]); this.banca.set([]); this.formacion.set('4-4-2'); }
@@ -732,13 +762,16 @@ export class AlineacionComponent implements OnInit {
   async repetirUltima() {
     const eq = this.equipo(); const j = this.jornada(); if (!eq || !j) return;
     const prev = await this.falm.ultimaAlineacion(eq.id, this.competicionId(), j.numero);
-    if (prev) { this.aplicar(prev); this.aviso.set('↩︎ Cargada tu última. Revisa y guarda.'); }
+    if (prev) { this.aplicar(prev); this.enviada.set(false);
+                this.copiadaDe.set(prev.desdeJornada ?? null);
+                this.aviso.set('↩︎ Cargada tu última. Revisa y guarda.'); }
     else this.aviso.set('No hay alineación anterior en esta competición.');
   }
   async copiarDeLiga() {
     const eq = this.equipo(); const j = this.jornada(); if (!eq || !j) return;
     const liga = await this.falm.copiarDesdeLiga(eq.id, j.fecha);
-    if (liga) { this.aplicar(liga); this.aviso.set('Copiada de Liga. Revisa y guarda.'); }
+    if (liga) { this.aplicar(liga); this.enviada.set(false); this.copiadaDe.set(null);
+                this.aviso.set('Copiada de Liga. Revisa y guarda.'); }
     else this.aviso.set('No hay alineación de Liga de ese fin de semana.');
   }
 
@@ -852,6 +885,7 @@ export class AlineacionComponent implements OnInit {
     this.guardando.set(true);
     try {
       await this.falm.guardarAlineacion(eq.id, jor.id, this.formacion(), jugadores);
+      this.enviada.set(true); this.copiadaDe.set(null);
       try { await this.falm.recalcular(); this.aviso.set('Alineación guardada y clasificación recalculada.'); }
       catch { this.aviso.set('Alineación guardada.'); }
     } catch (e: any) { this.aviso.set(e?.message ?? 'Error al guardar'); }
