@@ -152,7 +152,13 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
                 }
               } @else if (reinicioAbierto()) {
                 <div class="reinicio">
-                  <p class="rtit"><b>Vas a borrar los {{ draft().picks_hechos }} picks del draft.</b></p>
+                  <p class="rtit"><b>
+                    @if (draft().picks_hechos > 0) {
+                      Vas a borrar las {{ draft().picks_hechos }} elecciones y el orden del sorteo.
+                    } @else {
+                      Vas a borrar el orden del sorteo.
+                    }
+                  </b></p>
                   <p class="hint">
                     Se borran las elecciones <b>y el orden del sorteo</b>: el draft se queda
                     en blanco y hay que volver a sortear para empezar. <b>Esto no se deshace</b>,
@@ -473,10 +479,15 @@ export class AdminPretemporadaComponent implements OnInit {
   /** Quién abre el draft con el orden actual: se dice en el botón de reinicio. */
   primerEquipo() { return this.draft()?.turno?.equipo ?? ''; }
 
-  /** Un único camino: si hay elecciones, primero se confirma; si no, al sorteo. */
+  /**
+   * Hay algo que borrar mientras queden elecciones O un orden sorteado: con cero
+   * picks pero con orden esto solo abría el sorteo y el orden viejo seguía ahí,
+   * así que el draft continuaba diciendo a quién le tocaba.
+   */
   empezarDeCero() {
     const d = this.draft();
-    if (d?.picks_hechos > 0) { this.reinicioAbierto.set(true); this.confirmaTexto.set(''); }
+    const hayAlgo = (d?.picks_hechos ?? 0) > 0 || (d?.picks_totales ?? 0) > 0;
+    if (hayAlgo) { this.reinicioAbierto.set(true); this.confirmaTexto.set(''); }
     else this.sorteoAbierto.set(true);
   }
 
