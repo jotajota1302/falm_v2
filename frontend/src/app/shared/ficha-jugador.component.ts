@@ -55,9 +55,10 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
             @if (barras().length) {
               <div class="chart">
                 @for (d of barras(); track d.j) {
-                  <div class="bar" [title]="'J' + d.j + ': ' + d.p + ' pts'">
-                    <span class="fill" [style.height.%]="d.h" [class.neg]="d.p < 0"></span>
-                    <span class="jl num">{{ d.j }}</span>
+                  <div class="bar" [title]="'Jornada ' + d.j + ': ' + d.p + ' puntos'">
+                    <span class="pv num" [class.neg]="d.p < 0">{{ d.p }}</span>
+                    <span class="tubo"><span class="fill" [style.height.%]="d.h" [class.neg]="d.p < 0"></span></span>
+                    <span class="jl">J{{ d.j }}</span>
                   </div>
                 }
               </div>
@@ -112,11 +113,18 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
     .acum .s span { font-size: var(--t-xs); font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--text2); }
 
     h3 { margin: 0 0 12px; color: var(--text2); letter-spacing: .16em; font-size: var(--t-xs); font-weight: 700; }
-    .chart { display: flex; align-items: flex-end; gap: 5px; height: 118px; overflow-x: auto; padding-bottom: 4px; }
-    .bar { flex: 0 0 17px; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 4px; }
+    /* Cada barra dice cuántos puntos fueron encima y de qué jornada debajo:
+       con solo el número suelto no se distinguía una cosa de la otra. */
+    .chart { display: flex; align-items: flex-end; gap: 5px; height: 150px; overflow-x: auto; padding-bottom: 4px; }
+    .bar { flex: 0 0 30px; height: 100%; display: flex; flex-direction: column;
+      justify-content: flex-end; align-items: center; gap: 3px; }
+    .pv { font-family: var(--fm); font-size: var(--t-xs); font-weight: 700; line-height: 1; }
+    .pv.neg { color: var(--bad); }
+    /* La barra crece dentro de su hueco, para no empujar a las dos etiquetas. */
+    .tubo { flex: 1 1 auto; width: 100%; display: flex; align-items: flex-end; }
     .fill { width: 100%; min-height: 2px; background: var(--accent); border-radius: 4px 4px 0 0; }
     .fill.neg { background: var(--bad); }
-    .jl { font-size: var(--t-xs); color: var(--text2); font-weight: 600; }
+    .jl { font-size: var(--t-xs); color: var(--text2); font-weight: 600; letter-spacing: .02em; }
     .muted { color: var(--text2); }
   `],
 })
