@@ -107,10 +107,9 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
     .club img { width: 18px; height: 18px; object-fit: contain; flex: 0 0 auto; }
 
     .pts { font-family: var(--fm); text-align: right; }
-    /* Quien aún no ha puntuado lleva un cero, no un hueco. */
-    .pts.cero { display: inline-flex; align-items: center; justify-content: center;
-      margin-left: auto; width: 22px; height: 22px; color: var(--text2);
-      border: 1px solid var(--line); border-radius: 50%; }
+    /* Quien aún no ha puntuado lleva un cero, no un hueco: gris, pero un número
+       como los demás, para que la columna se lea de arriba abajo. */
+    .pts.cero { color: var(--text2); }
     .vacio { padding: 22px 18px; margin: 0; font-size: var(--t-sm); }
 
     .pie { display: flex; align-items: center; justify-content: space-between;

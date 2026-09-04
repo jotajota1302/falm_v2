@@ -161,9 +161,9 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
       object-position: top center; background: var(--surface2); }
     .fo.es { object-fit: contain; padding: 3px; border: 1px solid var(--line); }
     .pts { font-family: var(--fm); text-align: right; }
-    .pts.cero { display: inline-flex; align-items: center; justify-content: center;
-      margin-left: auto; width: 22px; height: 22px; color: var(--text2);
-      border: 1px solid var(--line); border-radius: 50%; }
+    /* El cero se distingue por el gris, no por un aro: en la columna de puntos
+       todos los números tienen que verse iguales. */
+    .pts.cero { color: var(--text2); }
     /* Lo pedido se marca en el papel, para no perderlo al desplazar la lista. */
     .fila.pedido { background: var(--accent-soft); }
     .nom { background: none; border: none; padding: 0; text-align: left; cursor: pointer;

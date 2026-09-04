@@ -207,11 +207,9 @@ interface Once { equipo: string; formacion: string; campo: EnCampo[]; banca: EnB
     .cl { width: 18px; height: 18px; object-fit: contain; opacity: .85; }
     .pts { font-family: var(--fm); font-size: var(--t-sm); text-align: right; }
     /* Sin puntuación todavía es un cero, no un hueco: se ve que jugó y no sumó
-       igual que se vería un 7. */
-    .pts.cero, .s em.cero { display: inline-flex; align-items: center; justify-content: center;
-      width: 22px; height: 22px; border: 1px solid var(--line); border-radius: 50%;
-      color: var(--text2); }
-    .pts.cero { margin-left: auto; }
+       igual que se vería un 7. Se distingue por el gris, no por un círculo:
+       un número dentro de un aro y otro sin él no parecen la misma columna. */
+    .pts.cero, .s em.cero { color: var(--text2); }
 
     /* El banquillo, agrupado por la línea que cubre cada uno: de un vistazo se
        ve quién entra si falla un defensa, un medio o un delantero. */
@@ -263,7 +261,6 @@ interface Once { equipo: string; formacion: string; campo: EnCampo[]; banca: EnB
       .j11 { grid-template-columns: 30px 24px 1fr 16px 34px; gap: 7px; }
       .tabla .fila { padding: 6px 12px; }
       .cola { grid-template-columns: 30px 1fr; gap: 7px; }
-      .pts.cero, .s em.cero { width: 20px; height: 20px; }
     }
   `],
 })

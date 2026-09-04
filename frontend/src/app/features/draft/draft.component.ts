@@ -566,8 +566,13 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
       .candidatos li { grid-template-columns: 46px 1fr 24px 62px; }
       .fila.res { grid-template-columns: 42px 1.4fr; }
       .fila.res > :nth-child(3) { display: none; }
-      .barra { padding: 11px 12px; }
-      .barra .buscar { flex: 1 1 100%; margin-left: 0; }
+      .barra { padding: 11px 12px; gap: 7px; }
+      /* El rótulo se va: son 70px que le faltaban a los filtros para caber. */
+      .barra .lb { display: none; }
+      /* El club y la búsqueda se reparten la última línea en vez de una cada uno. */
+      .barra .club-f, .barra .buscar { flex: 1 1 calc(50% - 4px); min-width: 0;
+        margin-left: 0; height: 34px; padding: 0 12px; font-size: var(--t-sm);
+        border-radius: var(--pill); }
       .tira { padding: 10px 12px; }
     }
 
