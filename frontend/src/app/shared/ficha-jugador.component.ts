@@ -53,11 +53,21 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
 
             <h3>Puntos por jornada</h3>
             @if (barras().length) {
-              <div class="chart">
+              <!-- Cero en medio: lo que suma va hacia arriba y lo que resta hacia
+                   abajo, con la cifra dentro de su propia barra. -->
+              <div class="chart" [class.conneg]="hayNegativos()">
                 @for (d of barras(); track d.j) {
                   <div class="bar" [title]="'Jornada ' + d.j + ': ' + d.p + ' puntos'">
-                    <span class="pv num" [class.neg]="d.p < 0">{{ d.p }}</span>
-                    <span class="tubo"><span class="fill" [style.height.%]="d.h" [class.neg]="d.p < 0"></span></span>
+                    <span class="up" [style.flex-basis.%]="zonaPos()">
+                      @if (d.p >= 0) {
+                        <span class="fill" [style.height.%]="d.h"><i class="num">{{ d.p }}</i></span>
+                      }
+                    </span>
+                    <span class="dn">
+                      @if (d.p < 0) {
+                        <span class="fill neg" [style.height.%]="d.h"><i class="num">{{ d.p }}</i></span>
+                      }
+                    </span>
                     <span class="jl">J{{ d.j }}</span>
                   </div>
                 }
@@ -113,18 +123,21 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
     .acum .s span { font-size: var(--t-xs); font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--text2); }
 
     h3 { margin: 0 0 12px; color: var(--text2); letter-spacing: .16em; font-size: var(--t-xs); font-weight: 700; }
-    /* Cada barra dice cuántos puntos fueron encima y de qué jornada debajo:
-       con solo el número suelto no se distinguía una cosa de la otra. */
-    .chart { display: flex; align-items: flex-end; gap: 5px; height: 150px; overflow-x: auto; padding-bottom: 4px; }
-    .bar { flex: 0 0 30px; height: 100%; display: flex; flex-direction: column;
-      justify-content: flex-end; align-items: center; gap: 3px; }
-    .pv { font-family: var(--fm); font-size: var(--t-xs); font-weight: 700; line-height: 1; }
-    .pv.neg { color: var(--bad); }
-    /* La barra crece dentro de su hueco, para no empujar a las dos etiquetas. */
-    .tubo { flex: 1 1 auto; width: 100%; display: flex; align-items: flex-end; }
-    .fill { width: 100%; min-height: 2px; background: var(--accent); border-radius: 4px 4px 0 0; }
-    .fill.neg { background: var(--bad); }
-    .jl { font-size: var(--t-xs); color: var(--text2); font-weight: 600; letter-spacing: .02em; }
+    /* Los puntos van dentro de su barra y la jornada debajo. Sin hueco entre
+       columnas, la línea del cero sale continua de lado a lado. */
+    .chart { display: flex; align-items: stretch; height: 160px; overflow-x: auto; padding-bottom: 4px; }
+    .bar { flex: 0 0 34px; display: flex; flex-direction: column; align-items: stretch; padding: 0 3px; }
+    .up { display: flex; align-items: flex-end; }
+    .chart.conneg .up { border-bottom: 1px solid var(--line); }
+    .dn { flex: 1 1 auto; display: flex; align-items: flex-start; }
+    .fill { width: 100%; min-height: 19px; background: var(--accent); border-radius: 4px 4px 0 0;
+      display: flex; align-items: flex-start; justify-content: center; padding-top: 3px; }
+    .fill.neg { background: var(--bad); border-radius: 0 0 4px 4px;
+      align-items: flex-end; padding: 0 0 3px; }
+    .fill i { font-family: var(--fm); font-style: normal; font-size: var(--t-xs);
+      font-weight: 700; color: var(--accent-ink); line-height: 1; }
+    .jl { text-align: center; margin-top: 4px; font-size: var(--t-xs);
+      color: var(--text2); font-weight: 600; }
     .muted { color: var(--text2); }
   `],
 })
@@ -170,8 +183,25 @@ export class FichaJugadorComponent {
   barras = computed(() => {
     const jn = (x: any) => Number(x.jornada?.numero ?? x.jornada ?? 0);
     const h = [...this.jornadas()].sort((a, b) => jn(a) - jn(b));
-    const max = Math.max(1, ...h.map((x) => Math.abs(Number(x.puntosJornada ?? 0))));
-    return h.map((x) => ({ j: jn(x), p: Number(x.puntosJornada ?? 0), h: Math.abs(Number(x.puntosJornada ?? 0)) / max * 100 }));
+    const maxP = Math.max(1, ...h.map((x) => Number(x.puntosJornada ?? 0)));
+    const maxN = Math.max(1, ...h.map((x) => -Number(x.puntosJornada ?? 0)));
+    return h.map((x) => {
+      const p = Number(x.puntosJornada ?? 0);
+      return { j: jn(x), p, h: (p >= 0 ? p / maxP : -p / maxN) * 100 };
+    });
+  });
+
+  hayNegativos = computed(() => this.barras().some((d) => d.p < 0));
+  /**
+   * Cuánto alto se lleva la mitad de arriba. Sin negativos, todo; con ellos, en
+   * proporción a lo mejor y lo peor, sin que ninguna zona baje del 30%.
+   */
+  zonaPos = computed(() => {
+    if (!this.hayNegativos()) return 100;
+    const maxP = Math.max(0, ...this.barras().map((d) => d.p));
+    const maxN = Math.max(0, ...this.barras().map((d) => -d.p));
+    const total = maxP + maxN || 1;
+    return Math.min(70, Math.max(30, Math.round((maxP / total) * 100)));
   });
 
   constructor(public ficha: FichaService, private falm: FalmService) {
