@@ -108,6 +108,13 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
                     (click)="soloLibres.set(!soloLibres())">
               Ver fichados ({{ d.picks().length }})
             </button>
+            <select class="club-f" [ngModel]="clubFiltro()"
+                    (ngModelChange)="clubFiltro.set($event); limite.set(30)">
+              <option value="">Todos los clubes</option>
+              @for (c of clubes(); track c.nombre) {
+                <option [value]="c.nombre">{{ c.nombre }} ({{ c.libres }})</option>
+              }
+            </select>
             <input class="buscar" type="search" placeholder="Buscar jugador o club…"
                    [ngModel]="texto()" (ngModelChange)="texto.set($event); limite.set(30)" />
           </div>
@@ -572,6 +579,7 @@ export class DraftComponent implements OnInit, OnDestroy {
   texto = signal('');
   posFiltro = signal('');
   soloLibres = signal(true);
+  clubFiltro = signal('');
   soloCola = signal(false);
   limite = signal(30);
   msg = signal('');
@@ -708,6 +716,18 @@ export class DraftComponent implements OnInit, OnDestroy {
     return !this.d.debeElegirPorteria() || a.tipo === 'DEFENSA';
   }
 
+  /** Los clubes del catálogo, con cuántos les quedan sin fichar. */
+  readonly clubes = computed(() => {
+    const tom = this.d.tomadoPor();
+    const m = new Map<string, number>();
+    for (const a of this.d.catalogo()) {
+      if (!a.club) continue;
+      m.set(a.club, (m.get(a.club) ?? 0) + (tom.has(a.activo_id) ? 0 : 1));
+    }
+    return [...m.entries()].map(([nombre, libres]) => ({ nombre, libres }))
+      .sort((x, y) => x.nombre.localeCompare(y.nombre, 'es'));
+  });
+
   readonly visibles = computed(() => {
     const t = this.texto().trim().toLowerCase();
     const p = this.posFiltro();
@@ -715,8 +735,10 @@ export class DraftComponent implements OnInit, OnDestroy {
     const soloC = this.soloCola();
     const cola = new Set(this.d.cola().map((c) => c.activo_id));
     const tom = this.d.tomadoPor();
+    const club = this.clubFiltro();
     return this.d.catalogo().filter((a) => {
       if (p && a.posicion !== p) return false;
+      if (club && a.club !== club) return false;
       if (soloL && tom.has(a.activo_id)) return false;
       if (soloC && !cola.has(a.activo_id)) return false;
       if (t && !`${a.nombre} ${a.club}`.toLowerCase().includes(t)) return false;

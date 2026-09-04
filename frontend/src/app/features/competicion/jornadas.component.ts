@@ -29,7 +29,9 @@ import { colorEquipo } from '../../shared/equipo-colores';
                 aria-label="Jornadas anteriores">‹</button>
         <div class="jchips">
           @for (j of jornadasPag(); track j.id) {
-            <button [class.on]="j.id === jornadaId()" (click)="seleccionarJornada(j.id)">J{{ j.numero }}</button>
+            <button [class.on]="j.id === jornadaId()" [class.doble]="esDoble(j.id)"
+                    [title]="esDoble(j.id) ? 'Jornada doble: cada equipo juega dos partidos' : ''"
+                    (click)="seleccionarJornada(j.id)">J{{ j.numero }}@if (esDoble(j.id)) { <i>×2</i> }</button>
           }
         </div>
         <button class="jb" (click)="mover(1)" [disabled]="bloque() >= paginas() - 1"
@@ -44,6 +46,10 @@ import { colorEquipo } from '../../shared/equipo-colores';
     } @else if (enfrentamientos().length === 0) {
       <p class="muted">No hay partidos en esta jornada.</p>
     } @else {
+      @if (esDoble(jornadaId())) {
+        <p class="doble-av">Jornada doble: cada equipo juega dos partidos y los dos
+          se puntúan con la misma alineación.</p>
+      }
       <div class="lista">
         @for (e of enfrentamientos(); track e.enfrentamiento_id) {
           <button class="match" (click)="abrirDetalle(e)">
@@ -132,6 +138,13 @@ import { colorEquipo } from '../../shared/equipo-colores';
       background: var(--surface); color: var(--text2); border-radius: 10px; cursor: pointer;
       font-family: var(--fm); font-weight: 600; font-size: var(--t-sm); }
     .jchips button.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+    /* Las dobles se marcan en la tira: cambian lo que vale la alineación. */
+    .jchips button.doble { border-color: var(--por); }
+    .jchips button i { font-style: normal; font-size: var(--t-xs); margin-left: 2px; color: var(--por); }
+    .jchips button.on i { color: var(--accent-ink); }
+    .doble-av { margin: 0 0 12px; padding: 9px 13px; font-size: var(--t-sm);
+      background: var(--surface); border: 1px solid var(--line);
+      border-left: 3px solid var(--por); border-radius: var(--r-sm); color: var(--text2); }
 
     .lista { display: flex; flex-direction: column; gap: 10px; }
     .match { width: 100%; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
@@ -265,6 +278,8 @@ export class JornadasComponent implements OnInit {
   async cargarJornadas(compId: string) {
     const js = await this.falm.jornadas(compId);
     this.jornadas.set(js);
+    this.falm.jornadasDobles(js.map((j) => j.id))
+      .then((d) => this.dobles.set(d)).catch(() => {});
     if (js.length === 0) { this.enfrentamientos.set([]); this.cargando.set(false); return; }
     // Se abre en la que se está jugando, no en la última del calendario.
     const i = this.indiceActual(js);
@@ -288,6 +303,9 @@ export class JornadasComponent implements OnInit {
     js.forEach((j, k) => { if (j.fecha && new Date(j.fecha).getTime() <= ahora) i = k; });
     return i;
   }
+
+  dobles = signal<Set<string>>(new Set());
+  esDoble(id: string | null) { return !!id && this.dobles().has(id); }
 
   /** Las jornadas se enseñan por decenas, con la de la jornada abierta delante. */
   readonly porPagina = 10;

@@ -43,6 +43,9 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
           <div class="jc">
             <h2 class="jt">Jornada {{ j.numero }}</h2>
             @if (j.fecha) { <span class="jf">{{ fechaCorta(j.fecha) }}</span> }
+            @if (esDoble(j.id)) {
+              <span class="jdoble" title="Cada equipo juega dos partidos y los dos se puntúan con esta alineación">Jornada doble ×2</span>
+            }
             @if (!esJornadaPorDefecto()) {
               <button class="jhoy" (click)="irAJornadaActual()">Ir a la actual</button>
             }
@@ -247,6 +250,10 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
     .jt { margin: 0; font-family: var(--fh); font-size: var(--t-xl); font-weight: 600;
       letter-spacing: -.01em; }
     .jf { font-size: var(--t-sm); color: var(--text2); text-transform: capitalize; }
+    /* En una jornada doble esta misma alineación puntúa en dos partidos. */
+    .jdoble { font-size: var(--t-xs); font-weight: 700; letter-spacing: .06em;
+      color: var(--por); border: 1px solid color-mix(in oklab, var(--por) 34%, var(--line));
+      border-radius: var(--pill); padding: 3px 9px; }
     .jhoy { background: none; border: none; cursor: pointer; padding: 0;
       font-family: var(--fb); font-size: var(--t-sm); color: var(--text2);
       text-decoration: underline; text-underline-offset: 3px; }
@@ -571,6 +578,9 @@ export class AlineacionComponent implements OnInit {
   etiqueta(t: string) { return t === 'CHAMPIONS' ? 'Champions' : t === 'CLAUSURA' ? 'Clausura' : 'Liga'; }
   etiquetaPos(p: string) { return ETI[p] ?? p; }
   abr(p: string) { return ABR[p] ?? p; }
+  dobles = signal<Set<string>>(new Set());
+  esDoble(id: string) { return this.dobles().has(id); }
+
   fechaCorta(iso: string) {
     const d = new Date(iso);
     return d.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' }) +
@@ -738,6 +748,8 @@ export class AlineacionComponent implements OnInit {
     const js = this.cacheJornadas.get(compId) ?? await this.falm.jornadas(compId);
     this.cacheJornadas.set(compId, js);
     this.jornadasComp.set(js);
+    this.falm.jornadasDobles(js.map((x) => x.id))
+      .then((d) => this.dobles.set(d)).catch(() => {});
     const proxima = this.porDefecto();
     if (proxima) await this.seleccionarJornada(proxima);
     else { this.jornada.set(null); this.limpiar(); }

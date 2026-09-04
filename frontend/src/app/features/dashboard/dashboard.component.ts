@@ -49,7 +49,9 @@ interface Once { equipo: string; formacion: string; campo: EnCampo[]; banca: EnB
       @if (ag()?.proximo; as pr) {
         <section class="next">
           <div class="nh">
-            <span class="jlbl">Jornada {{ pr.numero }} · {{ etiqueta(pr.comp) }}</span>
+            <span class="jlbl">Jornada {{ pr.numero }} · {{ etiqueta(pr.comp) }}
+              @if (doble()) { <b class="x2" title="Cada equipo juega dos partidos con esta misma alineación">doble ×2</b> }
+            </span>
             <span class="fecha">{{ fechaLarga(pr.fecha) }}</span>
           </div>
           <div class="match">
@@ -164,6 +166,8 @@ interface Once { equipo: string; formacion: string; campo: EnCampo[]; banca: EnB
     .nh { display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
       padding-bottom: 14px; border-bottom: 1px solid var(--line); margin-bottom: 20px; }
     .jlbl { font-size: var(--t-xs); font-weight: 700; text-transform: uppercase; letter-spacing: .16em; color: var(--accent); }
+    /* Una jornada doble se puntúa dos veces con la misma alineación. */
+    .x2 { margin-left: 7px; color: var(--por); letter-spacing: .06em; }
     .fecha { font-size: var(--t-sm); color: var(--text2); text-transform: capitalize; }
     .match { display: flex; align-items: center; justify-content: center; gap: 16px; }
     .match .tn { flex: 1; min-width: 0; text-align: center; font-family: var(--fh); font-size: var(--t-lg);
@@ -275,6 +279,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
   /** Los dos onces de la jornada que viene (o de la que se está jugando). */
   mio = signal<Once | null>(null);
   rival = signal<Once | null>(null);
+  /** Si en esta jornada cada equipo juega dos partidos. */
+  doble = signal(false);
 
   actual = computed<AgendaItem | null>(() => this.ag()?.en_juego ?? this.ag()?.ultimo ?? null);
   /** La jornada cuyo once enseñamos: la que viene, y si no la que está en juego. */
@@ -397,6 +403,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.ag.set(await this.falm.agenda(eq.id));
         const f = this.foco();
         if (f?.jornada_id) {
+          this.falm.jornadasDobles([f.jornada_id])
+            .then((d) => this.doble.set(d.has(f.jornada_id))).catch(() => {});
           const [yo, otro] = await Promise.all([
             this.onceDe(eq.id, eq.nombre, f.jornada_id),
             this.onceDe(f.rival_id, f.rival, f.jornada_id),

@@ -372,6 +372,31 @@ export class FalmService {
   }
 
   /** Enfrentamientos de una jornada (puntos reales importados) + reparto 3/2/1.5. */
+  /**
+   * Cuáles de esas jornadas son dobles. Doble = algún equipo juega dos veces en
+   * ella, así que una sola alineación cuenta para los dos partidos.
+   */
+  async jornadasDobles(jornadaIds: string[]): Promise<Set<string>> {
+    const ids = [...new Set(jornadaIds.filter(Boolean))];
+    if (!ids.length) return new Set();
+    const { data, error } = await this.sb.client
+      .from('enfrentamiento')
+      .select('jornada_falm_id, equipo_local_id, equipo_visitante_id')
+      .in('jornada_falm_id', ids);
+    if (error) throw error;
+    const veces = new Map<string, number>();
+    const dobles = new Set<string>();
+    for (const e of (data ?? []) as any[]) {
+      for (const eq of [e.equipo_local_id, e.equipo_visitante_id]) {
+        const k = `${e.jornada_falm_id}|${eq}`;
+        const n = (veces.get(k) ?? 0) + 1;
+        veces.set(k, n);
+        if (n > 1) dobles.add(e.jornada_falm_id);
+      }
+    }
+    return dobles;
+  }
+
   async enfrentamientos(jornadaFalmId: string): Promise<EnfrentamientoFila[]> {
     const { data, error } = await this.sb.client
       .from('enfrentamiento')
