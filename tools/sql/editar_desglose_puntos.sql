@@ -89,7 +89,7 @@ set search_path to 'public', 'falm'
 as $function$
 declare
   v_jlfp uuid; v_activo uuid; v_pos falm.posicion;
-  v_desglose jsonb; v_puntos numeric;
+  v_desglose jsonb; v_puntos numeric; v_sync int := 0;
 begin
   if not falm.puede_gestionar() then
     raise exception 'Solo un administrador puede editar puntuaciones';
@@ -117,7 +117,14 @@ begin
   do update set puntos = excluded.puntos, desglose = excluded.desglose,
                 tipo_insercion = 'MANUAL', updated_at = now();
 
+  -- Si es portero, rehacer las porterias virtuales de su club, que copian sus
+  -- puntos. Sin forzar: una porteria corregida a mano se respeta.
+  if v_pos = 'PORTERO' then
+    v_sync := falm.sincronizar_porterias(v_jlfp, false);
+  end if;
+
   return jsonb_build_object('ok', true, 'puntos', v_puntos, 'desglose', v_desglose,
+                            'porterias_sincronizadas', v_sync,
                             'explicacion', falm.desglose_puntos(v_pos, v_desglose));
 end $function$;
 
@@ -131,12 +138,15 @@ stable
 security definer
 set search_path to 'public', 'falm'
 as $function$
-  select coalesce(jsonb_agg(jsonb_build_object(
+  with jugadores as (
+    select jsonb_build_object(
       'jugador', jsonb_build_object(
         'id', jl.ext_id,
         'nombre', trim(jl.nombre || ' ' || coalesce(jl.apellido,'')),
         'equipo', el.nombre, 'escudo', el.escudo, 'foto', jl.foto,
         'posicion', jl.posicion::text),
+      'esPorteria', false,
+      'desdePortero', null::text,
       'puntosTotales', pn.puntos,
       'tipo', pn.tipo_insercion::text,
       'goles', coalesce((pn.desglose->>'goles')::int, 0),
@@ -153,14 +163,55 @@ as $function$
       'tarjetasAmarillas', coalesce((pn.desglose->>'tarjetas_amarillas')::int, 0),
       'tarjetasRojas', coalesce((pn.desglose->>'tarjetas_rojas')::int, 0),
       'explicacion', falm.desglose_puntos(jl.posicion, pn.desglose)
-    ) order by pn.puntos desc), '[]'::jsonb)
-  from falm.puntuacion pn
-  join falm.jornada_lfp jlf on jlf.id = pn.jornada_lfp_id
-  join falm.temporada t on t.id = jlf.temporada_id and t.activa
-  join falm.activo a on a.id = pn.activo_id and a.tipo = 'JUGADOR'
-  join falm.jugador_lfp jl on jl.id = a.jugador_lfp_id
-  left join falm.equipo_lfp el on el.id = jl.equipo_lfp_id
-  where jlf.numero = p_lfp;
+    ) fila, pn.puntos
+    from falm.puntuacion pn
+    join falm.jornada_lfp jlf on jlf.id = pn.jornada_lfp_id
+    join falm.temporada t on t.id = jlf.temporada_id and t.activa
+    join falm.activo a on a.id = pn.activo_id and a.tipo = 'JUGADOR'
+    join falm.jugador_lfp jl on jl.id = a.jugador_lfp_id
+    left join falm.equipo_lfp el on el.id = jl.equipo_lfp_id
+    where jlf.numero = p_lfp
+  ),
+  porterias as (
+    select jsonb_build_object(
+      'jugador', jsonb_build_object(
+        'id', null,
+        'nombre', 'Porteria ' || el.nombre,
+        'equipo', el.nombre, 'escudo', el.escudo, 'foto', null,
+        'posicion', 'PORTERO'),
+      'esPorteria', true,
+      'desdePortero', (
+        select trim(j2.nombre || ' ' || coalesce(j2.apellido,''))
+        from falm.puntuacion p2
+        join falm.activo a2 on a2.id = p2.activo_id and a2.tipo = 'JUGADOR'
+        join falm.jugador_lfp j2 on j2.id = a2.jugador_lfp_id
+        where p2.jornada_lfp_id = pn.jornada_lfp_id
+          and j2.posicion = 'PORTERO' and j2.equipo_lfp_id = el.id
+        order by coalesce((p2.desglose->>'minutos')::int, 0) desc
+        limit 1),
+      'puntosTotales', pn.puntos,
+      'tipo', pn.tipo_insercion::text,
+      'goles', 0, 'golesPenalti', 0, 'asistencias', 0,
+      'estrellas', coalesce((pn.desglose->>'estrellas')::numeric, 0),
+      'minutosJugados', coalesce((pn.desglose->>'minutos')::int, 0),
+      'imbatido', coalesce((pn.desglose->>'imbatido')::boolean, false),
+      'resultado', coalesce(pn.desglose->>'resultado', ''),
+      'penaltiFallado', 0,
+      'penaltiParado', coalesce((pn.desglose->>'penalti_parado')::int, 0),
+      'golesEnPropia', 0,
+      'golesEnContra', coalesce((pn.desglose->>'goles_en_contra')::int, 0),
+      'tarjetasAmarillas', 0, 'tarjetasRojas', 0,
+      'explicacion', falm.desglose_puntos('PORTERO'::falm.posicion, pn.desglose)
+    ) fila, pn.puntos
+    from falm.puntuacion pn
+    join falm.jornada_lfp jlf on jlf.id = pn.jornada_lfp_id
+    join falm.temporada t on t.id = jlf.temporada_id and t.activa
+    join falm.activo a on a.id = pn.activo_id and a.tipo = 'DEFENSA'
+    join falm.equipo_lfp el on el.id = a.equipo_lfp_id
+    where jlf.numero = p_lfp
+  )
+  select coalesce(jsonb_agg(fila order by puntos desc), '[]'::jsonb)
+  from (select * from jugadores union all select * from porterias) todo;
 $function$;
 
 grant execute on function falm.editar_desglose(integer, integer, jsonb) to authenticated;
