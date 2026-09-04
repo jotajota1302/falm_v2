@@ -230,6 +230,8 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
       .fila { grid-template-columns: 36px 26px 1fr 44px 82px; gap: 8px; padding: 8px 13px; }
       .fila > :nth-child(4) { display: none; }
       .nom { font-size: var(--t-sm); }
+      /* Mismo caso que en el mercado: el rótulo "Libres" estorba más que informa. */
+      .barra .lb { display: none; }
       .barra .buscar { margin-left: 0; flex: 1 1 100%; }
     }
   `],

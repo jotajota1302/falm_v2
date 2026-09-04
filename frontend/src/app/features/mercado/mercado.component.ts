@@ -121,6 +121,9 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
       /* Sin sitio para el club: se queda el escudo pegado al retrato. */
       .fila { grid-template-columns: 42px 26px 1fr 52px; padding: 7px 13px; }
       .fila > :nth-child(4) { display: none; }
+      /* Fuera el rótulo "Libres": se comía los 49px que le faltaban a DEL para
+         no caerse a una segunda línea, y el título de la pantalla ya lo dice. */
+      .barra .lb { display: none; }
       .barra .buscar { margin-left: 0; flex: 1 1 100%; }
     }
   `],
