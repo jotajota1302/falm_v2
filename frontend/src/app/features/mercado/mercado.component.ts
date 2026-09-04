@@ -16,7 +16,7 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
     <header class="phead">
       <div>
         <h1>Mercado</h1>
-        <p class="sub">Jugadores sin dueño. Toca una fila para ver la ficha; las peticiones se envían desde Fichajes.</p>
+        <p class="sub">Jugadores libres. Toca una fila para ver su ficha.</p>
       </div>
       <a class="btn" routerLink="/fichajes">Pedir fichaje</a>
     </header>

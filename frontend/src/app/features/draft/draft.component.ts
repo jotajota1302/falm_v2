@@ -19,11 +19,7 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     <header class="phead">
       <div>
         <h1>Draft</h1>
-        <p class="sub">
-          El turno no avanza hasta que el equipo al que le toca elige. Marca con ★ a quien
-          quieras vigilar: si otro se te adelanta, lo verás tacharse al instante.
-          Máximo 2 jugadores del Madrid, Barcelona o Atlético, y 3 de cualquier otro club.
-        </p>
+        <p class="sub">El turno no avanza hasta que elige el equipo que lo tiene.</p>
       </div>
     </header>
 
@@ -117,8 +113,10 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
           </div>
 
           <div class="fila cab">
-            <span></span><span>Pos</span><span>Jugador</span><span class="club">Club</span>
-            <span class="der">Cupo</span><span></span>
+            <span title="Marca a quien quieras vigilar: si otro se te adelanta, lo verás tacharse al instante">★</span>
+            <span>Pos</span><span>Jugador</span><span class="club">Club</span>
+            <span class="der" title="Máximo 2 jugadores del Madrid, Barcelona o Atlético, y 3 de cualquier otro club">Cupo</span>
+            <span></span>
           </div>
 
           @if (visibles().length === 0) {
@@ -371,9 +369,11 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
   `,
   styles: [`
     /* Cabecera y tira de turno centradas: es lo que todos miran a la vez. */
-    /* El título va donde el de todas las demás pantallas: arriba a la izquierda. */
+    /* El título va donde el de todas las demás pantallas: arriba a la izquierda,
+       y la explicación en una sola línea: tres líneas empujaban el draft entero
+       fuera de la pantalla. */
     .phead { display: block; }
-    .phead .sub { max-width: 66ch; }
+    .phead .sub { max-width: none; }
 
     .tira { position: sticky; top: 0; z-index: 6; display: flex; align-items: center; gap: 12px;
       flex-wrap: wrap; justify-content: center; padding: 12px 18px; margin-bottom: 16px;

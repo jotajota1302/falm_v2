@@ -16,7 +16,7 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     <header class="phead">
       <div>
         <h1>Intercambios</h1>
-        <p class="sub">Cambia jugadores con otro equipo. La oferta se cierra cuando el otro la acepta.</p>
+        <p class="sub">Cambia jugadores con otro equipo, si acepta.</p>
       </div>
     </header>
 

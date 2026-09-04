@@ -13,7 +13,7 @@ import { SubnavComponent, SubnavItem } from '../../shared/subnav.component';
     <header class="phead">
       <div>
         <h1>Premios</h1>
-        <p class="sub">Lo que llevas ganado esta temporada entre premios de jornada y de competición.</p>
+        <p class="sub">Premios de jornada y de competición, esta temporada.</p>
       </div>
     </header>
 

@@ -18,8 +18,7 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
     <header class="phead">
       <div>
         <h1>Fichajes</h1>
-        <p class="sub">Pide hasta dos jugadores por orden de prioridad. Si otro equipo pide al mismo,
-          gana quien no fichó la semana pasada; si sigue el empate, el peor clasificado.</p>
+        <p class="sub">Pide hasta dos jugadores por orden de prioridad.</p>
       </div>
     </header>
 
@@ -97,6 +96,11 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
                 </div>
               }
             }
+            <!-- La regla de desempate, junto a lo que has pedido: es donde
+                 sirve, y en la cabecera ocupaba tres líneas. -->
+            <p class="regla">Si otro equipo pide al mismo jugador, gana quien no fichó la
+              semana pasada; si sigue el empate, el peor clasificado.</p>
+
             <div class="pieCaja">
               <span class="lb">La plantilla no puede pasar de 23 jugadores</span>
               <button class="btn" [disabled]="!p1() || enviando()" (click)="enviar()">
@@ -192,6 +196,8 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
     .vacia { color: var(--text2); font-size: var(--t-sm); }
     .rm { background: transparent; border: 1px solid var(--line); color: var(--bad);
       width: 26px; height: 26px; border-radius: 7px; cursor: pointer; font-size: var(--t-xs); flex: 0 0 auto; }
+
+    .regla { margin: 12px 0 0; font-size: var(--t-xs); color: var(--text2); line-height: 1.5; }
 
     .pieCaja { display: flex; align-items: center; justify-content: space-between; gap: 12px;
       margin-top: 14px; padding-top: 13px; border-top: 1px solid var(--line); }

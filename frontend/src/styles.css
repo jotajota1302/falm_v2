@@ -97,9 +97,12 @@ h3 { font-family: var(--fh); font-weight: 500; font-size: var(--t-sm); text-tran
   gap: 20px; flex-wrap: wrap; margin-bottom: 18px;
 }
 /* Cabecera de una sola pieza (titular + entradilla, sin acciones): en columna,
-   que si no el reparto manda la entradilla al otro extremo. */
+   que si no el reparto manda la entradilla al otro extremo. Aquí el hueco entre
+   titular y entradilla lo daba el gap de la fila (20px) en vez de los 5px que
+   deja el patrón normal, y esas cabeceras se veían más sueltas que las demás. */
+.phead:has(> h1:first-child + .sub) { row-gap: 0; }
 .phead > h1:first-child { flex: 1 1 100%; }
-.phead > h1:first-child + .sub { flex: 1 1 100%; margin-top: 0; }
+.phead > h1:first-child + .sub { flex: 1 1 100%; margin-top: 5px; }
 .phead .sub { margin: 5px 0 0; color: var(--text2); font-size: var(--t-sm); max-width: 68ch; }
 
 /* rótulo de columna o de bloque */
