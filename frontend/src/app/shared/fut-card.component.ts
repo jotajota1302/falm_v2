@@ -2,6 +2,10 @@ import { Component, Input } from '@angular/core';
 
 const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'MED', DELANTERO: 'DEL' };
 
+/** Partículas que van pegadas al apellido: "González de Zarate", "van Dijk". */
+const PARTICULAS = new Set(['de', 'del', 'la', 'las', 'los', 'da', 'das', 'do', 'dos',
+  'van', 'von', 'di', 'du', 'le', 'el', 'al', 'bin', 'ben', 'y']);
+
 /**
  * Carta de jugador sobre el campo de la Alineación: papel con filo del color de
  * la posición, retrato recortado y los puntos en cifra mono.
@@ -26,8 +30,7 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
         @else { <span class="ph">{{ abr }}</span> }
       </div>
       <div class="foot">
-        <span class="n1" [class.largo]="campo && enCampo.length > 15"
-              [class.muylargo]="campo && enCampo.length > 21">{{ campo ? enCampo : corto }}</span>
+        <span class="n1" [style.--n]="campo ? enCampo.length : null">{{ campo ? enCampo : corto }}</span>
         @if (stats?.length) {
           <div class="sline">@for (s of stats; track s.ico) { <span>{{ s.ico }}{{ s.n }}</span> }</div>
         }
@@ -80,14 +83,12 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     /* En una portería la cifra iba encima del escudo: le dejamos su sitio. */
     .fut.campo.solo-escudo .top { padding-top: 16%; }
     .fut.campo.solo-escudo .face.esc { max-height: 84%; }
-    /* Dos líneas como mucho, y si una palabra no cabe se parte antes que
-       comerse el resto del nombre. */
-    .fut.campo .n1 { text-align: center; white-space: normal; overflow-wrap: anywhere;
-      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
-      line-clamp: 2; }
-    /* Un nombre largo baja de tamaño antes que quedarse a medias. */
-    .fut.campo .n1.largo { font-size: var(--t-sm); }
-    .fut.campo .n1.muylargo { font-size: var(--t-xs); line-height: 1.25; }
+    /* Siempre una línea: el tamaño se ajusta a lo que mide el nombre. El ancho
+       útil de la carta es ~88cqw y cada letra pesa ~0.52em, así que caben con
+       170cqw/nº de letras, sin pasar del tamaño normal ni bajar de legible.
+       Así entra cualquier nombre, también los que vengan en el futuro. */
+    .fut.campo .n1 { text-align: center; white-space: nowrap;
+      font-size: min(var(--t-md), max(9px, calc(170cqw / var(--n, 12)))); }
 
     /* En el móvil la carta es la mitad de ancha: el nombre baja un escalón. */
     @media (max-width: 620px) {
@@ -110,15 +111,24 @@ export class FutCardComponent {
   get corto() { const p = (this.nombre || '').split(' '); return p.length > 1 ? p[p.length - 1] : this.nombre; }
 
   /**
-   * Sobre el campo, el nombre de pila se queda en inicial: "Jude Bellingham" se
-   * partía en dos líneas y "J. Bellingham" cabe en una. Los de una sola palabra
-   * (Raphinha) y las porterías se quedan como están.
+   * El nombre tal como va sobre el campo: los nombres de pila en inicial y el
+   * apellido entero. "Jude Bellingham" se partía en dos líneas; así queda
+   * "J. Bellingham", y los de dos nombres, que son los que se iban de largo,
+   * bajan bastante: "Jon Ander Olasagasti" -> "J. A. Olasagasti".
+   *
+   * El apellido es la última palabra más las partículas que la preceden, para
+   * no romper "de Zarate" ni "de Galarreta". Los de una sola palabra (Raphinha)
+   * y las porterías se quedan enteros.
    */
   get enCampo() {
     const n = (this.nombre || '').trim();
     if (!n.includes(' ') || /^porter[ií]a/i.test(n)) return n;
-    const [pila, ...resto] = n.split(/\s+/);
-    return `${pila.charAt(0)}. ${resto.join(' ')}`;
+    const p = n.split(/\s+/);
+    let i = p.length - 1;
+    while (i > 1 && PARTICULAS.has(p[i - 1].toLowerCase())) i--;
+    const apellido = p.slice(i).join(' ');
+    const iniciales = p.slice(0, i).map((x) => x.charAt(0).toUpperCase() + '.').join(' ');
+    return `${iniciales} ${apellido}`;
   }
   get num(): number | string | null {
     if (this.media !== null && this.media !== undefined && this.media !== '') return this.media;
