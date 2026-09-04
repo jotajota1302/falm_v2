@@ -57,9 +57,10 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
                    abajo, con la cifra dentro de su propia barra. -->
               <div class="chart" [class.conneg]="hayNegativos()">
                 @for (d of barras(); track d.j) {
-                  <div class="bar"
-                       [title]="d.jugo ? 'Jornada ' + d.j + ': ' + d.p + ' puntos en ' + d.min + ' minutos'
-                                       : 'Jornada ' + d.j + ': no jugó'">
+                  <button class="bar" type="button" [class.sel]="verJ() === d.j"
+                          (click)="verJ.set(verJ() === d.j ? null : d.j)"
+                          [title]="d.jugo ? 'Jornada ' + d.j + ': ' + d.p + ' puntos en ' + d.min + ' minutos'
+                                          : 'Jornada ' + d.j + ': no jugó'">
                     <span class="up" [style.flex-basis.%]="zonaPos()">
                       @if (!d.jugo) {
                         <span class="fill nojugo"><i>NJ</i></span>
@@ -73,9 +74,24 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
                       }
                     </span>
                     <span class="jl">J{{ d.j }}</span>
-                  </div>
+                  </button>
                 }
               </div>
+
+              <!-- De qué se compone la jornada que se toca. -->
+              @if (detalleJ(); as dj) {
+                <div class="detj">
+                  <span class="dt">Jornada {{ dj.j }}</span>
+                  @if (dj.jugo) {
+                    <span class="dp num" [class.neg]="dj.p < 0">{{ dj.p }} pts</span>
+                    <span class="dh">{{ hechosDe(dj) }}</span>
+                  } @else {
+                    <span class="dh">No jugó esta jornada.</span>
+                  }
+                </div>
+              } @else {
+                <p class="pista">Toca una barra para ver de qué salen esos puntos.</p>
+              }
             } @else {
               <p class="muted">Aún sin puntos esta temporada.</p>
             }
@@ -148,6 +164,19 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
       font-weight: 700; color: var(--accent-ink); line-height: 1; }
     .jl { text-align: center; margin-top: 4px; font-size: var(--t-xs);
       color: var(--text2); font-weight: 600; }
+    .bar { border: none; background: none; cursor: pointer; font-family: var(--fb); }
+    .bar.sel .jl { color: var(--accent); }
+    .bar.sel .fill { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+    /* El desglose de la jornada tocada, en palabras. */
+    .detj { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px;
+      margin-top: 10px; padding: 10px 12px; background: var(--surface2);
+      border: 1px solid var(--line); border-radius: var(--r-sm); font-size: var(--t-sm); }
+    .dt { font-weight: 700; }
+    .dp { font-family: var(--fm); font-weight: 700; color: var(--accent); }
+    .dp.neg { color: var(--bad); }
+    .dh { color: var(--text2); }
+    .pista { margin: 10px 0 0; font-size: var(--t-xs); color: var(--text2); }
     .muted { color: var(--text2); }
   `],
 })
@@ -200,9 +229,36 @@ export class FichaJugadorComponent {
       // jugo=false es "no jugó esa jornada", que no es lo mismo que hacer 0.
       const jugo = x.jugo !== false;
       return { j: jn(x), p, jugo, min: Number(x.minutosJugados ?? 0),
-        h: (p >= 0 ? p / maxP : -p / maxN) * 100 };
+        h: (p >= 0 ? p / maxP : -p / maxN) * 100, datos: x };
     });
   });
+
+  /** La jornada cuyo desglose se está mirando. */
+  verJ = signal<number | null>(null);
+  detalleJ = computed(() => this.barras().find((d) => d.j === this.verJ()) ?? null);
+
+  /** De qué se compone esa jornada, en palabras y por orden de importancia. */
+  hechosDe(d: any): string {
+    const x = d.datos ?? {};
+    const n = (v: any) => Number(v ?? 0);
+    const p: string[] = [];
+    const plural = (c: number, uno: string, varios: string) => `${c} ${c === 1 ? uno : varios}`;
+    if (n(x.goles)) p.push(plural(n(x.goles), 'gol', 'goles'));
+    if (n(x.golesPenalti)) p.push(plural(n(x.golesPenalti), 'gol de penalti', 'goles de penalti'));
+    if (n(x.asistencias)) p.push(plural(n(x.asistencias), 'asistencia', 'asistencias'));
+    if (n(x.estrellas)) p.push(`${n(x.estrellas)} ${Math.abs(n(x.estrellas)) === 1 ? 'estrella' : 'estrellas'}`);
+    if (x.imbatido && n(x.minutosJugados) > 45) p.push('portería a cero');
+    if (n(x.penaltiParado)) p.push(plural(n(x.penaltiParado), 'penalti parado', 'penaltis parados'));
+    if (n(x.penaltiFallado)) p.push(plural(n(x.penaltiFallado), 'penalti fallado', 'penaltis fallados'));
+    if (n(x.golesEnPropia)) p.push(plural(n(x.golesEnPropia), 'gol en propia', 'goles en propia'));
+    if (n(x.tarjetasRojas)) p.push(plural(n(x.tarjetasRojas), 'roja', 'rojas'));
+    if (n(x.golesEnContra) > 1) p.push(`${n(x.golesEnContra)} goles encajados`);
+    const res = x.resultado === 'VICTORIA' ? 'victoria' : x.resultado === 'EMPATE' ? 'empate'
+      : x.resultado === 'DERROTA' ? 'derrota' : '';
+    if (res) p.push(res);
+    p.push(`${n(x.minutosJugados)} min`);
+    return p.join(' · ');
+  }
 
   hayNegativos = computed(() => this.barras().some((d) => d.p < 0));
   /**
@@ -221,6 +277,7 @@ export class FichaJugadorComponent {
     effect(() => {
       const j = this.ficha.abierto();
       this.sinFoto.set(false);
+      this.verJ.set(null);
       if (j) this.cargar(j);
       else this.jornadas.set([]);
     }, { allowSignalWrites: true });
