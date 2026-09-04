@@ -20,6 +20,10 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
     } @else if (!equipo()) {
       <p class="muted">No tienes equipo en esta temporada.</p>
     } @else {
+      <header class="phead">
+        <h1>Alineación</h1>
+      </header>
+
       @if (competiciones().length > 1) {
         <div class="comps">
           @for (c of competiciones(); track c.id) {
@@ -37,7 +41,7 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
             @if (jAnterior(); as a) { ‹ Jornada {{ a.numero }} } @else { ‹ }
           </button>
           <div class="jc">
-            <h1>Jornada {{ j.numero }}</h1>
+            <h2 class="jt">Jornada {{ j.numero }}</h2>
             @if (j.fecha) { <span class="jf">{{ fechaCorta(j.fecha) }}</span> }
             @if (!esJornadaPorDefecto()) {
               <button class="jhoy" (click)="irAJornadaActual()">Ir a la actual</button>
@@ -222,13 +226,15 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
        altura al campo, que es lo que se quiere ver. */
     .jc { display: flex; align-items: baseline; justify-content: center;
       gap: 10px; flex-wrap: wrap; text-align: center; }
-    .jc h1 { font-size: var(--t-xl); }
+    .jt { margin: 0; font-family: var(--fh); font-size: var(--t-xl); font-weight: 600;
+      letter-spacing: -.01em; }
     .jf { font-size: var(--t-sm); color: var(--text2); text-transform: capitalize; }
     .jhoy { background: none; border: none; cursor: pointer; padding: 0;
       font-family: var(--fb); font-size: var(--t-sm); color: var(--text2);
       text-decoration: underline; text-underline-offset: 3px; }
     .jhoy:hover { color: var(--accent); }
 
+    .phead { margin-bottom: 14px; }
     .comps { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 12px; }
 
     /* Se compone arriba y se envía abajo: la barra se queda pegada al fondo

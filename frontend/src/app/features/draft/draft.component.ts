@@ -371,8 +371,9 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
   `,
   styles: [`
     /* Cabecera y tira de turno centradas: es lo que todos miran a la vez. */
-    .phead { display: block; text-align: center; }
-    .phead .sub { max-width: 66ch; margin-left: auto; margin-right: auto; }
+    /* El título va donde el de todas las demás pantallas: arriba a la izquierda. */
+    .phead { display: block; }
+    .phead .sub { max-width: 66ch; }
 
     .tira { position: sticky; top: 0; z-index: 6; display: flex; align-items: center; gap: 12px;
       flex-wrap: wrap; justify-content: center; padding: 12px 18px; margin-bottom: 16px;
