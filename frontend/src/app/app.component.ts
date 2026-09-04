@@ -270,16 +270,21 @@ export class AppComponent implements AfterViewChecked {
     return t ? `Liga ${t.nombre}${t.activa ? '' : ' · pruebas'}` : this.season.nombreCache();
   });
 
+  /**
+   * En el móvil la barra dice lo mismo que el menú de escritorio: la misma
+   * palabra, recortada cuando no cabe. Sinónimos distintos arriba y abajo
+   * (Plantilla/Equipo, Alineación/Once) hacían dudar si eran lo mismo.
+   */
   items: NavItem[] = [
     { path: '/dashboard', label: 'Inicio', corto: 'Inicio' },
-    { path: '/plantilla', label: 'Plantilla', corto: 'Equipo' },
-    { path: '/alineacion', label: 'Alineación', corto: 'Once' },
+    { path: '/plantilla', label: 'Plantilla', corto: 'Plantilla' },
+    { path: '/alineacion', label: 'Alineación', corto: 'Alineac.' },
     { path: '/mercado', label: 'Mercado', corto: 'Mercado' },
     { path: '/fichajes', label: 'Fichajes', corto: 'Fichajes' },
     { path: '/draft', label: 'Draft', corto: 'Draft' },
     { path: '/clasificacion', label: 'Clasificación', corto: 'Clasif.' },
-    { path: '/jornadas', label: 'Partidos', corto: 'Jornadas' },
-    { path: '/puntuaciones', label: 'Estadísticas', corto: 'Stats' },
+    { path: '/jornadas', label: 'Partidos', corto: 'Partidos' },
+    { path: '/puntuaciones', label: 'Estadísticas', corto: 'Estadís.' },
   ];
 
   constructor(public auth: AuthService, public season: SeasonService,
