@@ -333,7 +333,9 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
        anchas y con cinco defensas estrechas, pero siempre aprovechan el campo. */
     .slot { background: none; border: none; cursor: pointer; padding: 0;
       flex: 1 1 0; min-width: 84px; max-width: 136px; }
-    .slot.vacio { min-height: 112px; border-radius: 13px; display: flex;
+    /* La misma proporción que la carta (1/1.22): con una altura fija, el campo
+       daba un salto al colocar a alguien. */
+    .slot.vacio { aspect-ratio: 1 / 1.22; border-radius: 13px; display: flex;
       flex-direction: column; align-items: center; justify-content: center; gap: 6px;
       border: 1.5px dashed rgba(255,255,255,.9);
       background: rgba(255,255,255,.28); }
@@ -433,7 +435,6 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
       .fila { gap: 6px; padding: 5px 2px 5px 18px; }
       .banda { width: 12px; font-size: var(--t-xs); letter-spacing: .14em; }
       .slot { width: 62px; }
-      .slot.vacio { min-height: 76px; }
       .slot.vacio .mas { width: 28px; height: 28px; font-size: var(--t-md); }
       .slot.vacio .lb { font-size: var(--t-xs); }
       .formas { width: 100%; }

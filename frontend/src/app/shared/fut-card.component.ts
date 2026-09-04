@@ -26,8 +26,8 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
         @else { <span class="ph">{{ abr }}</span> }
       </div>
       <div class="foot">
-        <span class="n1" [class.largo]="campo && nombre.length > 15"
-              [class.muylargo]="campo && nombre.length > 21">{{ campo ? nombre : corto }}</span>
+        <span class="n1" [class.largo]="campo && enCampo.length > 15"
+              [class.muylargo]="campo && enCampo.length > 21">{{ campo ? enCampo : corto }}</span>
         @if (stats?.length) {
           <div class="sline">@for (s of stats; track s.ico) { <span>{{ s.ico }}{{ s.n }}</span> }</div>
         }
@@ -108,6 +108,18 @@ export class FutCardComponent {
 
   /** En el campo solo cabe una palabra: el apellido. */
   get corto() { const p = (this.nombre || '').split(' '); return p.length > 1 ? p[p.length - 1] : this.nombre; }
+
+  /**
+   * Sobre el campo, el nombre de pila se queda en inicial: "Jude Bellingham" se
+   * partía en dos líneas y "J. Bellingham" cabe en una. Los de una sola palabra
+   * (Raphinha) y las porterías se quedan como están.
+   */
+  get enCampo() {
+    const n = (this.nombre || '').trim();
+    if (!n.includes(' ') || /^porter[ií]a/i.test(n)) return n;
+    const [pila, ...resto] = n.split(/\s+/);
+    return `${pila.charAt(0)}. ${resto.join(' ')}`;
+  }
   get num(): number | string | null {
     if (this.media !== null && this.media !== undefined && this.media !== '') return this.media;
     return null;
