@@ -49,6 +49,10 @@ import { colorEquipo } from '../../shared/equipo-colores';
           <button class="match" (click)="abrirDetalle(e)">
             <span class="lado izq" [class.gana]="e.puntos_clasif_local > e.puntos_clasif_visitante">
               <span class="nm">{{ e.equipo_local }}</span>
+              <span class="ali" [class.si]="e.alineado_local"
+                    [title]="e.alineado_local ? 'Alineación enviada' : 'Sin alineación'">
+                {{ e.alineado_local ? '✓' : '·' }}
+              </span>
               <span class="marca" [style.background]="color(e.equipo_local)"></span>
             </span>
             <span class="centro">
@@ -59,6 +63,10 @@ import { colorEquipo } from '../../shared/equipo-colores';
             </span>
             <span class="lado der" [class.gana]="e.puntos_clasif_visitante > e.puntos_clasif_local">
               <span class="marca" [style.background]="color(e.equipo_visitante)"></span>
+              <span class="ali" [class.si]="e.alineado_visitante"
+                    [title]="e.alineado_visitante ? 'Alineación enviada' : 'Sin alineación'">
+                {{ e.alineado_visitante ? '✓' : '·' }}
+              </span>
               <span class="nm">{{ e.equipo_visitante }}</span>
             </span>
           </button>
@@ -83,12 +91,20 @@ import { colorEquipo } from '../../shared/equipo-colores';
             <div class="dcols">
               @for (lado of [detalle().local, detalle().visitante]; track lado.equipo) {
                 <div class="dcol">
-                  @for (j of lado.jugadores; track j.nombre) {
-                    <div class="dj" [class.supl]="j.rol !== 'TITULAR'" [class.nojugo]="!j.jugo">
-                      <span class="pos" [class]="abrPos(j.pos)">{{ abrPos(j.pos) }}</span>
-                      <span class="dn">{{ j.nombre }}</span>
-                      <span class="dp num" [class.neg]="j.puntos < 0">{{ j.puntos }}</span>
-                    </div>
+                  @for (grupo of grupos(lado); track grupo.rol) {
+                    @if (grupo.js.length) {
+                      <span class="drol">{{ grupo.rol === 'TITULAR' ? 'Once' : 'Banquillo' }}</span>
+                      @for (j of grupo.js; track j.nombre) {
+                        <div class="dj" [class.supl]="j.rol !== 'TITULAR'" [class.nojugo]="!j.jugo">
+                          <span class="pos" [class]="abrPos(j.pos)">{{ abrPos(j.pos) }}</span>
+                          <img class="dfo" [class.es]="!j.foto" [src]="j.foto || j.escudo" alt="" loading="lazy" />
+                          <span class="dn">{{ j.nombre }}</span>
+                          @if (j.foto && j.escudo) { <img class="dcl" [src]="j.escudo" alt="" loading="lazy" /> }
+                          @else { <span></span> }
+                          <span class="dp num" [class.neg]="j.puntos < 0">{{ j.puntos }}</span>
+                        </div>
+                      }
+                    }
                   }
                 </div>
               }
@@ -125,6 +141,11 @@ import { colorEquipo } from '../../shared/equipo-colores';
     .lado { display: flex; align-items: center; gap: 10px; min-width: 0; }
     .lado.izq { justify-content: flex-end; } .lado.der { justify-content: flex-start; }
     .marca { width: 3px; height: 24px; border-radius: 2px; flex: 0 0 auto; }
+    /* Si ese equipo ya ha mandado su once. */
+    .ali { flex: 0 0 auto; width: 17px; height: 17px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      border: 1px solid var(--line); color: var(--text2); font-size: var(--t-xs); line-height: 1; }
+    .ali.si { border-color: var(--good); color: var(--good); font-weight: 700; }
     .nm { font-family: var(--fh); font-size: var(--t-md); font-weight: 500; text-transform: uppercase;
       color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .lado.gana .nm { color: var(--text); font-weight: 600; }
@@ -150,9 +171,19 @@ import { colorEquipo } from '../../shared/equipo-colores';
     .dm { font-size: var(--t-lg); font-weight: 700; text-align: center; color: var(--accent); white-space: nowrap; }
     .dcols { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .dcol { display: flex; flex-direction: column; gap: 4px; }
-    .dj { display: grid; grid-template-columns: 32px 1fr auto; align-items: center; gap: 8px; padding: 6px 8px;
-      background: var(--surface); border: 1px solid var(--line); border-radius: 8px; font-size: var(--t-sm); }
-    .dj.supl { border-style: dashed; }
+    /* Titulares y suplentes, cada grupo bajo su rótulo: el borde discontinuo
+       apenas se veía y no decía cuál era cuál. */
+    .drol { display: block; margin: 12px 0 5px; font-size: var(--t-xs); font-weight: 700;
+      letter-spacing: .1em; text-transform: uppercase; color: var(--text2); }
+    .dcol > .drol:first-child { margin-top: 0; }
+    .dj { display: grid; grid-template-columns: 32px 24px 1fr 16px auto; align-items: center; gap: 8px;
+      padding: 5px 8px; background: var(--surface); border: 1px solid var(--line);
+      border-radius: 8px; font-size: var(--t-sm); }
+    .dfo { width: 24px; height: 24px; border-radius: 50%; object-fit: cover;
+      object-position: top center; background: var(--surface2); }
+    .dfo.es { object-fit: contain; padding: 2px; border: 1px solid var(--line); }
+    .dcl { width: 16px; height: 16px; object-fit: contain; opacity: .85; }
+    .dj.supl { background: var(--surface2); }
     .dj.nojugo { color: var(--text2); }
     .dj.nojugo .dp { color: var(--text2); }
     .dj .pos { min-width: 30px; padding: 2px 4px; font-size: var(--t-xs); }
@@ -239,6 +270,15 @@ export class JornadasComponent implements OnInit {
     const i = this.indiceActual(js);
     this.bloque.set(Math.floor(i / this.porPagina));
     await this.seleccionarJornada(js[i].id);
+  }
+
+  /** El once y el banquillo, cada uno con su rótulo. */
+  grupos(lado: any) {
+    const js = (lado?.jugadores ?? []) as any[];
+    return [
+      { rol: 'TITULAR', js: js.filter((j) => j.rol === 'TITULAR') },
+      { rol: 'SUPLENTE', js: js.filter((j) => j.rol !== 'TITULAR') },
+    ];
   }
 
   /** La última jornada cuyo cierre ya pasó; si no ha empezado nada, la primera. */

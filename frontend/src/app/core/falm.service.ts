@@ -70,6 +70,9 @@ export interface EnfrentamientoFila {
   enfrentamiento_id: string;
   equipo_local: string;
   equipo_visitante: string;
+  /** Si cada equipo ya ha mandado su alineación en esa jornada. */
+  alineado_local: boolean;
+  alineado_visitante: boolean;
   puntos_local: number;
   puntos_visitante: number;
   puntos_clasif_local: number;
@@ -383,6 +386,7 @@ export class FalmService {
       .in('id', ids);
     if (e2) throw e2;
     const n = new Map((eqs ?? []).map((e: any) => [e.id, e.nombre]));
+    const alineados = await this.quienHaAlineado(jornadaFalmId, ids);
 
     const reparto = (a: number, b: number): [number, number] => {
       const d = a - b;
@@ -400,6 +404,8 @@ export class FalmService {
         enfrentamiento_id: f.id,
         equipo_local: n.get(f.equipo_local_id) ?? '?',
         equipo_visitante: n.get(f.equipo_visitante_id) ?? '?',
+        alineado_local: alineados.has(f.equipo_local_id),
+        alineado_visitante: alineados.has(f.equipo_visitante_id),
         puntos_local: pl,
         puntos_visitante: pv,
         puntos_clasif_local: cl,
