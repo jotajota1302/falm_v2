@@ -66,11 +66,14 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
           <p class="estado ok">Once enviado para esta jornada.</p>
         } @else if (copiadaDe() !== null) {
           <p class="estado borrador">
-            <b>Todavía no has mandado once para esta jornada.</b>
-            Esto es una copia del de la jornada {{ copiadaDe() }}: revísala y dale a guardar.
+            <b>Sin enviar.</b>
+            Copia del once de la jornada {{ copiadaDe() }}: revísala y dale a guardar.
           </p>
         } @else {
-          <p class="estado borrador">Todavía no has mandado once para esta jornada.</p>
+          <p class="estado borrador">
+            <b>Todavía no has mandado once para esta jornada.</b>
+            Móntalo, o usa «Repetir última» para partir del anterior.
+          </p>
         }
       }
       @if (aviso()) { <p class="aviso">{{ aviso() }}</p> }
@@ -744,11 +747,9 @@ export class AlineacionComponent implements OnInit {
     const eq = this.equipo(); if (!eq) return;
     const ali = await this.falm.getAlineacion(eq.id, j.id);
     if (ali) { this.aplicar(ali); this.enviada.set(true); return; }
-    // Sin once propio se precarga el anterior, pero como borrador: hay que
-    // guardarlo para que cuente.
-    const prev = await this.falm.ultimaAlineacion(eq.id, this.competicionId(), j.numero);
-    if (prev) { this.aplicar(prev); this.copiadaDe.set(prev.desdeJornada ?? null); }
-    else this.limpiar();
+    // Cada jornada empieza en blanco. Antes se precargaba el once de la anterior
+    // y parecia enviado sin estarlo; si se quiere repetir, esta el boton.
+    this.limpiar();
   }
   private limpiar() { this.titulares.set([]); this.banca.set([]); this.formacion.set('4-4-2'); }
   private aplicar(ali: AlineacionGuardada) {
