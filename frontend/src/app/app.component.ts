@@ -160,7 +160,11 @@ interface NavItem { path: string; label: string; corto: string; }
         scroll-padding: 0 22px;
         border-top: 1px solid var(--line);
         overflow-x: auto; overscroll-behavior-x: contain;
-        scroll-snap-type: x proximity; scrollbar-width: none;
+        /* Sin scroll-snap: centraba la pestaña más cercana al soltar, así que la
+           barra saltaba bajo el dedo y las posiciones de reposo dejaban una
+           pestaña metida en el carril de las flechas (Draft perdía 13 de sus
+           76px). Además, el reajuste cancelaba el toque y no navegaba. */
+        scrollbar-width: none;
         touch-action: pan-x;
         background:
           linear-gradient(to right, var(--surface) 40%, transparent) left center / 26px 100% no-repeat local,
@@ -170,7 +174,12 @@ interface NavItem { path: string; label: string; corto: string; }
           var(--surface);
       }
       .nav::-webkit-scrollbar { display: none; }
-      .nav a, .nav .masb { flex: 0 0 auto; min-width: 76px; scroll-snap-align: center;
+      .nav a, .nav .masb { flex: 0 0 auto; min-width: 76px;
+        /* Los enlaces heredaban touch-action:auto dentro de un carril que se
+           desliza, así que el navegador podía quedarse el gesto y cancelar el
+           toque. Con pan-x se sigue pudiendo arrastrar la barra desde encima de
+           una pestaña, pero un toque quieto ya no se pierde. */
+        touch-action: pan-x;
         padding: 10px 9px; text-align: center; border-radius: 8px;
         border: none; background: none; cursor: pointer; color: var(--text2);
         font-family: var(--fb); font-size: var(--t-xs); font-weight: 700;
