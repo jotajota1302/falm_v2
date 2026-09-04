@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, computed, signal } from '@angular/core';
 import { Competicion, EnfrentamientoFila, FalmService, JornadaFalm } from '../../core/falm.service';
 import { colorEquipo } from '../../shared/equipo-colores';
 
@@ -22,11 +22,18 @@ import { colorEquipo } from '../../shared/equipo-colores';
       </div>
     }
 
+    <!-- De diez en diez: con las 32 de la liga a la vez no se encontraba nada. -->
     @if (jornadas().length > 0) {
-      <div class="jchips">
-        @for (j of jornadas(); track j.id) {
-          <button [class.on]="j.id === jornadaId()" (click)="seleccionarJornada(j.id)">J{{ j.numero }}</button>
-        }
+      <div class="jnav">
+        <button class="jb" (click)="mover(-1)" [disabled]="bloque() === 0"
+                aria-label="Jornadas anteriores">‹</button>
+        <div class="jchips">
+          @for (j of jornadasPag(); track j.id) {
+            <button [class.on]="j.id === jornadaId()" (click)="seleccionarJornada(j.id)">J{{ j.numero }}</button>
+          }
+        </div>
+        <button class="jb" (click)="mover(1)" [disabled]="bloque() >= paginas() - 1"
+                aria-label="Jornadas siguientes">›</button>
       </div>
     }
 
@@ -94,7 +101,13 @@ import { colorEquipo } from '../../shared/equipo-colores';
   `,
   styles: [`
     .comps { margin-bottom: 12px; }
-    .jchips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 14px; }
+    .jnav { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+    .jb { flex: 0 0 auto; width: 34px; height: 38px; border: 1px solid var(--line);
+      background: var(--surface); color: var(--text2); border-radius: 10px; cursor: pointer;
+      font-family: var(--fb); font-size: var(--t-lg); line-height: 1; }
+    .jb:disabled { opacity: .35; cursor: default; }
+    .jb:not(:disabled):hover { border-color: var(--accent); color: var(--accent); }
+    .jchips { flex: 1; min-width: 0; display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
     .jchips button { flex: 0 0 auto; min-width: 44px; padding: 8px 10px; border: 1px solid var(--line);
       background: var(--surface); color: var(--text2); border-radius: 10px; cursor: pointer;
       font-family: var(--fm); font-weight: 600; font-size: var(--t-sm); }
@@ -215,9 +228,28 @@ export class JornadasComponent implements OnInit {
   async cargarJornadas(compId: string) {
     const js = await this.falm.jornadas(compId);
     this.jornadas.set(js);
-    if (js.length > 0) await this.seleccionarJornada(js[js.length - 1].id);
-    else { this.enfrentamientos.set([]); this.cargando.set(false); }
+    if (js.length === 0) { this.enfrentamientos.set([]); this.cargando.set(false); return; }
+    // Se abre en la que se está jugando, no en la última del calendario.
+    const i = this.indiceActual(js);
+    this.bloque.set(Math.floor(i / this.porPagina));
+    await this.seleccionarJornada(js[i].id);
   }
+
+  /** La última jornada cuyo cierre ya pasó; si no ha empezado nada, la primera. */
+  private indiceActual(js: JornadaFalm[]): number {
+    const ahora = Date.now();
+    let i = 0;
+    js.forEach((j, k) => { if (j.fecha && new Date(j.fecha).getTime() <= ahora) i = k; });
+    return i;
+  }
+
+  /** Las jornadas se enseñan por decenas, con la de la jornada abierta delante. */
+  readonly porPagina = 10;
+  bloque = signal(0);
+  paginas = computed(() => Math.max(1, Math.ceil(this.jornadas().length / this.porPagina)));
+  jornadasPag = computed(() =>
+    this.jornadas().slice(this.bloque() * this.porPagina, (this.bloque() + 1) * this.porPagina));
+  mover(d: number) { this.bloque.set(Math.min(this.paginas() - 1, Math.max(0, this.bloque() + d))); }
 
   async seleccionarJornada(id: string) {
     this.jornadaId.set(id);
