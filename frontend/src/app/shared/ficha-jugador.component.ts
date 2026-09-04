@@ -57,14 +57,18 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
                    abajo, con la cifra dentro de su propia barra. -->
               <div class="chart" [class.conneg]="hayNegativos()">
                 @for (d of barras(); track d.j) {
-                  <div class="bar" [title]="'Jornada ' + d.j + ': ' + d.p + ' puntos'">
+                  <div class="bar"
+                       [title]="d.jugo ? 'Jornada ' + d.j + ': ' + d.p + ' puntos en ' + d.min + ' minutos'
+                                       : 'Jornada ' + d.j + ': no jugó'">
                     <span class="up" [style.flex-basis.%]="zonaPos()">
-                      @if (d.p >= 0) {
+                      @if (!d.jugo) {
+                        <span class="fill nojugo"><i>NJ</i></span>
+                      } @else if (d.p >= 0) {
                         <span class="fill" [style.height.%]="d.h"><i class="num">{{ d.p }}</i></span>
                       }
                     </span>
                     <span class="dn">
-                      @if (d.p < 0) {
+                      @if (d.jugo && d.p < 0) {
                         <span class="fill neg" [style.height.%]="d.h"><i class="num">{{ d.p }}</i></span>
                       }
                     </span>
@@ -134,6 +138,12 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
       display: flex; align-items: flex-start; justify-content: center; padding-top: 3px; }
     .fill.neg { background: var(--bad); border-radius: 0 0 4px 4px;
       align-items: flex-end; padding: 0 0 3px; }
+    /* Sin registro en esa jornada: no es un cero, es que no estuvo. */
+    .fill.nojugo { height: 19px; background: repeating-linear-gradient(135deg,
+        var(--surface2) 0 4px, var(--surface) 4px 8px);
+      border: 1px solid var(--line); border-radius: 4px; }
+    .fill.nojugo i { font-family: var(--fb); font-size: 10px; letter-spacing: .04em;
+      color: var(--text2); }
     .fill i { font-family: var(--fm); font-style: normal; font-size: var(--t-xs);
       font-weight: 700; color: var(--accent-ink); line-height: 1; }
     .jl { text-align: center; margin-top: 4px; font-size: var(--t-xs);
@@ -187,7 +197,10 @@ export class FichaJugadorComponent {
     const maxN = Math.max(1, ...h.map((x) => -Number(x.puntosJornada ?? 0)));
     return h.map((x) => {
       const p = Number(x.puntosJornada ?? 0);
-      return { j: jn(x), p, h: (p >= 0 ? p / maxP : -p / maxN) * 100 };
+      // jugo=false es "no jugó esa jornada", que no es lo mismo que hacer 0.
+      const jugo = x.jugo !== false;
+      return { j: jn(x), p, jugo, min: Number(x.minutosJugados ?? 0),
+        h: (p >= 0 ? p / maxP : -p / maxN) * 100 };
     });
   });
 
