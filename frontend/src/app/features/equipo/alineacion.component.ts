@@ -84,7 +84,7 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
       <!-- CAMPO: huecos por formación -->
       <div class="zona">
         <div class="lado-campo">
-          <div class="pitch">
+          <div class="pitch" [style.--nl]="maxPorLinea()">
             <span class="lineas" aria-hidden="true"></span>
             <label class="fsel">
               <span class="lb">Formación</span>
@@ -336,10 +336,14 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
     .fila { position: relative; z-index: 1; display: flex; justify-content: center;
       align-items: center; gap: 10px; flex-wrap: wrap; padding: 4px; }
 
-    /* Las cartas se reparten el ancho de su línea: con dos delanteros son
-       anchas y con cinco defensas estrechas, pero siempre aprovechan el campo. */
+    /* Todas las cartas miden lo mismo, se reparta como se reparta la formación:
+       con "flex: 1 1 0" el portero y los dos delanteros se estiraban al máximo y
+       salían un tercio más grandes que los cuatro medios. El ancho lo marca la
+       línea más poblada de la formación puesta (--nl), así que ninguna se sale y
+       se aprovecha el campo: en un 4-4-2 caben más anchas que en un 5-4-1. */
     .slot { background: none; border: none; cursor: pointer; padding: 0;
-      flex: 1 1 0; min-width: 84px; max-width: 136px; }
+      flex: 0 0 auto; max-width: 136px;
+      width: calc((100% - (var(--nl, 5) - 1) * 10px) / var(--nl, 5)); }
     /* La misma proporción que la carta (1/1.22): con una altura fija, el campo
        daba un salto al colocar a alguien. */
     .slot.vacio { aspect-ratio: 1 / 1.22; border-radius: 13px; display: flex;
@@ -441,7 +445,6 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
       .pitch { padding: 14px 8px; min-height: 470px; gap: 8px; }
       .fila { gap: 6px; padding: 5px 2px 5px 18px; }
       .banda { width: 12px; font-size: var(--t-xs); letter-spacing: .14em; }
-      .slot { width: 62px; }
       .slot.vacio .mas { width: 28px; height: 28px; font-size: var(--t-md); }
       .slot.vacio .lb { font-size: var(--t-xs); }
       .formas { width: 100%; }
@@ -558,6 +561,9 @@ export class AlineacionComponent implements OnInit {
     const p = this.formacion().split('-').map(Number);
     return { PORTERO: 1, DEFENSA: p[0] || 0, MEDIO: p[1] || 0, DELANTERO: p[2] || 0 } as Record<string, number>;
   });
+
+  /** Cuántas cartas tiene la línea más poblada: marca el ancho de todas. */
+  maxPorLinea = computed(() => Math.max(1, ...Object.values(this.cupos())));
 
   candidatos = computed(() => {
     const p = this.picker();

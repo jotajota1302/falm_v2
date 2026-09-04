@@ -276,7 +276,7 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     .bar { flex: 1; height: 8px; background: var(--surface2); border-radius: 999px; overflow: hidden; }
     .bar span { display: block; height: 100%; background: var(--accent); border-radius: 999px; }
     .pcttxt { font-size: var(--t-sm); color: var(--text2); font-weight: 700; white-space: nowrap; }
-    .turno { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: var(--accent-soft); border: 1px solid var(--accent-line); border-radius: 10px; font-size: var(--t-md); }
+    .turno { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: var(--accent-soft); border: 1px solid var(--accent-line); border-radius: 10px; font-size: var(--t-md); flex-wrap: wrap; }
     .turno .tl { font-size: var(--t-xs); text-transform: uppercase; letter-spacing: .05em; color: var(--text2); font-weight: 700; }
     .picks { display: flex; flex-direction: column; gap: 5px; }
     .pk { display: flex; align-items: center; gap: 9px; padding: 6px 9px; background: var(--surface2); border: 1px solid var(--line); border-radius: 8px; font-size: var(--t-sm); }
@@ -284,6 +284,12 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     .pos.POR { background: var(--por); } .pos.DEF { background: var(--def); }
     .pos.MED { background: var(--med); } .pos.DEL { background: var(--del); }
     .turno a.mini { margin-left: auto; text-decoration: none; display: inline-block; }
+    /* El panel se usa desde el móvil en la quedada del draft: nada de scroll
+       lateral. La tira de turno se envuelve y los botones ocupan la fila. */
+    @media (max-width: 620px) {
+      .turno { font-size: var(--t-sm); }
+      .turno a.mini, .turno button.mini { margin-left: 0; flex: 1 1 auto; text-align: center; }
+    }
     .pj { font-weight: 700; } .o { width: 34px; }
   `],
 })
