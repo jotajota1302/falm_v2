@@ -130,50 +130,58 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
             <div class="bar"><span [style.width.%]="pct()"></span></div>
             <span class="pcttxt">{{ draft().picks_hechos }} / {{ draft().picks_totales }} picks</span>
           </div>
-          <!-- Con picks hechos no se puede tocar el orden: para volver a sortear
-               hay que vaciar el draft, y eso no se deshace. -->
-          @if (draft().picks_hechos > 0 && draft().estado !== 'CONSOLIDADO') {
-            @if (!reinicioAbierto()) {
-              <button class="btn ghost peligro" (click)="reinicioAbierto.set(true)">
-                Empezar el draft de cero
-              </button>
-            } @else {
-              <div class="reinicio">
-                <p class="rtit"><b>Vas a borrar los {{ draft().picks_hechos }} picks del draft.</b></p>
-                <p class="hint">
-                  Todos los equipos se quedan sin elecciones y el draft vuelve al principio,
-                  con lo que podrás rehacer el sorteo del orden. <b>Esto no se deshace</b>,
-                  aunque se guarda una copia de seguridad automática antes de borrar.
-                </p>
-                <label class="rconf">
-                  Escribe <b>BORRAR</b> para confirmar
-                  <input type="text" [ngModel]="confirmaTexto()"
-                         (ngModelChange)="confirmaTexto.set($event)" placeholder="BORRAR" />
-                </label>
-                <div class="racc">
-                  <button class="btn ghost" (click)="reinicioAbierto.set(false); confirmaTexto.set('')">
-                    Cancelar
-                  </button>
-                  <button class="btn peligro" [disabled]="confirmaTexto().trim().toUpperCase() !== 'BORRAR'"
-                          (click)="reiniciarDraft()">
-                    Borrar los picks y empezar de cero
-                  </button>
+          <!-- Un solo camino para volver a empezar: vacía las elecciones (si las
+               hay) y lleva al sorteo. Antes había dos botones que hacían cosas
+               parecidas y no se entendía cuál tocaba. -->
+          @if (draft().estado !== 'CONSOLIDADO') {
+            <div class="dacc">
+              @if (sorteoAbierto()) {
+                <p class="hint">Pulsa los equipos en el orden que salga en el sorteo.</p>
+                <admin-draft-sorteo
+                  [equipos]="equipos()"
+                  etiqueta="Guardar este orden"
+                  (confirmado)="rehacerOrden($event)" />
+                <button class="btn ghost" (click)="sorteoAbierto.set(false)">Cancelar</button>
+              } @else if (reinicioAbierto()) {
+                <div class="reinicio">
+                  <p class="rtit"><b>Vas a borrar los {{ draft().picks_hechos }} picks del draft.</b></p>
+                  <p class="hint">
+                    Todos los equipos se quedan sin elecciones y, al terminar, se abre el
+                    sorteo para repartir el orden otra vez. <b>Esto no se deshace</b>, aunque
+                    se guarda una copia de seguridad automática antes de borrar.
+                  </p>
+                  <label class="rconf">
+                    Escribe <b>BORRAR</b> para confirmar
+                    <input type="text" [ngModel]="confirmaTexto()"
+                           (ngModelChange)="confirmaTexto.set($event)" placeholder="BORRAR" />
+                  </label>
+                  <div class="racc">
+                    <button class="btn ghost" (click)="reinicioAbierto.set(false); confirmaTexto.set('')">
+                      Cancelar
+                    </button>
+                    <button class="btn peligro" [disabled]="confirmaTexto().trim().toUpperCase() !== 'BORRAR'"
+                            (click)="reiniciarDraft()">
+                      Borrar y sortear de nuevo
+                    </button>
+                  </div>
                 </div>
-              </div>
-            }
-          }
-          @if (draft().picks_hechos === 0) {
-            @if (sorteoAbierto()) {
-              <admin-draft-sorteo
-                [equipos]="equipos()"
-                etiqueta="Guardar este orden"
-                (confirmado)="rehacerOrden($event)" />
-              <button class="btn ghost" (click)="sorteoAbierto.set(false)">Cancelar</button>
-            } @else {
-              <button class="btn ghost" (click)="sorteoAbierto.set(true)">
-                Rehacer el orden del sorteo
-              </button>
-            }
+              } @else {
+                <button class="btn ghost peligro" (click)="empezarDeCero()">
+                  @if (draft().picks_hechos > 0) {
+                    Reiniciar el draft y sortear de nuevo
+                  } @else {
+                    Sortear el orden otra vez
+                  }
+                </button>
+                <p class="hint mini">
+                  @if (draft().picks_hechos > 0) {
+                    Borra las {{ draft().picks_hechos }} elecciones hechas y vuelve a repartir el orden.
+                  } @else {
+                    El draft está vacío: puedes repartir el orden las veces que quieras.
+                  }
+                </p>
+              }
+            </div>
           }
           @if (draft().turno; as t) {
             <div class="turno">
@@ -236,6 +244,8 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     .btn.peligro:disabled { opacity: .45; }
     .reinicio { border: 1px solid var(--bad); border-radius: var(--r-sm);
       padding: 13px 15px; margin: 10px 0; background: var(--surface2); }
+    .dacc { margin: 16px 0 6px; padding-top: 14px; border-top: 1px solid var(--line); }
+    .dacc .hint.mini { margin: 7px 0 0; font-size: var(--t-xs); }
     .rtit { margin: 0 0 6px; font-size: var(--t-sm); }
     .rtit b { color: var(--bad); }
     .rconf { display: flex; gap: 8px; align-items: center; font-size: var(--t-sm);
@@ -451,6 +461,13 @@ export class AdminPretemporadaComponent implements OnInit {
    * Deshacer el último pick. En la quedada presencial alguien dicta mal un
    * nombre y hay que poder arreglarlo sin tocar la base a mano.
    */
+  /** Un único camino: si hay elecciones, primero se confirma; si no, al sorteo. */
+  empezarDeCero() {
+    const d = this.draft();
+    if (d?.picks_hechos > 0) { this.reinicioAbierto.set(true); this.confirmaTexto.set(''); }
+    else this.sorteoAbierto.set(true);
+  }
+
   async reiniciarDraft() {
     const d = this.draft();
     if (!d?.id || this.confirmaTexto().trim().toUpperCase() !== 'BORRAR') return;
@@ -461,6 +478,7 @@ export class AdminPretemporadaComponent implements OnInit {
     );
     this.reinicioAbierto.set(false);
     this.confirmaTexto.set('');
+    this.sorteoAbierto.set(true);   // vaciado: lo siguiente es repartir el orden
   }
 
   async deshacer() {
