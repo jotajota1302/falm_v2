@@ -4,6 +4,7 @@ import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/rou
 import { AuthService } from './core/auth.service';
 import { FalmService } from './core/falm.service';
 import { SeasonService } from './core/season.service';
+import { SupabaseService } from './core/supabase.service';
 import { environment } from '../environments/environment';
 import { FichaJugadorComponent } from './shared/ficha-jugador.component';
 
@@ -45,7 +46,9 @@ interface NavItem { path: string; label: string; corto: string; }
             <span class="team">{{ team }}</span>
           </span>
           <span class="acc">
-            <a class="tlink" routerLink="/admin" title="Administración">Admin</a>
+            @if (esAdmin()) {
+              <a class="tlink" routerLink="/admin" title="Administración">Admin</a>
+            }
             <button class="tlink" (click)="logout()">Salir</button>
           </span>
         </div>
@@ -61,7 +64,9 @@ interface NavItem { path: string; label: string; corto: string; }
       @if (mas()) {
         <div class="masback" (click)="mas.set(false)"></div>
         <div class="maspanel">
-          <a routerLink="/admin" (click)="mas.set(false)">Administración</a>
+          @if (esAdmin()) {
+            <a routerLink="/admin" (click)="mas.set(false)">Administración</a>
+          }
           <button (click)="logout()">Salir</button>
         </div>
       }
@@ -287,10 +292,14 @@ export class AppComponent implements AfterViewChecked {
     { path: '/puntuaciones', label: 'Estadísticas', corto: 'Estadís.' },
   ];
 
+  /** El enlace de administración solo se le enseña a quien puede usarlo. */
+  esAdmin = signal(false);
+
   constructor(public auth: AuthService, public season: SeasonService,
-              private router: Router, falm: FalmService) {
+              private router: Router, falm: FalmService, private sb: SupabaseService) {
     season.ensure();
     falm.warmup(); // despierta el dyno del backend al arrancar
+    this.sb.client.rpc('es_admin').then(({ data }) => this.esAdmin.set(data === true));
   }
 
   cambiarTemporada(id: string) {

@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/auth.guard';
+import { adminGuard } from './core/admin.guard';
 
 /**
  * Rutas de FALM V2. Estructura del análisis UX (5 secciones).
@@ -74,6 +75,7 @@ export const routes: Routes = [
       },
       {
         path: 'admin',
+        canActivate: [adminGuard],
         loadComponent: () => import('./features/admin/admin.component').then((m) => m.AdminComponent),
         children: [
           { path: '', redirectTo: 'pretemporada', pathMatch: 'full' },
