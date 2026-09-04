@@ -4,12 +4,13 @@
 -- así que todo se revierte. Usa a Álex Baena en la jornada 3, que es el caso que
 -- disparó todo esto: 11 puntos y no se veía de dónde salían.
 --
---   PASA  -> termina con el error 'TEST OK: los 6 casos pasaron'
+--   PASA  -> termina con el error 'TEST OK: los 8 casos pasaron'
 --   FALLA -> termina con un error que empieza por 'FALLO C<n>'
 
 do $$
 declare
   v_ext int; v_antes numeric; v_r jsonb; v_tipo text; v_mal int;
+  v_club uuid; v_jlfp uuid; v_pt numeric; v_pv numeric;
 begin
   select jl.ext_id, p.puntos into v_ext, v_antes
     from falm.puntuacion p
@@ -64,5 +65,30 @@ begin
     raise exception 'FALLO C6: % filas donde la explicacion no cuadra con el total', v_mal;
   end if;
 
-  raise exception 'TEST OK: los 6 casos pasaron';
+  -- C7: la porteria virtual sigue al portero. Se le quita la porteria a cero a
+  -- Sivera y su club tiene que bajar los mismos 2 puntos.
+  select j.id into v_jlfp from falm.jornada_lfp j
+   where j.numero = 3 and j.temporada_id = (select id from falm.temporada where activa limit 1);
+  select jl.ext_id, jl.equipo_lfp_id, p.puntos into v_ext, v_club, v_antes
+    from falm.puntuacion p
+    join falm.activo a on a.id = p.activo_id and a.tipo='JUGADOR'
+    join falm.jugador_lfp jl on jl.id = a.jugador_lfp_id
+   where p.jornada_lfp_id = v_jlfp and jl.nombre = 'Antonio Sivera';
+  if v_ext is null then raise exception 'FALLO C7: no esta Sivera en la jornada 3'; end if;
+
+  v_r := falm.editar_desglose(v_ext, 3, '{"imbatido": false}'::jsonb);
+  v_pt := (v_r->>'puntos')::numeric;
+  if v_pt <> v_antes - 2 then
+    raise exception 'FALLO C7: el portero quedo en % y se esperaba %', v_pt, v_antes - 2;
+  end if;
+
+  -- C8: y la porteria de su club vale ahora lo mismo que el
+  select pv.puntos into v_pv from falm.puntuacion pv
+    join falm.activo av on av.id = pv.activo_id and av.tipo='DEFENSA'
+   where av.equipo_lfp_id = v_club and pv.jornada_lfp_id = v_jlfp;
+  if v_pv <> v_pt then
+    raise exception 'FALLO C8: la porteria quedo en % y el portero en %', v_pv, v_pt;
+  end if;
+
+  raise exception 'TEST OK: los 8 casos pasaron';
 end $$;
