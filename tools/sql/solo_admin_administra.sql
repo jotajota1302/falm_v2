@@ -1,0 +1,31 @@
+-- Quien administra FALM: solo GOLDEN BOYS.
+--
+-- Habia tres equipos con rol GESTOR (CHANATIBORG, MANCHISTER, TOBAGO), y
+-- falm.puede_gestionar() acepta GESTOR igual que ADMIN, asi que podian editar
+-- puntuaciones, reiniciar el draft, borrar copias de seguridad y tocar la
+-- pretemporada. No estaba puesto a proposito: se arrastraba de las pruebas.
+--
+-- Aplicado el 2026-09-04, con copia previa en
+-- bk_falm_20260904_093240_antes_de_quitar_gestores:
+--
+--   update falm.usuario_perfil set rol = 'USUARIO' where rol = 'GESTOR';
+--
+-- Queda: 1 ADMIN (GOLDEN BOYS) y 9 USUARIO.
+--
+-- Para devolverle el mando a alguien, por equipo:
+--
+--   update falm.usuario_perfil set rol = 'GESTOR'
+--    where usuario_id = (select usuario_id from falm.equipo_falm where nombre = 'TOBAGO');
+--
+-- Y para verlo en cualquier momento:
+--
+--   select up.rol, ef.nombre
+--     from falm.usuario_perfil up
+--     left join falm.equipo_falm ef on ef.usuario_id = up.usuario_id
+--    where up.rol <> 'USUARIO';
+--
+-- Nota sobre donde esta la puerta: /admin tiene un guard en el navegador y el
+-- enlace solo se le enseña al admin, pero eso es comodidad, no seguridad. Lo que
+-- de verdad protege es este rol, que comprueban las funciones de la base. Por
+-- eso separar el admin a otra direccion o ponerle otro login no añadiria nada:
+-- la app es estatica y la API es la misma para todos.

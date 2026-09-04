@@ -81,6 +81,7 @@ dentro del repo.
 | `respaldos.sql` | Copias de `falm` a schemas `bk_falm_*`, purga y restauración |
 | `limpieza_supabase_2026-09.sql` | Qué se limpió del proyecto compartido y qué queda pendiente |
 | `funciones_admin_cerradas.sql` | `puede_gestionar` y guardias de las funciones de admin |
+| `solo_admin_administra.sql` | Quién administra: solo GOLDEN BOYS (los GESTOR pasaron a USUARIO) |
 | `revocar_funciones_internas.sql` | Revocación de funciones internas y RLS de las tablas de respaldo |
 | `precios_15m.sql` | Precios planos y presupuesto (histórico; el dinero ya no se usa) |
 
