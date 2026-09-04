@@ -151,6 +151,11 @@ interface NavItem { path: string; label: string; corto: string; }
       .nav {
         position: fixed; bottom: 0; left: 0; right: 0; z-index: 50;
         display: flex; flex-wrap: nowrap; gap: 2px;
+        /* Sin esto hereda el justify-content:center del escritorio y, al no
+           caber las diez secciones, el contenido se sale por los DOS lados: las
+           tres primeras (Inicio, Plantilla, Alineación) quedaban fuera y no se
+           podía llegar a ellas, porque scrollLeft ya estaba en su mínimo. */
+        justify-content: flex-start;
         padding: 5px 22px calc(5px + env(safe-area-inset-bottom));
         scroll-padding: 0 22px;
         border-top: 1px solid var(--line);
