@@ -1,13 +1,16 @@
-import { ActivoLibre, FalmService } from '../core/falm.service';
+import { FalmService } from '../core/falm.service';
+
+/** Lo mínimo para saber si a alguien le falta cara y de qué club es. */
+export interface SinCara { foto?: string | null; club_id?: string | null }
 
 /**
  * Un portero conocido por club, para las porterías de las listas de libres:
  * no tienen retrato propio, y al ficharlas fichas a quien pare ese día.
- * Lo usan Mercado y Fichajes, que enseñan la misma lista.
+ * Lo usan Mercado, Fichajes e Intercambios, que enseñan las mismas fichas.
  */
 export async function carasDePorterias(
   falm: FalmService,
-  libres: ActivoLibre[],
+  libres: SinCara[],
 ): Promise<Record<string, string>> {
   const clubes = libres.filter((a) => !a.foto && a.club_id).map((a) => a.club_id!);
   if (!clubes.length) return {};

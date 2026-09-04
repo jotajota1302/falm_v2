@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { NavFichajesComponent } from '../../shared/nav-fichajes.component';
 import { environment } from '../../../environments/environment';
 import { ActivoMini, Equipo, FalmService, ItemPlantilla, OfertaIntercambio } from '../../core/falm.service';
+import { carasDePorterias } from '../../shared/caras-libres';
 
 const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'MED', DELANTERO: 'DEL' };
 
@@ -100,7 +101,10 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
               @for (j of miPlantilla(); track j.activo_id) {
                 <button class="fila" [class.sel]="ofrecidos().includes(j.activo_id)" (click)="toggle(ofrecidosSet, j.activo_id)">
                   <span class="pos" [class]="abr(j.posicion)">{{ abr(j.posicion) }}</span>
+                  <img class="fo" [class.es]="!foto(j)" [src]="foto(j) || j.escudo" alt="" loading="lazy" />
                   <span class="nm">{{ j.nombre }}</span>
+                  @if (foto(j) && j.escudo) { <img class="cl" [src]="j.escudo" alt="" loading="lazy" /> }
+                  @else { <span></span> }
                   <span class="tick">{{ ofrecidos().includes(j.activo_id) ? '✓' : '' }}</span>
                 </button>
               }
@@ -111,7 +115,10 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
               @for (j of plantillaRival(); track j.activo_id) {
                 <button class="fila" [class.sel]="solicitados().includes(j.activo_id)" (click)="toggle(solicitadosSet, j.activo_id)">
                   <span class="pos" [class]="abr(j.posicion)">{{ abr(j.posicion) }}</span>
+                  <img class="fo" [class.es]="!foto(j)" [src]="foto(j) || j.escudo" alt="" loading="lazy" />
                   <span class="nm">{{ j.nombre }}</span>
+                  @if (foto(j) && j.escudo) { <img class="cl" [src]="j.escudo" alt="" loading="lazy" /> }
+                  @else { <span></span> }
                   <span class="tick">{{ solicitados().includes(j.activo_id) ? '✓' : '' }}</span>
                 </button>
               }
@@ -156,7 +163,8 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     .swap { align-self: center; font-size: var(--t-lg); color: var(--text2); }
     .mini { display: flex; align-items: center; gap: 8px; background: var(--surface2); border: 1px solid var(--line);
       border-radius: 9px; padding: 6px 9px; font-size: var(--t-sm); font-weight: 600; min-width: 0; }
-    .mini img { width: 22px; height: 22px; border-radius: 6px; object-fit: cover; flex: 0 0 auto; }
+    .mini img { width: 22px; height: 22px; border-radius: 50%; object-fit: cover;
+      object-position: top center; background: var(--surface); flex: 0 0 auto; }
     .mini i { width: 26px; padding: 3px 0; border-radius: 5px; text-align: center; flex: 0 0 auto;
       font-size: var(--t-xs); font-weight: 700; letter-spacing: .06em; font-style: normal;
       color: #fff; background: var(--text2); }
@@ -176,11 +184,18 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     .lado { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r);
       padding: 14px; max-height: 420px; overflow-y: auto; }
     .lt { margin: 0 0 11px; } .lt small { font-family: var(--fm); color: var(--accent); margin-left: 4px; }
-    .fila { width: 100%; display: flex; align-items: center; gap: 9px; padding: 9px 10px; margin-bottom: 5px;
+    /* Misma ficha que en Mercado y Fichajes: posición, cara, nombre y club. */
+    .fila { width: 100%; display: grid; align-items: center; gap: 8px;
+      grid-template-columns: 40px 26px 1fr 18px 16px;
+      padding: 7px 10px; margin-bottom: 5px;
       background: var(--surface); border: 1px solid var(--line); border-radius: 9px; cursor: pointer; }
     .fila:hover { background: var(--surface2); }
     .fila.sel { border-color: var(--accent); background: var(--accent-soft); }
-    .nm { flex: 1; text-align: left; font-weight: 600; font-size: var(--t-md);
+    .fo { width: 26px; height: 26px; border-radius: 50%; object-fit: cover;
+      object-position: top center; background: var(--surface2); }
+    .fo.es { object-fit: contain; padding: 3px; border: 1px solid var(--line); }
+    .cl { width: 18px; height: 18px; object-fit: contain; opacity: .85; }
+    .nm { min-width: 0; text-align: left; font-weight: 600; font-size: var(--t-sm);
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .tick { color: var(--accent); font-weight: 700; }
     .coment-in { width: 100%; font-family: var(--fb); font-size: var(--t-md); background: var(--surface);
@@ -234,6 +249,7 @@ export class IntercambiosComponent implements OnInit {
         this.falm.ofertas(eq.id), this.falm.equiposFalm(eq.id), this.falm.miPlantilla(eq.id),
       ]);
       this.ofertas.set(ofs); this.rivales.set(rivs); this.miPlantilla.set(mp);
+      await this.ponerCaras(mp);
     } catch (e: any) { this.error.set(e?.message ?? 'Error'); }
     finally { this.cargando.set(false); }
   }
@@ -244,9 +260,23 @@ export class IntercambiosComponent implements OnInit {
     this.plantillaRival.set([]);
     if (!id) return;
     this.cargandoRival.set(true);
-    try { this.plantillaRival.set(await this.falm.miPlantilla(id)); }
+    try {
+      const pr = await this.falm.miPlantilla(id);
+      this.plantillaRival.set(pr);
+      await this.ponerCaras(pr);
+    }
     catch (e: any) { this.error.set(e?.message ?? 'Error'); }
     finally { this.cargandoRival.set(false); }
+  }
+
+  /** Una portería no tiene retrato: lleva la cara de un portero de su club. */
+  private caras = signal<Record<string, string>>({});
+  foto(j: ItemPlantilla): string | null {
+    return j.foto ?? (j.club_id ? this.caras()[j.club_id] ?? null : null);
+  }
+  private async ponerCaras(fichas: ItemPlantilla[]) {
+    const nuevas = await carasDePorterias(this.falm, fichas);
+    this.caras.set({ ...this.caras(), ...nuevas });
   }
 
   toggle(set: WritableSignal<Set<string>>, id: string) {
