@@ -53,13 +53,25 @@ const CAMPOS: Campo[] = [
       <p class="muted">Sin datos para esta jornada.</p>
     } @else {
       <div class="tabla card">
-        @for (p of visibles(); track p.id) {
+        @for (p of visibles(); track p.nombre) {
           <div class="fila" [class.abierta]="abierto() === p.id" (click)="alternar(p)">
             <span class="pos" [class]="abr(p.posicion)">{{ abr(p.posicion) }}</span>
+            @if (p.foto && !rotas().has(p.nombre)) {
+              <img class="fo" [src]="p.foto" alt="" loading="lazy" (error)="sinFoto(p)" />
+            } @else if (p.escudo) {
+              <img class="fo es" [src]="p.escudo" alt="" loading="lazy" />
+            } @else { <span class="fo"></span> }
             <div class="info">
               <span class="nm">{{ p.nombre }}</span>
-              <span class="cl">{{ p.equipo }}{{ p.minutos ? ' · ' + p.minutos + '′' : '' }}</span>
+              <span class="cl">
+                @if (p.esPorteria) { copia los puntos de {{ p.desdePortero || 'su portero' }} }
+                @else {
+                  @if (p.escudo) { <img class="esc" [src]="p.escudo" alt="" loading="lazy" /> }
+                  {{ p.equipo }}{{ p.minutos ? ' · ' + p.minutos + '′' : '' }}
+                }
+              </span>
             </div>
+            @if (p.esPorteria) { <span class="chip">portería</span> }
             @if (p.tipo === 'MANUAL') { <span class="chip">manual</span> }
             <span class="pts num">{{ p.puntos }}</span>
             <span class="chevron">{{ abierto() === p.id ? '▾' : '▸' }}</span>
@@ -81,6 +93,12 @@ const CAMPOS: Campo[] = [
                 </div>
               </div>
 
+              @if (p.esPorteria) {
+                <p class="faint mini nota-p">
+                  Esta portería no se edita aquí: sale del portero que más minutos jugó
+                  ({{ p.desdePortero || '—' }}). Corrige a ese portero y se actualiza sola.
+                </p>
+              } @else {
               <div class="edit">
                 <div class="campo">
                   <label>Resultado</label>
@@ -97,11 +115,13 @@ const CAMPOS: Campo[] = [
                            [ngModel]="ed()[c.clave]" (ngModelChange)="cambiar(c.clave, $event)" />
                   </div>
                 }
-                <label class="campo chk">
-                  <input type="checkbox" [ngModel]="ed()['imbatido']"
-                         (ngModelChange)="cambiar('imbatido', $event)" />
-                  Portería a cero
-                </label>
+                @if (puntuaImbatido(p)) {
+                  <label class="campo chk">
+                    <input type="checkbox" [ngModel]="ed()['imbatido']"
+                           (ngModelChange)="cambiar('imbatido', $event)" />
+                    Portería a cero
+                  </label>
+                }
 
                 <div class="acciones">
                   <span class="faint mini">
@@ -113,6 +133,7 @@ const CAMPOS: Campo[] = [
                   </button>
                 </div>
               </div>
+              }
             </div>
           }
         }
@@ -135,7 +156,13 @@ const CAMPOS: Campo[] = [
     .pos.MED { background: var(--med); } .pos.DEL { background: var(--del); }
     .info { flex: 1; min-width: 0; display: flex; flex-direction: column; }
     .nm { font-weight: 700; font-size: var(--t-md); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .cl { color: var(--text2); font-size: var(--t-sm); }
+    .cl { color: var(--text2); font-size: var(--t-sm); display: flex; align-items: center; gap: 6px; }
+    .cl .esc { width: 15px; height: 15px; object-fit: contain; flex: 0 0 auto; }
+    /* Mismo retrato que en Mercado e Inicio: redondo, y el escudo sobre un disco
+       porque los casi blancos se perdían sobre el papel. */
+    .fo { width: 26px; height: 26px; border-radius: 50%; object-fit: cover;
+      object-position: top center; background: var(--surface2); flex: 0 0 auto; }
+    .fo.es { object-fit: contain; padding: 3px; border: 1px solid var(--line); }
     .pts { font-weight: 700; color: var(--accent); min-width: 34px; text-align: right; }
     .chevron { color: var(--text2); width: 14px; }
     .muted { color: var(--text2); }
@@ -164,6 +191,7 @@ const CAMPOS: Campo[] = [
       justify-content: flex-end; margin-top: 4px; }
     .acciones .mini { flex: 1; font-size: var(--t-xs); }
     .chip { font-size: var(--t-xs); }
+    .nota-p { align-self: start; margin: 0; font-size: var(--t-sm); line-height: 1.5; }
 
     @media (max-width: 800px) {
       .detalle { grid-template-columns: 1fr; }
@@ -184,6 +212,8 @@ export class AdminPuntuacionesComponent implements OnInit {
   guardando = signal(false);
   /** Valores en edición, con las claves tal como se llaman en el desglose. */
   ed = signal<Record<string, any>>({});
+  /** Fotos que no cargan: esa fila se queda con el escudo, como en Mercado. */
+  rotas = signal<Set<string>>(new Set());
 
   campos = CAMPOS;
 
@@ -194,6 +224,13 @@ export class AdminPuntuacionesComponent implements OnInit {
 
   constructor(private admin: AdminService) {}
   abr(p: string) { return ABR[p] ?? 'MED'; }
+  sinFoto(p: AdminPuntuacion) { const r = new Set(this.rotas()); r.add(p.nombre); this.rotas.set(r); }
+
+  /** La portería a cero solo suma a porteros (+2) y defensas (+1). */
+  puntuaImbatido(p: AdminPuntuacion) {
+    const a = this.abr(p.posicion);
+    return a === 'POR' || a === 'DEF';
+  }
 
   /** Penaltis parados y goles encajados solo puntúan al portero. */
   camposDe(p: AdminPuntuacion) {

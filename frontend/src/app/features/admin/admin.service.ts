@@ -181,6 +181,10 @@ export class AdminService {
       posicion: p.jugador?.posicion ?? '',
       puntos: Number(p.puntosTotales ?? 0),
       tipo: p.tipo ?? 'AUTOMATICO',
+      esPorteria: !!p.esPorteria,
+      desdePortero: p.desdePortero ?? '',
+      foto: p.jugador?.foto ?? null,
+      escudo: p.jugador?.escudo ?? null,
       goles: Number(p.goles ?? 0),
       asistencias: Number(p.asistencias ?? 0),
       // el desglose entero, para poder verlo y corregirlo concepto a concepto
@@ -428,6 +432,9 @@ export interface LineaPuntos { concepto: string; detalle: string; puntos: number
 export interface AdminPuntuacion {
   id: number; nombre: string; equipo: string; posicion: string; puntos: number;
   tipo: string; goles: number; asistencias: number;
+  /** Portería virtual: copia los puntos del portero titular, no se edita aquí. */
+  esPorteria: boolean; desdePortero: string;
+  foto: string | null; escudo: string | null;
   resultado: string; minutos: number; estrellas: number; golesPenalti: number;
   penaltiFallado: number; penaltiParado: number; golesEnPropia: number;
   golesEnContra: number; tarjetasRojas: number; imbatido: boolean;

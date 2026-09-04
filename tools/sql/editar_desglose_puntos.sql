@@ -166,3 +166,21 @@ $function$;
 grant execute on function falm.editar_desglose(integer, integer, jsonb) to authenticated;
 revoke execute on function falm.editar_desglose(integer, integer, jsonb) from public, anon;
 revoke execute on function falm.desglose_puntos(falm.posicion, jsonb) from public, anon;
+
+-- ---------------------------------------------------------------------------
+-- Porterias virtuales
+-- ---------------------------------------------------------------------------
+-- Una porteria (activo tipo DEFENSA) no tiene estadisticas propias: copia las
+-- del portero de su club que mas minutos jugo esa jornada, via
+-- falm.sincronizar_porterias. Por eso:
+--
+--   * editar_desglose, cuando el editado es PORTERO, vuelve a sincronizar. Antes
+--     no lo hacia y el club se quedaba puntuando distinto que su portero.
+--     Sin forzar: una porteria corregida a mano (MANUAL) se respeta.
+--   * puntuaciones_jornada devuelve tambien las porterias, marcadas con
+--     esPorteria y con desdePortero (de quien copian), pero no se editan desde
+--     ahi: se corrige al portero y ellas se actualizan.
+--
+-- Y la porteria a cero solo suma a porteros (+2) y defensas (+1), asi que la
+-- casilla no se enseña a medios ni delanteros: verla ahi hacia pensar que
+-- puntuaba.

@@ -101,13 +101,17 @@ import { colorEquipo } from '../../shared/equipo-colores';
   `,
   styles: [`
     .comps { margin-bottom: 12px; }
-    .jnav { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+    /* El grupo entero va centrado: con las flechas pegadas a los bordes
+       quedaba un vacío enorme entre ellas y las jornadas. */
+    .jnav { display: flex; align-items: center; justify-content: center;
+      gap: 8px; margin-bottom: 14px; }
     .jb { flex: 0 0 auto; width: 34px; height: 38px; border: 1px solid var(--line);
       background: var(--surface); color: var(--text2); border-radius: 10px; cursor: pointer;
       font-family: var(--fb); font-size: var(--t-lg); line-height: 1; }
     .jb:disabled { opacity: .35; cursor: default; }
     .jb:not(:disabled):hover { border-color: var(--accent); color: var(--accent); }
-    .jchips { flex: 1; min-width: 0; display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
+    .jchips { flex: 0 1 auto; min-width: 0; display: flex; justify-content: center;
+      gap: 6px; overflow-x: auto; padding-bottom: 2px; }
     .jchips button { flex: 0 0 auto; min-width: 44px; padding: 8px 10px; border: 1px solid var(--line);
       background: var(--surface); color: var(--text2); border-radius: 10px; cursor: pointer;
       font-family: var(--fm); font-weight: 600; font-size: var(--t-sm); }
@@ -158,6 +162,8 @@ import { colorEquipo } from '../../shared/equipo-colores';
     .muted { color: var(--text2); } .err { color: var(--bad); }
 
     @media (max-width: 560px) {
+      /* Aquí sí necesita todo el ancho: las diez no caben y hay que arrastrar. */
+      .jchips { flex: 1 1 auto; justify-content: flex-start; }
       /* Dos nombres de equipo y el marcador en 393px: el nombre baja un
          escalón y el partido respira menos por los lados. */
       .nm { font-size: var(--t-sm); }
