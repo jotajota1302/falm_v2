@@ -180,9 +180,35 @@ export class AdminService {
       equipo: p.jugador?.equipo ?? '',
       posicion: p.jugador?.posicion ?? '',
       puntos: Number(p.puntosTotales ?? 0),
+      tipo: p.tipo ?? 'AUTOMATICO',
       goles: Number(p.goles ?? 0),
       asistencias: Number(p.asistencias ?? 0),
+      // el desglose entero, para poder verlo y corregirlo concepto a concepto
+      resultado: p.resultado ?? '',
+      minutos: Number(p.minutosJugados ?? 0),
+      estrellas: Number(p.estrellas ?? 0),
+      golesPenalti: Number(p.golesPenalti ?? 0),
+      penaltiFallado: Number(p.penaltiFallado ?? 0),
+      penaltiParado: Number(p.penaltiParado ?? 0),
+      golesEnPropia: Number(p.golesEnPropia ?? 0),
+      golesEnContra: Number(p.golesEnContra ?? 0),
+      tarjetasRojas: Number(p.tarjetasRojas ?? 0),
+      imbatido: !!p.imbatido,
+      explicacion: (p.explicacion?.lineas ?? []) as LineaPuntos[],
     }));
+  }
+
+  /**
+   * Corrige los conceptos de una puntuación: el total lo recalcula el baremo del
+   * servidor, para que el número y su explicación no puedan separarse. Solo se
+   * mandan los campos que cambian.
+   */
+  async editarDesglose(ext: number, lfp: number, cambios: Record<string, any>): Promise<number> {
+    const { data, error } = await this.sb.client.rpc('editar_desglose', {
+      p_ext: ext, p_lfp: lfp, p_cambios: cambios,
+    });
+    if (error) throw error;
+    return Number((data as any)?.puntos ?? 0);
   }
 
   // ---- Operaciones de liga (RPC de mutación; requieren rol/permiso) ----------
@@ -397,6 +423,13 @@ export interface EstadoPretemporada {
 export interface AdminEquipo {
   id: string; nombre: string; presupuesto: number; beneficio: number; usuarioId: string | null; jugadores: number;
 }
+export interface LineaPuntos { concepto: string; detalle: string; puntos: number; }
+
 export interface AdminPuntuacion {
-  id: number; nombre: string; equipo: string; posicion: string; puntos: number; goles: number; asistencias: number;
+  id: number; nombre: string; equipo: string; posicion: string; puntos: number;
+  tipo: string; goles: number; asistencias: number;
+  resultado: string; minutos: number; estrellas: number; golesPenalti: number;
+  penaltiFallado: number; penaltiParado: number; golesEnPropia: number;
+  golesEnContra: number; tarjetasRojas: number; imbatido: boolean;
+  explicacion: LineaPuntos[];
 }

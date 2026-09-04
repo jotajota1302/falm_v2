@@ -73,6 +73,7 @@ dentro del repo.
 | `ingestar_jornada_ff_marcadores.sql` | Ingesta de puntuaciones de una jornada |
 | `parseo_por_slug_ff.sql` | Emparejar por slug de futbolfantasy (y el año es el de FIN de temporada) |
 | `puntuaciones_a_demanda.sql` | Leer una jornada desde el panel, con guardias de rol |
+| `editar_desglose_puntos.sql` | De qué se componen los puntos y edición concepto a concepto |
 | `procesar_jornada_auto.sql`, `tareas_previas_jornada.sql` | Lo que ejecutan los cron |
 | `liga_falm_calendario.sql` | `generar_liga_falm` (mantenimiento; revocada a los usuarios) |
 | `admin_operaciones.sql` | `estado_crons` y el cierre de escritura en `equipo_falm` |
@@ -91,6 +92,7 @@ dentro del repo.
 | `pretemporada_protecciones_test.sql` | 11 casos de protecciones y edición del calendario |
 | `draft_orden_manual_test.sql` | 4 casos del orden manual del sorteo |
 | `respaldos_test.sql` | 8 casos de respaldo y restauración (borra tablas de verdad) |
+| `editar_desglose_puntos_test.sql` | 6 casos de edición por conceptos y de la explicación |
 
 ## Dónde está la verdad
 
