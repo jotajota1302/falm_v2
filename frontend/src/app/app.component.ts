@@ -1,4 +1,4 @@
-import { AfterViewChecked, Component, ElementRef, HostListener, ViewChild, computed, signal } from '@angular/core';
+import { AfterViewChecked, Component, ElementRef, HostListener, ViewChild, computed, effect, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from './core/auth.service';
@@ -299,7 +299,12 @@ export class AppComponent implements AfterViewChecked {
               private router: Router, falm: FalmService, private sb: SupabaseService) {
     season.ensure();
     falm.warmup(); // despierta el dyno del backend al arrancar
-    this.sb.client.rpc('es_admin').then(({ data }) => this.esAdmin.set(data === true));
+    // Hay que esperar a la sesión: preguntado en el constructor, la llamada sale
+    // como anon, que no tiene permiso, y el enlace no aparecía nunca.
+    effect(() => {
+      if (!this.auth.session()) { this.esAdmin.set(false); return; }
+      this.sb.client.rpc('es_admin').then(({ data }) => this.esAdmin.set(data === true));
+    });
   }
 
   cambiarTemporada(id: string) {
