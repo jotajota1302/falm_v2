@@ -130,6 +130,38 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
             <div class="bar"><span [style.width.%]="pct()"></span></div>
             <span class="pcttxt">{{ draft().picks_hechos }} / {{ draft().picks_totales }} picks</span>
           </div>
+          <!-- Con picks hechos no se puede tocar el orden: para volver a sortear
+               hay que vaciar el draft, y eso no se deshace. -->
+          @if (draft().picks_hechos > 0 && draft().estado !== 'CONSOLIDADO') {
+            @if (!reinicioAbierto()) {
+              <button class="btn ghost peligro" (click)="reinicioAbierto.set(true)">
+                Empezar el draft de cero
+              </button>
+            } @else {
+              <div class="reinicio">
+                <p class="rtit"><b>Vas a borrar los {{ draft().picks_hechos }} picks del draft.</b></p>
+                <p class="hint">
+                  Todos los equipos se quedan sin elecciones y el draft vuelve al principio,
+                  con lo que podrás rehacer el sorteo del orden. <b>Esto no se deshace</b>,
+                  aunque se guarda una copia de seguridad automática antes de borrar.
+                </p>
+                <label class="rconf">
+                  Escribe <b>BORRAR</b> para confirmar
+                  <input type="text" [ngModel]="confirmaTexto()"
+                         (ngModelChange)="confirmaTexto.set($event)" placeholder="BORRAR" />
+                </label>
+                <div class="racc">
+                  <button class="btn ghost" (click)="reinicioAbierto.set(false); confirmaTexto.set('')">
+                    Cancelar
+                  </button>
+                  <button class="btn peligro" [disabled]="confirmaTexto().trim().toUpperCase() !== 'BORRAR'"
+                          (click)="reiniciarDraft()">
+                    Borrar los picks y empezar de cero
+                  </button>
+                </div>
+              </div>
+            }
+          }
           @if (draft().picks_hechos === 0) {
             @if (sorteoAbierto()) {
               <admin-draft-sorteo
@@ -197,6 +229,19 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     h3 { margin: 0 0 12px; font-size: var(--t-md); }
     h4 { margin: 14px 0 8px; font-size: var(--t-sm); color: var(--text2); }
     .hint { color: var(--text2); font-size: var(--t-sm); margin: 0 0 10px; }
+    /* Empezar de cero: se enseña en rojo y pide escribir la palabra, porque
+       borra todas las elecciones y no hay vuelta atrás. */
+    .btn.peligro { background: var(--bad); border-color: var(--bad); color: #fff; }
+    .btn.ghost.peligro { background: none; color: var(--bad); border-color: var(--bad); }
+    .btn.peligro:disabled { opacity: .45; }
+    .reinicio { border: 1px solid var(--bad); border-radius: var(--r-sm);
+      padding: 13px 15px; margin: 10px 0; background: var(--surface2); }
+    .rtit { margin: 0 0 6px; font-size: var(--t-sm); }
+    .rtit b { color: var(--bad); }
+    .rconf { display: flex; gap: 8px; align-items: center; font-size: var(--t-sm);
+      color: var(--text2); margin-bottom: 11px; flex-wrap: wrap; }
+    .rconf input { width: 130px; }
+    .racc { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
     .form { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
     .form input { background: var(--surface); border: 1px solid var(--line); border-radius: 9px; padding: 8px 10px; }
     .form label { font-size: var(--t-sm); color: var(--text2); display: flex; gap: 6px; align-items: center; }
@@ -245,6 +290,8 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
 export class AdminPretemporadaComponent implements OnInit {
   temporadas = signal<AdminTemporada[]>([]);
   draft = signal<any | null>(null);
+  reinicioAbierto = signal(false);
+  confirmaTexto = signal('');
   picks = signal<{ orden: number; ronda: number; equipo: string; jugador: string; posicion: string }[]>([]);
   equipos = signal<EquipoSorteo[]>([]);
   estado = signal<EstadoPretemporada | null>(null);
@@ -398,6 +445,18 @@ export class AdminPretemporadaComponent implements OnInit {
    * Deshacer el último pick. En la quedada presencial alguien dicta mal un
    * nombre y hay que poder arreglarlo sin tocar la base a mano.
    */
+  async reiniciarDraft() {
+    const d = this.draft();
+    if (!d?.id || this.confirmaTexto().trim().toUpperCase() !== 'BORRAR') return;
+    const n = d.picks_hechos;
+    await this.accion(
+      () => this.admin.ejecutar('draft_reiniciar', { p_draft: d.id, p_confirmar: true }),
+      `Draft vaciado: ${n} picks borrados. Ya puedes rehacer el sorteo del orden.`
+    );
+    this.reinicioAbierto.set(false);
+    this.confirmaTexto.set('');
+  }
+
   async deshacer() {
     const d = this.draft();
     if (!d?.id) return;

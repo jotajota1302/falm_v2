@@ -56,6 +56,7 @@ dentro del repo.
 |---|---|
 | `draft_pick_v2.sql` | `draft_pick`, `draft_pick_deshacer`, `draft_consolidar` |
 | `draft_pick_correcciones.sql` | `draft_pick_corregir` y `draft_pick_anular`: arreglar un pick suelto |
+| `draft_reiniciar.sql` | `draft_reiniciar`: vaciar el draft para volver a sortear el orden |
 | `draft_orden_manual.sql` | `draft_crear`, `draft_reordenar`, `draft_generar_orden`, `draft_validar_orden` |
 | `draft_en_vivo.sql` | Tabla `draft_wishlist`, RLS del tablero y publicación de Realtime |
 | `limite_por_club.sql` | `equipo_lfp.limite_plantilla`, `club_de_activo`, vista `v_activo_libre` |
@@ -89,6 +90,7 @@ dentro del repo.
 |---|---|
 | `draft_pick_v2_test.sql` | 7 casos del motor de picks |
 | `draft_pick_correcciones_test.sql` | 8 casos de corregir y anular un pick |
+| `draft_reiniciar_test.sql` | 5 casos de vaciar el draft (lo vacía de verdad) |
 | `pretemporada_protecciones_test.sql` | 11 casos de protecciones y edición del calendario |
 | `draft_orden_manual_test.sql` | 4 casos del orden manual del sorteo |
 | `respaldos_test.sql` | 8 casos de respaldo y restauración (borra tablas de verdad) |
