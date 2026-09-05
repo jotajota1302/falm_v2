@@ -1,7 +1,8 @@
 import { Component, OnInit, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
-  Alineado, AlineacionGuardada, Competicion, Equipo, FalmService, FORMACIONES, ItemPlantilla, JornadaFalm,
+  Alineado, AlineacionGuardada, Competicion, ContextoActivo, Equipo, FalmService, FORMACIONES,
+  ItemPlantilla, JornadaFalm,
 } from '../../core/falm.service';
 import { FutCardComponent } from '../../shared/fut-card.component';
 
@@ -80,6 +81,17 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
         }
       }
       @if (aviso()) { <p class="aviso">{{ aviso() }}</p> }
+
+      <!-- Lo que uno querría saber antes de darle a guardar: a quién tienes
+           puesto que no está para jugar. -->
+      @if (tocados().length) {
+        <p class="tocados">
+          <b>Ojo:</b>
+          @for (t of tocados(); track t.id) {
+            <span class="tj">{{ t.nombre }} <b [class]="t.clase">{{ t.eti }}</b>@if (t.detalle) { <i>· {{ t.detalle }}</i> }</span>
+          }
+        </p>
+      }
 
       <!-- CAMPO: huecos por formación -->
       <div class="zona">
@@ -211,11 +223,26 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
                   @else { {{ j.nombre.charAt(0) }} }
                 </span>
                 <span class="cw">
-                  <span class="cn">{{ j.nombre }}</span>
+                  <span class="cn">
+                    {{ j.nombre }}
+                    <!-- Solo avisa. Nadie te impide alinear a un tocado. -->
+                    @if (parte(j.activo_id); as e) {
+                      <b class="parte" [class]="e.clase" [title]="e.title">{{ e.eti }}</b>
+                    }
+                  </span>
                   <span class="cc">
                     @if (j.escudo) { <img [src]="j.escudo" alt="" loading="lazy" /> }
                     {{ j.club }}
                   </span>
+                  <!-- Contra quién y dónde: en las dobles salen los dos partidos. -->
+                  @for (p of partidos(j.activo_id); track $index) {
+                    <span class="cvs">
+                      <span class="dnd" [title]="p.casa ? 'En casa' : 'Fuera'">{{ p.casa ? '⌂' : '✈' }}</span>
+                      @if (p.escudo) { <img [src]="p.escudo" alt="" loading="lazy" /> }
+                      {{ p.rival }}
+                      <span class="cfe">{{ fechaCorta(p.fecha) }}</span>
+                    </span>
+                  }
                 </span>
                 <span class="ck">{{ seleccionado(j) ? '✓' : '' }}</span>
               </button>
@@ -462,6 +489,33 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
     .cand { display: grid; grid-template-columns: 32px 40px 1fr 22px; align-items: center; gap: 10px; padding: 8px 10px;
       background: var(--surface); border: 1px solid var(--line); border-radius: 11px; cursor: pointer; text-align: left; }
     .cand:hover { background: var(--surface2); }
+
+    /* Los avisos de estado: rojo el que no juega, ámbar el que puede que sí. */
+    .parte { margin-left: 6px; padding: 1px 6px; border-radius: var(--pill);
+      font-family: var(--fb); font-size: 9px; font-weight: 700; letter-spacing: .08em;
+      text-transform: uppercase; vertical-align: middle; }
+    .parte.lesionado, .parte.sancionado { background: var(--bad); color: #fff; }
+    .parte.duda { background: var(--por); color: #fff; }
+
+    /* Contra quién juega y dónde, debajo del club. */
+    .cvs { display: flex; align-items: center; gap: 5px; min-width: 0;
+      font-size: var(--t-xs); color: var(--text2); white-space: nowrap;
+      overflow: hidden; text-overflow: ellipsis; }
+    .cvs img { width: 13px; height: 13px; flex: 0 0 auto; object-fit: contain; }
+    .cvs .dnd { font-size: var(--t-sm); line-height: 1; }
+    .cvs .cfe { opacity: .75; }
+
+    .tocados { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px;
+      margin: 0 0 14px; padding: 10px 14px; font-size: var(--t-sm);
+      background: color-mix(in oklab, var(--bad) 7%, var(--surface));
+      border: 1px solid color-mix(in oklab, var(--bad) 28%, var(--line));
+      border-radius: var(--r); }
+    .tocados .tj { display: inline-flex; align-items: center; gap: 5px; }
+    .tocados .tj b { font-size: var(--t-xs); text-transform: uppercase; letter-spacing: .06em; }
+    .tocados .tj b.lesionado, .tocados .tj b.sancionado { color: var(--bad); }
+    .tocados .tj b.duda { color: var(--por); }
+    .tocados .tj i { color: var(--text2); font-style: normal; }
+
     .cand.sel { border-color: var(--accent); background: var(--accent-soft); }
     .cm { font-family: var(--fm); font-weight: 700; color: var(--accent); text-align: center; }
     .cav { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
@@ -493,6 +547,53 @@ export class AlineacionComponent implements OnInit {
   /** Calendario de cada competición, ya consultado al arrancar. */
   private cacheJornadas = new Map<string, JornadaFalm[]>();
   jornada = signal<JornadaFalm | null>(null);
+
+  /** Los partidos de ese activo en la jornada: dos si es doble. */
+  partidos(activoId: string) {
+    return this.ctx()[activoId]?.partidos ?? [];
+  }
+
+  /**
+   * El aviso de estado, solo cuando hay algo que avisar: quien vuelve de una
+   * lesión ya está disponible y no hace falta marcarlo.
+   */
+  parte(activoId: string): { eti: string; clase: string; title: string } | null {
+    const c = this.ctx()[activoId];
+    if (!c?.estado || c.estado === 'DISPONIBLE') return null;
+    const eti = c.estado === 'SANCIONADO' ? 'Sancionado'
+      : c.estado === 'DUDA' ? 'Duda' : 'Lesionado';
+    return {
+      eti,
+      clase: c.estado.toLowerCase(),
+      title: [c.detalle, c.vuelve].filter(Boolean).join(' · ') || eti,
+    };
+  }
+
+  /** Titulares y suplentes que llegan tocados, para avisar antes de guardar. */
+  readonly tocados = computed(() => {
+    const ctx = this.ctx();
+    const puestos = [...this.titulares(), ...this.banca().map((b) => b.id)];
+    const vistos = new Set<string>();
+    const out: { id: string; nombre: string; eti: string; clase: string; detalle: string }[] = [];
+    for (const id of puestos) {
+      if (vistos.has(id)) continue;
+      vistos.add(id);
+      const c = ctx[id];
+      if (!c?.estado || c.estado === 'DISPONIBLE') continue;
+      out.push({
+        id,
+        nombre: this.nombreDe(id),
+        eti: c.estado === 'SANCIONADO' ? 'sancionado' : c.estado === 'DUDA' ? 'duda' : 'lesionado',
+        clase: c.estado.toLowerCase(),
+        detalle: c.detalle ?? '',
+      });
+    }
+    return out;
+  });
+
+
+  /** Rival, casa o fuera, y estado físico de cada activo en esta jornada. */
+  ctx = signal<Record<string, ContextoActivo>>({});
   /** ¿Hay alineación guardada para la jornada abierta? */
   enviada = signal(false);
   /** Si no la hay, de qué jornada se ha copiado el borrador que se está viendo. */
@@ -762,6 +863,10 @@ export class AlineacionComponent implements OnInit {
   }
   async seleccionarJornada(j: JornadaFalm) {
     this.jornada.set(j); this.aviso.set('');
+    // Contra quién juega cada uno esa jornada y quién llega tocado. Es un
+    // apaño de ayuda: si falla, la pantalla sigue funcionando igual.
+    this.ctx.set({});
+    this.falm.contextoJornada(j.id).then((c) => this.ctx.set(c)).catch(() => {});
     this.enviada.set(false); this.copiadaDe.set(null);
     const eq = this.equipo(); if (!eq) return;
     const ali = await this.falm.getAlineacion(eq.id, j.id);

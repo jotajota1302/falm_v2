@@ -105,6 +105,16 @@ export interface ActivoLibre {
   ext_id?: number | null;
 }
 
+/** Con quién se juega esa jornada y en qué estado se llega. */
+export interface ContextoActivo {
+  /** Uno normalmente; dos en las jornadas dobles. */
+  partidos?: { rival: string; escudo?: string | null; casa: boolean; fecha: string }[];
+  /** Solo si hay algo que contar: LESIONADO, DUDA, SANCIONADO o DISPONIBLE. */
+  estado?: string;
+  detalle?: string;
+  vuelve?: string;
+}
+
 export interface ActivoMini { nombre: string; posicion: string; foto?: string | null; escudo?: string | null; }
 export interface OfertaIntercambio {
   id: string;
@@ -739,6 +749,17 @@ export class FalmService {
     if (error) throw error;
     const d = typeof data === 'string' ? JSON.parse(data) : data;
     return (Array.isArray(d) ? d : []) as any[];
+  }
+
+  /**
+   * Contra quién juega cada activo esa jornada, si es en casa, y cómo está
+   * (lesionado, duda, sancionado). Viene indexado por activo_id.
+   */
+  async contextoJornada(jornadaId: string): Promise<Record<string, ContextoActivo>> {
+    const { data, error } = await this.sb.client.rpc('contexto_jornada', { p_jornada: jornadaId });
+    if (error) throw error;
+    const d = typeof data === 'string' ? JSON.parse(data) : data;
+    return (d ?? {}) as Record<string, ContextoActivo>;
   }
 
   /** Mercado: activos libres en la temporada activa. */

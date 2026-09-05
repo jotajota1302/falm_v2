@@ -278,6 +278,9 @@ export class AdminOperacionesComponent implements OnInit {
       desc: 'Reparte los premios de esa jornada (normal 10/5, doble 20/15/5).' },
     { id: 'expirar', titulo: 'Expirar ofertas', rpc: 'expirar_ofertas', porJornada: false,
       desc: 'Marca EXPIRADA las ofertas de intercambio vencidas. El cron ya lo hace cada hora.' },
+    { id: 'estados', titulo: 'Leer lesionados y sancionados', rpc: 'refrescar_estados_jugadores',
+      porJornada: false,
+      desc: 'Relee las dos páginas de futbolfantasy y actualiza quién está tocado. El cron lo hace cada 3 horas; esto es para justo antes de cerrar una jornada.' },
   ];
 
   constructor(private admin: AdminService) {}
