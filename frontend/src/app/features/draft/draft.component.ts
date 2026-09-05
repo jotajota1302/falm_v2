@@ -21,10 +21,6 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
         <h1>Draft</h1>
         <p class="sub">El turno no avanza hasta que elige el equipo que lo tiene.</p>
       </div>
-      <!-- Para el televisor del salón. En pestaña aparte a propósito: esta se
-           queda con el buscador, que es desde donde se ficha. -->
-      <a class="tv" href="/tablero" target="_blank" rel="noopener"
-         title="El draft entero en una pantalla, para proyectar"><span class="lg">Abrir tablero</span><span class="sm">Tablero</span> ↗</a>
     </header>
 
     @if (d.cargando()) {
@@ -423,13 +419,8 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     /* El título va donde el de todas las demás pantallas: arriba a la izquierda,
        y la explicación en una sola línea: tres líneas empujaban el draft entero
        fuera de la pantalla. */
-    .phead { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
+    .phead { display: block; }
     .phead .sub { max-width: none; }
-    .tv { flex: 0 0 auto; padding: 8px 15px; border-radius: var(--pill);
-      border: 1px solid var(--line); background: var(--surface); color: var(--text2);
-      font-family: var(--fb); font-size: var(--t-sm); font-weight: 600; white-space: nowrap; }
-    .tv:hover { color: var(--accent); border-color: var(--accent); }
-    .tv .sm { display: none; }
 
     .tira { position: sticky; top: 0; z-index: 6; display: flex; align-items: center; gap: 12px;
       flex-wrap: wrap; justify-content: center; padding: 12px 18px; margin-bottom: 16px;
@@ -626,9 +617,6 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
       .fila.pk { grid-template-columns: 34px 46px 1fr 24px 140px; }
       .fila.pk > :nth-child(2) { display: none; }
       .candidatos li { grid-template-columns: 46px 1fr 24px 62px; }
-      /* En el móvil el enlace al tablero se queda en una palabra. */
-      .tv { padding: 7px 12px; font-size: var(--t-xs); }
-      .tv .lg { display: none; } .tv .sm { display: inline; }
       .barra { padding: 11px 12px; gap: 7px; }
       /* El rótulo se va: son 70px que le faltaban a los filtros para caber. */
       .barra .lb { display: none; }
