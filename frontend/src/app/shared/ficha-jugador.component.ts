@@ -41,14 +41,16 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
             <div class="acum">
               <div class="s"><b class="num">{{ acum().puntos }}</b><span>Puntos</span></div>
               <div class="s"><b class="num">{{ acum().goles }}</b><span>Goles</span></div>
-              <div class="s"><b class="num">{{ acum().asis }}</b><span>Asistencias</span></div>
-              <div class="s"><b class="num">{{ acum().estrellas }}</b><span>Estrellas</span></div>
-              <!-- La portería a cero solo se le enseña a quien la cobra, pero los
-                   minutos son de todos: antes una sustituía a la otra y un
-                   defensa se quedaba sin ver los suyos por ningún lado. -->
+              <!-- La casilla que cambia según a quién se mire: al portero y al
+                   defensa les interesa la portería a cero, que la cobran; a los
+                   demás, las asistencias, que ni cobran ni les afectan pero se
+                   guardan. Los minutos son de todos y ya no los pisa nadie. -->
               @if (puntuaImbatido()) {
                 <div class="s"><b class="num">{{ acum().imbatidos }}</b><span>Imbatido</span></div>
+              } @else {
+                <div class="s"><b class="num">{{ acum().asis }}</b><span>Asistencias</span></div>
               }
+              <div class="s"><b class="num">{{ acum().estrellas }}</b><span>Estrellas</span></div>
               <div class="s"><b class="num">{{ acum().minutos }}</b><span>Minutos</span></div>
               <div class="s"><b class="num">{{ acum().jugadas }}</b><span>Jornadas</span></div>
             </div>
@@ -141,9 +143,6 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
     .acum { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; margin-bottom: 20px;
       background: var(--line); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
     .acum .s { background: var(--surface); padding: 12px 10px; text-align: center; }
-    /* Porteros y defensas tienen siete casillas: la que se queda sola en la
-       última fila se estira, para no dejar dos huecos al lado. */
-    .acum .s:last-child:nth-child(3n + 1) { grid-column: 1 / -1; }
     .acum .s b { display: block; font-family: var(--fm); font-size: var(--t-lg); font-weight: 700; }
     .acum .s span { font-size: var(--t-xs); font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--text2); }
 
