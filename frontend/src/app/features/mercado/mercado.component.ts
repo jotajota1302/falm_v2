@@ -1,7 +1,7 @@
 import { Component, HostListener, OnInit, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { ActivoLibre, FalmService, PuntosJugador } from '../../core/falm.service';
+import { ActivoLibre, ContextoActivo, FalmService, PuntosJugador } from '../../core/falm.service';
 import { FichaService } from '../../shared/ficha.service';
 import { carasDePorterias } from '../../shared/caras-libres';
 
@@ -53,7 +53,10 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
               } @else if (a.escudo) {
                 <img class="fo es" [src]="a.escudo" alt="" loading="lazy" />
               } @else { <span class="fo"></span> }
-              <span class="nom">{{ a.nombre }}</span>
+              <span class="nom">
+                {{ a.nombre }}
+                @if (parte(a.activo_id); as e) { <b class="parte" [class]="e.clase" [title]="e.title">{{ e.eti }}</b> }
+              </span>
               <span class="club">
                 @if (a.escudo) { <img [src]="a.escudo" alt="" loading="lazy" /> }
                 {{ a.club }}
@@ -137,8 +140,20 @@ export class MercadoComponent implements OnInit {
   limite = signal(30);
   cargando = signal(true);
   error = signal('');
+  estados = signal<Record<string, ContextoActivo>>({});
   private caras = signal<Record<string, string>>({});
   private rotas = signal<Set<string>>(new Set());
+
+
+  /** Quién está tocado. Es un aviso: no cambia nada de lo que puedas hacer. */
+  parte(activoId: string): { eti: string; clase: string; title: string } | null {
+    const c = this.estados()[activoId];
+    if (!c?.estado) return null;
+    const eti = c.estado === 'SANCIONADO' ? 'Sancionado'
+      : c.estado === 'DUDA' ? 'Duda' : 'Lesionado';
+    return { eti, clase: c.estado.toLowerCase(),
+             title: [c.detalle, c.vuelve].filter(Boolean).join(' · ') || eti };
+  }
 
   visibles = computed(() => {
     const f = this.texto().trim().toLowerCase();
@@ -188,6 +203,8 @@ export class MercadoComponent implements OnInit {
   async ngOnInit() {
     try {
       const [libres, acum] = await Promise.all([this.falm.mercadoLibre(), this.falm.puntuacionesAcumuladas()]);
+      // Un extra: si falla, el mercado se ve igual.
+      this.falm.estadosActivos().then((e) => this.estados.set(e)).catch(() => {});
       this.todos.set(libres);
       const m: Record<number, PuntosJugador> = {};
       for (const p of acum) m[p.jugador.id] = p;

@@ -499,13 +499,6 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
       background: var(--surface); border: 1px solid var(--line); border-radius: 11px; cursor: pointer; text-align: left; }
     .cand:hover { background: var(--surface2); }
 
-    /* Los avisos de estado: rojo el que no juega, ámbar el que puede que sí. */
-    .parte { margin-left: 6px; padding: 1px 6px; border-radius: var(--pill);
-      font-family: var(--fb); font-size: 9px; font-weight: 700; letter-spacing: .08em;
-      text-transform: uppercase; vertical-align: middle; }
-    .parte.lesionado, .parte.sancionado { background: var(--bad); color: #fff; }
-    .parte.duda { background: var(--por); color: #fff; }
-
     /* Contra quién juega y dónde, debajo del club. */
     .cvs { display: flex; align-items: center; gap: 5px; min-width: 0;
       font-size: var(--t-xs); color: var(--text2); white-space: nowrap;

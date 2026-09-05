@@ -191,6 +191,16 @@ h3 { font-family: var(--fh); font-weight: 500; font-size: var(--t-sm); text-tran
   color: #fff;
 }
 .pos.POR { background: var(--por); }
+
+/* Parte médico: rojo el que no juega, ámbar el que puede que sí. Lo usan la
+   alineación, el mercado y la plantilla, así que vive aquí. */
+.parte { display: inline-block; margin-left: 6px; padding: 1px 6px;
+  border-radius: var(--pill); font-family: var(--fb); font-size: 9px;
+  font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+  vertical-align: middle; color: #fff; white-space: nowrap; }
+.parte.lesionado, .parte.sancionado { background: var(--bad); }
+.parte.duda { background: var(--por); }
+
 .pos.DEF { background: var(--def); }
 .pos.MED { background: var(--med); }
 .pos.DEL { background: var(--del); }

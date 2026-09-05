@@ -1,5 +1,5 @@
 import { Component, OnInit, computed, signal } from '@angular/core';
-import { Equipo, FalmService, ItemPlantilla, PorteroClub } from '../../core/falm.service';
+import { ContextoActivo, Equipo, FalmService, ItemPlantilla, PorteroClub } from '../../core/falm.service';
 import { FichaService } from '../../shared/ficha.service';
 
 const ORDEN: Record<string, number> = { PORTERO: 0, DEFENSA: 1, MEDIO: 2, DELANTERO: 3 };
@@ -53,7 +53,10 @@ const ETI: Record<string, string> = { PORTERO: 'Porteros', DEFENSA: 'Defensas', 
                   @else { <span class="ini">{{ j.nombre.charAt(0) }}</span> }
                 }
               </span>
-              <span class="nom">{{ j.nombre }}</span>
+              <span class="nom">
+                {{ j.nombre }}
+                @if (parte(j.activo_id); as e) { <b class="parte" [class]="e.clase" [title]="e.title">{{ e.eti }}</b> }
+              </span>
               @if (porterosDe(j); as ps) {
                 <span class="caras" [title]="nombresPorteros(ps)">
                   @for (g of ps; track g.nombre) {
@@ -135,8 +138,20 @@ export class PlantillaComponent implements OnInit {
   statsEq = signal<Record<string, any>>({});
   /** Porteros reales de cada club del que tienes la portería. */
   porteros = signal<Record<string, PorteroClub[]>>({});
+  estados = signal<Record<string, ContextoActivo>>({});
   cargando = signal(true);
   error = signal('');
+
+
+  /** Quién está tocado. Es un aviso: no cambia nada de lo que puedas hacer. */
+  parte(activoId: string): { eti: string; clase: string; title: string } | null {
+    const c = this.estados()[activoId];
+    if (!c?.estado) return null;
+    const eti = c.estado === 'SANCIONADO' ? 'Sancionado'
+      : c.estado === 'DUDA' ? 'Duda' : 'Lesionado';
+    return { eti, clase: c.estado.toLowerCase(),
+             title: [c.detalle, c.vuelve].filter(Boolean).join(' · ') || eti };
+  }
 
   totalPuntos = computed(() => +Object.values(this.statsEq()).reduce((s, x: any) => s + Number(x?.puntos || 0), 0).toFixed(1));
 
@@ -196,6 +211,8 @@ export class PlantillaComponent implements OnInit {
         const [items, stats] = await Promise.all([
           this.falm.miPlantilla(eq.id), this.falm.statsEquipo(eq.id),
         ]);
+        // Un extra: si falla, la plantilla se ve igual.
+        this.falm.estadosActivos().then((e) => this.estados.set(e)).catch(() => {});
         this.items.set(items);
         this.statsEq.set(stats);
         const clubes = items.filter((j) => j.tipo === 'DEFENSA').map((j) => j.club_id!);

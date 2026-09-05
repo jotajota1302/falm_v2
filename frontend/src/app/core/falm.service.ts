@@ -762,6 +762,17 @@ export class FalmService {
     return (d ?? {}) as Record<string, ContextoActivo>;
   }
 
+  /**
+   * Solo quién está tocado, sin rival ni jornada: para el mercado y la
+   * plantilla, donde no se alinea a nadie pero conviene saberlo.
+   */
+  async estadosActivos(): Promise<Record<string, ContextoActivo>> {
+    const { data, error } = await this.sb.client.rpc('estados_activos');
+    if (error) throw error;
+    const d = typeof data === 'string' ? JSON.parse(data) : data;
+    return (d ?? {}) as Record<string, ContextoActivo>;
+  }
+
   /** Mercado: activos libres en la temporada activa. */
   async mercadoLibre(): Promise<ActivoLibre[]> {
     const { data, error } = await this.sb.client
