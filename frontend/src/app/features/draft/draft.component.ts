@@ -88,7 +88,11 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
         </div>
         <div class="kpi">
           <span class="lb">Pick</span>
-          <span class="v num">{{ d.draft()!.picks_hechos + 1 }}<small>/{{ d.draft()!.picks_totales }}</small></span>
+          <!-- El pick que toca ahora, no los hechos. Sin turno ya no toca
+               ninguno: sumar uno daba el 231 de 230. -->
+          <span class="v num">
+            {{ d.turno() ? d.draft()!.picks_hechos + 1 : d.draft()!.picks_hechos }}<small>/{{ d.draft()!.picks_totales }}</small>
+          </span>
         </div>
         <div class="kpi">
           <span class="lb">Te toca en</span>

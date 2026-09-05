@@ -289,6 +289,13 @@ export class DraftService {
     );
     this.draft.update((d) => (d ? { ...d, picks_hechos: d.picks_hechos + 1 } : d));
 
+    // Con el último pick, cerrar el draft aquí mismo. El estado también llega
+    // por su propio evento, pero si ese se pierde la pantalla se queda en "en
+    // curso" con el contador desbordado (pick 231 de 230) hasta que se recarga.
+    if (!this.orden().some((f) => !f.completado)) {
+      this.draft.update((d) => (d && d.estado === 'EN_CURSO' ? { ...d, estado: 'COMPLETADO' } : d));
+    }
+
     // El detalle es lo que pinta el tablero del televisor y la lista de picks
     // del admin. Sin esto, al fichar otro el turno avanzaba y el contador subía,
     // pero el jugador no aparecía hasta el siguiente refresco completo.
