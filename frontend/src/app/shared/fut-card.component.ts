@@ -74,22 +74,19 @@ const PARTICULAS = new Set(['de', 'del', 'la', 'las', 'los', 'da', 'das', 'do', 
     .sline span { white-space: nowrap; }
 
     /* modo campo (Alineación): la banda ya dice la posición, así que sobra el badge */
-    /* En el campo los puntos van dentro de la franja de color que corona la
-       carta, no en una caja encima del jugador: antes parecía una pegatina
-       pegada sobre la foto, y en algunas se comía la camiseta. La franja hace
-       de borde superior, así que aquí el borde se quita. */
-    .fut.campo { border-top-width: 0; padding-top: 17cqw; }
-    /* Los negativos compensan el relleno de la carta: la referencia es .top, que
-       ya vive dentro de él, y sin esto la franja se quedaba corta por los lados.
-       Las esquinas las redondea el overflow de la carta. */
-    .fut.campo .info { position: absolute; top: -17cqw; left: -6cqw; right: -6cqw;
-      height: 13cqw; flex-direction: row; align-items: center; justify-content: flex-start;
-      padding: 0 5cqw; z-index: 3; background: var(--c, var(--line)); }
-    .fut.campo .val { background: none; border: 0; padding: 0; color: #fff;
-      font-family: var(--fb); font-weight: 700; line-height: 1;
-      font-size: min(var(--t-sm), 10cqw); }
+    /* Los puntos, en su esquina y sin caja: antes iban en un recuadro gris con
+       tipografía monoespaciada y parecían una pegatina encima de la foto. Ahora
+       son la cifra a secas, en el color de su línea y con la letra de la casa.
+       El halo blanco es para cuando cae sobre una camiseta oscura. */
+    .fut.campo .info { position: absolute; top: 3cqw; left: 6cqw; z-index: 3; }
+    .fut.campo .val { background: none; border: 0; padding: 0;
+      color: var(--c, var(--text)); font-family: var(--fb); font-weight: 800;
+      line-height: 1; font-size: min(var(--t-lg), 15cqw);
+      text-shadow: 0 0 3px var(--surface), 0 0 6px var(--surface); }
     .fut.campo .top { justify-content: center; align-items: stretch; }
     .fut.campo .face { max-width: 88%; object-position: center bottom; }
+    /* En una portería la cifra caía sobre el escudo: le dejamos su sitio. */
+    .fut.campo.solo-escudo .top { padding-top: 14%; }
     .fut.campo .face.esc { max-width: 58%; max-height: 74%; object-position: center; }
     .fut.campo.solo-escudo .face.esc { max-height: 84%; }
     /* Siempre una línea: el tamaño se ajusta a lo que mide el nombre. El ancho
