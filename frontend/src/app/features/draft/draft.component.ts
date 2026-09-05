@@ -56,6 +56,34 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
         }
       </section>
 
+      <!-- Lo que eligió cada uno, en el orden en que lo eligió. La gracia del
+           draft se ve después: quién se llevó a quién y en qué ronda. -->
+      <section class="tabla">
+        <div class="barra">
+          <span class="lb">Cómo quedó el reparto</span>
+          <span class="muted mini">
+            {{ d.detalle().length }} elecciones · {{ d.draft()!.total_rondas }} rondas
+          </span>
+        </div>
+        <div class="equipos">
+          @for (e of reparto(); track e.id) {
+            <div class="eqc" [class.mio]="e.id === d.miEquipoId()">
+              <h4>{{ e.nombre }}</h4>
+              <ol>
+                @for (p of e.picks; track p.activo_id) {
+                  <li>
+                    <span class="rd num">{{ p.ronda }}</span>
+                    <span class="pos" [class]="abr(p.posicion)">{{ abr(p.posicion) }}</span>
+                    <span class="nom">{{ p.nombre }}</span>
+                    @if (p.escudo) { <img [src]="p.escudo" alt="" loading="lazy" /> }
+                  </li>
+                }
+              </ol>
+            </div>
+          }
+        </div>
+      </section>
+
       <!-- El respaldo que uno se guarda: las diez plantillas en un fichero,
            fuera de la aplicación y de la base de datos. -->
       <section class="tabla export">
@@ -451,6 +479,25 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     .barra button.pos-f.on.DEF { background: var(--def); border-color: var(--def); }
     .barra button.pos-f.on.MED { background: var(--med); border-color: var(--med); }
     .barra button.pos-f.on.DEL { background: var(--del); border-color: var(--del); }
+    /* Una columna por equipo mientras quepan; en el teléfono, una debajo de
+       otra. Cada tarjeta lleva sus 23 en el orden en que las cantó. */
+    .equipos { display: grid; grid-template-columns: repeat(auto-fill, minmax(258px, 1fr));
+      gap: 12px; padding: 14px 16px 16px; }
+    .eqc { border: 1px solid var(--line); border-radius: var(--r); padding: 12px 13px;
+      background: var(--surface); min-width: 0; }
+    .eqc.mio { border-color: var(--accent); }
+    .eqc h4 { margin: 0 0 9px; font-family: var(--fb); font-size: var(--t-xs);
+      font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--text2); }
+    .eqc.mio h4 { color: var(--accent); }
+    .eqc ol { list-style: none; margin: 0; padding: 0; }
+    .eqc li { display: grid; grid-template-columns: 20px 34px 1fr 16px; gap: 7px;
+      align-items: center; padding: 4px 0; font-size: var(--t-sm); }
+    .eqc li + li { border-top: 1px solid var(--line); }
+    .eqc .rd { color: var(--text2); font-size: var(--t-xs); text-align: right; }
+    .eqc .nom { font-weight: 600; min-width: 0; white-space: nowrap;
+      overflow: hidden; text-overflow: ellipsis; }
+    .eqc img { width: 16px; height: 16px; object-fit: contain; }
+
     .export .barra { gap: 10px; }
     .export .barra .btn-sec { padding: 6px 14px; font-size: var(--t-sm); }
     .export .barra .btn-sec:first-of-type { margin-left: auto; }
@@ -826,6 +873,19 @@ export class DraftComponent implements OnInit, OnDestroy {
    * Mi plantilla al terminar. Sale del detalle leído de la BD y no del catálogo,
    * porque al consolidar los jugadores salen de v_activo_libre.
    */
+  /** Lo que se llevó cada equipo, por orden de ronda. */
+  readonly reparto = computed(() => {
+    const picks = this.d.detalle();
+    return this.d.equipos()
+      .map((e) => ({
+        id: e.id,
+        nombre: e.nombre,
+        picks: picks.filter((p) => p.equipo_falm_id === e.id).sort((a, b) => a.ronda - b.ronda),
+      }))
+      .filter((e) => e.picks.length > 0)
+      .sort((a, b) => a.nombre.localeCompare(b.nombre));
+  });
+
   readonly misFichados = computed(() => {
     const yo = this.d.miEquipoId();
     return this.d.detalle().filter((p) => p.equipo_falm_id === yo);

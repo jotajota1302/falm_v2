@@ -177,7 +177,9 @@ export class DraftService {
       const { data: d } = await this.sb.client
         .from('draft')
         .select('id')
-        .in('estado', ['CREADO', 'EN_CURSO', 'COMPLETADO'])
+        // CONSOLIDADO entra: una vez repartido, la pantalla se queda como
+        // resumen de lo que hubo. Sin esto decía que no había ningún draft.
+        .in('estado', ['CREADO', 'EN_CURSO', 'COMPLETADO', 'CONSOLIDADO'])
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
