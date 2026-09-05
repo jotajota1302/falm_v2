@@ -55,6 +55,17 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
           </div>
         }
       </section>
+
+      <!-- El respaldo que uno se guarda: las diez plantillas en un fichero,
+           fuera de la aplicación y de la base de datos. -->
+      <section class="tabla export">
+        <div class="barra">
+          <span class="lb">Guardar el resultado</span>
+          <span class="muted mini">Las {{ d.equipos().length }} plantillas, para tenerlas fuera de aquí</span>
+          <button class="btn-sec" (click)="descargar('md')">Markdown</button>
+          <button class="btn-sec" (click)="descargar('csv')">CSV</button>
+        </div>
+      </section>
     } @else {
       <!-- La tira de turno se queda pegada arriba: es el dato que se mira sin parar. -->
       <div class="tira" [class.mio]="d.esMiTurno()">
@@ -430,6 +441,9 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     .barra button.pos-f.on.DEF { background: var(--def); border-color: var(--def); }
     .barra button.pos-f.on.MED { background: var(--med); border-color: var(--med); }
     .barra button.pos-f.on.DEL { background: var(--del); border-color: var(--del); }
+    .export .barra { gap: 10px; }
+    .export .barra .btn-sec { padding: 6px 14px; font-size: var(--t-sm); }
+    .export .barra .btn-sec:first-of-type { margin-left: auto; }
     .barra .buscar { margin-left: auto; flex: 0 1 210px; padding: 7px 13px;
       font-size: var(--t-sm); border-radius: var(--pill); }
 
@@ -811,6 +825,63 @@ export class DraftComponent implements OnInit, OnDestroy {
     const e = this.d.draft()?.estado;
     return e === 'COMPLETADO' || e === 'CONSOLIDADO';
   });
+
+  /**
+   * El resultado del draft en un fichero, para guardarlo fuera de la aplicación.
+   * Se compone aquí con lo que ya está en pantalla: no hace falta pedir nada.
+   *
+   * El CSV lleva BOM y separador de punto y coma porque el destino real es
+   * abrirlo con Excel en español: sin eso, los acentos salen rotos y todo cae
+   * en una sola columna.
+   */
+  descargar(tipo: 'csv' | 'md') {
+    const filas = [...this.d.detalle()].sort((a, b) => a.orden_seleccion - b.orden_seleccion);
+    if (filas.length === 0) return;
+    const equipos = this.d.equipos();
+    const hoy = new Date().toISOString().slice(0, 10);
+    const nombre = (id: string) => this.nombreEquipo(id);
+
+    let texto: string;
+    if (tipo === 'csv') {
+      const esc = (v: string | number) => {
+        const s = String(v ?? '');
+        return /[";\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+      };
+      texto = '﻿' + ['Equipo;Ronda;Pick;Jugador;Posicion;Club']
+        .concat(filas.map((p) => [
+          esc(nombre(p.equipo_falm_id)), p.ronda, p.orden_seleccion,
+          esc(p.nombre), esc(this.abr(p.posicion)), esc(p.club),
+        ].join(';')))
+        .join('\r\n');
+    } else {
+      const l: string[] = [`# Draft ${this.d.draft()?.nombre ?? ''} · ${hoy}`, ''];
+      l.push(`${filas.length} elecciones · ${equipos.length} equipos`, '');
+      for (const e of [...equipos].sort((a, b) => a.nombre.localeCompare(b.nombre))) {
+        const suyos = filas.filter((p) => p.equipo_falm_id === e.id);
+        l.push(`## ${e.nombre}`, '');
+        l.push(`_${suyos.length} elecciones · ${suyos.filter((p) => p.es_porteria).length} porterías_`, '');
+        l.push('| Ronda | Pos | Jugador | Club |', '| ---: | :--- | :--- | :--- |');
+        for (const p of suyos) {
+          l.push(`| ${p.ronda} | ${this.abr(p.posicion)} | ${p.nombre} | ${p.club} |`);
+        }
+        l.push('');
+      }
+      l.push('## Orden de elección', '');
+      l.push('| Pick | Ronda | Equipo | Jugador |', '| ---: | ---: | :--- | :--- |');
+      for (const p of filas) {
+        l.push(`| ${p.orden_seleccion} | ${p.ronda} | ${nombre(p.equipo_falm_id)} | ${p.nombre} |`);
+      }
+      texto = l.join('\n');
+    }
+
+    const tipos = { csv: 'text/csv;charset=utf-8', md: 'text/markdown;charset=utf-8' };
+    const url = URL.createObjectURL(new Blob([texto], { type: tipos[tipo] }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `draft-falm-${hoy}.${tipo}`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
   /** Primer elemento de la cola que sigue libre y vale según el cupo de porterías. */
   candidatoPrePick(): ActivoLibre | null {
