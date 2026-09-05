@@ -288,6 +288,29 @@ export class DraftService {
       o.map((f) => (f.orden_global === p.orden_seleccion ? { ...f, completado: true } : f))
     );
     this.draft.update((d) => (d ? { ...d, picks_hechos: d.picks_hechos + 1 } : d));
+
+    // El detalle es lo que pinta el tablero del televisor y la lista de picks
+    // del admin. Sin esto, al fichar otro el turno avanzaba y el contador subía,
+    // pero el jugador no aparecía hasta el siguiente refresco completo.
+    // El catálogo ya trae su nombre, club y escudo, así que no hace falta ir a
+    // la red; solo se pregunta si por lo que sea no estuviera.
+    const a = this.catalogo().find((x) => x.activo_id === p.activo_id);
+    if (!a) { this.cargarDetalle(); return; }
+    const fila: PickDetalle = {
+      id: p.id,
+      activo_id: p.activo_id,
+      equipo_falm_id: p.equipo_falm_id,
+      ronda: p.ronda,
+      orden_seleccion: p.orden_seleccion,
+      nombre: a.nombre,
+      posicion: a.posicion,
+      club: a.club,
+      escudo: a.escudo ?? null,
+      es_porteria: a.tipo === 'DEFENSA',
+    };
+    this.detalle.update((v) =>
+      [...v.filter((x) => x.id !== p.id), fila].sort((x, y) => x.orden_seleccion - y.orden_seleccion)
+    );
   }
 
   suscribir(): void {
