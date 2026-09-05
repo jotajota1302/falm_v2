@@ -43,11 +43,13 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
               <div class="s"><b class="num">{{ acum().goles }}</b><span>Goles</span></div>
               <div class="s"><b class="num">{{ acum().asis }}</b><span>Asistencias</span></div>
               <div class="s"><b class="num">{{ acum().estrellas }}</b><span>Estrellas</span></div>
+              <!-- La portería a cero solo se le enseña a quien la cobra, pero los
+                   minutos son de todos: antes una sustituía a la otra y un
+                   defensa se quedaba sin ver los suyos por ningún lado. -->
               @if (puntuaImbatido()) {
                 <div class="s"><b class="num">{{ acum().imbatidos }}</b><span>Imbatido</span></div>
-              } @else {
-                <div class="s"><b class="num">{{ acum().minutos }}</b><span>Minutos</span></div>
               }
+              <div class="s"><b class="num">{{ acum().minutos }}</b><span>Minutos</span></div>
               <div class="s"><b class="num">{{ acum().jugadas }}</b><span>Jornadas</span></div>
             </div>
 
@@ -139,6 +141,9 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
     .acum { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; margin-bottom: 20px;
       background: var(--line); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
     .acum .s { background: var(--surface); padding: 12px 10px; text-align: center; }
+    /* Porteros y defensas tienen siete casillas: la que se queda sola en la
+       última fila se estira, para no dejar dos huecos al lado. */
+    .acum .s:last-child:nth-child(3n + 1) { grid-column: 1 / -1; }
     .acum .s b { display: block; font-family: var(--fm); font-size: var(--t-lg); font-weight: 700; }
     .acum .s span { font-size: var(--t-xs); font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--text2); }
 
