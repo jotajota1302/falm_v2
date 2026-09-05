@@ -39,23 +39,6 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
         Habla con el administrador de la liga.
       </p>
     } @else if (terminado()) {
-      <section class="tabla">
-        <div class="barra">
-          <span class="lb">Draft terminado · tu plantilla</span>
-          <span class="muted num">
-            {{ d.misPicks().length }} jugadores · {{ d.misPorterias() }} porterías
-          </span>
-        </div>
-        <div class="fila cab res"><span>Pos</span><span>Jugador</span><span>Club</span></div>
-        @for (a of misFichados(); track a.activo_id) {
-          <div class="fila res">
-            <span class="pos" [class]="abr(a.posicion)">{{ abr(a.posicion) }}</span>
-            <span class="nom">{{ a.nombre }}</span>
-            <span class="club">{{ a.club }}</span>
-          </div>
-        }
-      </section>
-
       <!-- Lo que eligió cada uno, en el orden en que lo eligió. La gracia del
            draft se ve después: quién se llevó a quién y en qué ronda. -->
       <section class="tabla">
@@ -512,7 +495,6 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     .fila.cab { padding: 11px 18px; }
     .fila.cab > span { font-size: var(--t-xs); font-weight: 700; letter-spacing: .16em;
       text-transform: uppercase; color: var(--text2); }
-    .fila.res { grid-template-columns: 46px 1.6fr 1fr; }
     .fila.tomado { color: var(--text2); }
     .fila.tomado .nom { text-decoration: line-through; font-weight: 600; }
     .fila.tomado .pos { opacity: .5; }
@@ -644,8 +626,6 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
       .fila.pk { grid-template-columns: 34px 46px 1fr 24px 140px; }
       .fila.pk > :nth-child(2) { display: none; }
       .candidatos li { grid-template-columns: 46px 1fr 24px 62px; }
-      .fila.res { grid-template-columns: 42px 1.4fr; }
-      .fila.res > :nth-child(3) { display: none; }
       /* En el móvil el enlace al tablero se queda en una palabra. */
       .tv { padding: 7px 12px; font-size: var(--t-xs); }
       .tv .lg { display: none; } .tv .sm { display: inline; }
@@ -884,11 +864,6 @@ export class DraftComponent implements OnInit, OnDestroy {
       }))
       .filter((e) => e.picks.length > 0)
       .sort((a, b) => a.nombre.localeCompare(b.nombre));
-  });
-
-  readonly misFichados = computed(() => {
-    const yo = this.d.miEquipoId();
-    return this.d.detalle().filter((p) => p.equipo_falm_id === yo);
   });
 
   readonly terminado = computed(() => {
