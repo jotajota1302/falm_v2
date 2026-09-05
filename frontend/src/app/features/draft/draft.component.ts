@@ -201,6 +201,12 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
                     <span class="nom">{{ a.nombre }}</span>
                     <button class="mv" (click)="d.moverCola(a.activo_id, -1)" aria-label="Subir">↑</button>
                     <button class="mv" (click)="d.moverCola(a.activo_id, 1)" aria-label="Bajar">↓</button>
+                    <!-- Sin esto no había forma de sacar de la cola a quien ya
+                         han fichado: la estrella vive en la lista de fichables,
+                         y de ahí desaparece en cuanto lo elige otro. -->
+                    <button class="mv quitar" (click)="d.quitarCola(a.activo_id)"
+                            [attr.aria-label]="'Quitar a ' + a.nombre + ' de mi cola'"
+                            title="Quitar de mi cola">×</button>
                   </li>
                 }
               </ol>
@@ -495,7 +501,7 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     .cola li, .orden li { display: grid; align-items: center; gap: 8px;
       padding: 6px 7px; border-bottom: 1px solid var(--line); font-size: var(--t-sm);
       border-radius: var(--r-xs); }
-    .cola li { grid-template-columns: 14px 34px 1fr 22px 22px; }
+    .cola li { grid-template-columns: 14px 34px 1fr 22px 22px 22px; }
     .orden li { grid-template-columns: 16px 1fr 30px; }
     .cola li:last-child, .orden li:last-child { border-bottom: none; }
     .cola li.tomado { color: var(--text2); }
@@ -612,7 +618,7 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
       .fila.pk .ops { gap: 5px; }
       .mini-btn { padding: 6px 8px; font-size: var(--t-xs); }
       .candidatos li { grid-template-columns: 40px 1fr 22px 58px; gap: 8px; }
-      .cola li { grid-template-columns: 14px 32px 1fr 22px 22px; gap: 6px; }
+      .cola li { grid-template-columns: 14px 30px 1fr 22px 22px 22px; gap: 5px; }
     }
   `],
 })
