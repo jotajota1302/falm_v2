@@ -237,7 +237,16 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
                   <!-- Contra quién y dónde: en las dobles salen los dos partidos. -->
                   @for (p of partidos(j.activo_id); track $index) {
                     <span class="cvs">
-                      <span class="dnd" [title]="p.casa ? 'En casa' : 'Fuera'">{{ p.casa ? '⌂' : '✈' }}</span>
+                      @if (p.casa) {
+                        <!-- Dibujada, no el carácter ⌂: según el teléfono salía
+                             torcido, diminuto o directamente como un cuadro. -->
+                        <svg class="casa" viewBox="0 0 24 24" role="img" aria-label="En casa">
+                          <title>En casa</title>
+                          <path d="M12 3.3 2.6 11.4h2.6V20h5.1v-5.2h3.4V20h5.1v-8.6h2.6z" />
+                        </svg>
+                      } @else {
+                        <span class="dnd" title="Fuera">✈</span>
+                      }
                       @if (p.escudo) { <img [src]="p.escudo" alt="" loading="lazy" /> }
                       {{ p.rival }}
                       <span class="cfe">{{ fechaCorta(p.fecha) }}</span>
@@ -503,6 +512,8 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
       overflow: hidden; text-overflow: ellipsis; }
     .cvs img { width: 13px; height: 13px; flex: 0 0 auto; object-fit: contain; }
     .cvs .dnd { font-size: var(--t-sm); line-height: 1; }
+    .cvs .casa { width: 12px; height: 12px; flex: 0 0 auto; fill: currentColor;
+      vertical-align: -1px; }
     .cvs .cfe { opacity: .75; }
 
     .tocados { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px;
