@@ -52,6 +52,13 @@ export const routes: Routes = [
           import('./features/draft/draft.component').then((m) => m.DraftComponent),
       },
       {
+        // El draft para proyectar en un televisor. Ruta corta a propósito: se
+        // teclea en el mando de una smart TV.
+        path: 'tablero',
+        loadComponent: () =>
+          import('./features/draft/tablero.component').then((m) => m.TableroComponent),
+      },
+      {
         path: 'clasificacion',
         loadComponent: () =>
           import('./features/competicion/clasificacion.component').then(

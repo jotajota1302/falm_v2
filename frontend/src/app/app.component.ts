@@ -16,7 +16,9 @@ interface NavItem { path: string; label: string; corto: string; }
   standalone: true,
   imports: [RouterOutlet, RouterLink, RouterLinkActive, FichaJugadorComponent, FormsModule],
   template: `
-    @if (auth.isLoggedIn()) {
+    @if (auth.isLoggedIn() && aPantalla()) {
+      <router-outlet />
+    } @else if (auth.isLoggedIn()) {
       <header class="topbar">
         <a class="brand" routerLink="/dashboard">
           <span class="bn">FALM</span>
@@ -222,6 +224,9 @@ export class AppComponent implements AfterViewChecked {
   /** Panel con las opciones de cuenta (solo móvil). */
   mas = signal(false);
 
+  /** El tablero de televisor va a pantalla completa, sin marco de la app. */
+  aPantalla = signal(false);
+
   // La barra inferior se desliza, y un contenedor con scroll cancela el clic
   // en cuanto el dedo se mueve. Así que el toque lo resolvemos nosotros:
   // si al levantar el dedo apenas se ha movido, es un toque y navegamos.
@@ -319,6 +324,11 @@ export class AppComponent implements AfterViewChecked {
       if (!this.auth.session()) { this.esAdmin.set(false); return; }
       this.sb.client.rpc('es_admin').then(({ data }) => this.esAdmin.set(data === true));
     });
+
+    // El tablero se proyecta en un televisor: ahí sobran la cabecera, la barra
+    // de secciones y los márgenes. Ocupa la pantalla entera.
+    this.aPantalla.set(this.router.url.startsWith('/tablero'));
+    this.router.events.subscribe(() => this.aPantalla.set(this.router.url.startsWith('/tablero')));
   }
 
   cambiarTemporada(id: string) {
