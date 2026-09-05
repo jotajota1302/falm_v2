@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, computed, effect, signal } from '@angular/core';
+import { Component, HostListener, OnDestroy, OnInit, computed, effect, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivoLibre } from '../../core/falm.service';
 import { DraftService, MIN_PORTERIAS, PickDetalle } from './draft.service';
@@ -373,7 +373,7 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
 
       <div class="pie">
         <span class="muted">
-          <b class="num">{{ visibles().length }}</b> jugadores ·
+          <b class="num">{{ mostrados() }}</b> de <b class="num">{{ visibles().length }}</b> jugadores ·
           <b class="num">{{ d.draft()!.picks_hechos }}</b> fichados en total
         </span>
         @if (visibles().length > limite()) {
@@ -600,6 +600,19 @@ export class DraftComponent implements OnInit, OnDestroy {
   soloCola = signal(false);
   limite = signal(30);
   msg = signal('');
+
+  /**
+   * Del catálogo solo se pintan 30 filas de golpe: son 494 jugadores con foto y
+   * escudo. El botón de "Ver 30 más" queda al final de esas 30 filas, que en un
+   * teléfono son dos pantallas y media de recorrido, así que parecía que la
+   * lista se acababa ahí. Ahora, al acercarse al final, entran solas.
+   */
+  @HostListener('window:scroll')
+  alDesplazar() {
+    if (this.visibles().length <= this.limite()) return;
+    const e = document.documentElement;
+    if (e.scrollHeight - e.scrollTop - e.clientHeight < 700) this.limite.update((n) => n + 30);
+  }
   prePick = signal(false);
   verGlobal = signal(true);
   /** Jugador pendiente de confirmar. El confirm() nativo no se puede maquetar. */
@@ -744,6 +757,9 @@ export class DraftComponent implements OnInit, OnDestroy {
     return [...m.entries()].map(([nombre, libres]) => ({ nombre, libres }))
       .sort((x, y) => x.nombre.localeCompare(y.nombre, 'es'));
   });
+
+  /** Cuántos se están pintando de verdad, para que el pie no prometa 494. */
+  readonly mostrados = computed(() => Math.min(this.limite(), this.visibles().length));
 
   readonly visibles = computed(() => {
     const t = this.texto().trim().toLowerCase();

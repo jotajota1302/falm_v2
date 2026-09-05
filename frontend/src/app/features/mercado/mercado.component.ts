@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, signal } from '@angular/core';
+import { Component, HostListener, OnInit, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ActivoLibre, FalmService, PuntosJugador } from '../../core/falm.service';
@@ -155,6 +155,14 @@ export class MercadoComponent implements OnInit {
   });
 
   mostrados = computed(() => Math.min(this.limite(), this.visibles().length));
+
+  /** Al llegar al final de la lista entran las siguientes 30, sin buscar el botón. */
+  @HostListener('window:scroll')
+  alDesplazar() {
+    if (this.visibles().length <= this.limite()) return;
+    const e = document.documentElement;
+    if (e.scrollHeight - e.scrollTop - e.clientHeight < 700) this.limite.update((n) => n + 30);
+  }
 
   constructor(private falm: FalmService, public ficha: FichaService) {}
   abr(p: string) { return ({ PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'MED', DELANTERO: 'DEL' } as Record<string, string>)[p] ?? p; }

@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, signal } from '@angular/core';
+import { Component, HostListener, OnInit, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NavFichajesComponent } from '../../shared/nav-fichajes.component';
 import { RouterLink } from '@angular/router';
@@ -142,7 +142,7 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
       </div>
 
       <div class="pie">
-        <span class="muted">{{ visibles().length }} libres</span>
+        <span class="muted">{{ mostrados() }} de {{ visibles().length }} libres</span>
         @if (visibles().length > limite()) {
           <button class="btn-sec" (click)="limite.set(limite() + 30)">Ver 30 más</button>
         }
@@ -249,6 +249,17 @@ export class FichajesComponent implements OnInit {
   texto = signal('');
   posFiltro = signal('');
   limite = signal(30);
+
+  /** Cuántos se pintan de verdad: el pie decía el total y solo salían 30. */
+  mostrados = computed(() => Math.min(this.limite(), this.visibles().length));
+
+  /** Al llegar al final de la lista entran las siguientes 30, sin buscar el botón. */
+  @HostListener('window:scroll')
+  alDesplazar() {
+    if (this.visibles().length <= this.limite()) return;
+    const e = document.documentElement;
+    if (e.scrollHeight - e.scrollTop - e.clientHeight < 700) this.limite.update((n) => n + 30);
+  }
   cargando = signal(true);
   enviando = signal(false);
   error = signal('');
