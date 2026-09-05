@@ -78,6 +78,9 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
                       }
                     </span>
                     <span class="jl">J{{ d.j }}</span>
+                    <!-- Los minutos debajo: de un vistazo se ve si esos puntos
+                         son de un partido entero o de un cuarto de hora. -->
+                    <span class="ml">@if (d.jugo) { {{ d.min }}' } @else { — }</span>
                   </button>
                 }
               </div>
@@ -168,6 +171,10 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
       font-weight: 700; color: var(--accent-ink); line-height: 1; }
     .jl { text-align: center; margin-top: 4px; font-size: var(--t-xs);
       color: var(--text2); font-weight: 600; }
+    /* Los minutos, en segunda línea y más apagados: acompañan a la jornada sin
+       competir con ella ni con la cifra de puntos. */
+    .ml { display: block; text-align: center; font-family: var(--fm);
+      font-size: 9px; line-height: 1.4; color: var(--text2); opacity: .75; }
     .bar { border: none; background: none; cursor: pointer; font-family: var(--fb); }
     .bar.sel .jl { color: var(--accent); }
     .bar.sel .fill { outline: 2px solid var(--accent); outline-offset: 1px; }

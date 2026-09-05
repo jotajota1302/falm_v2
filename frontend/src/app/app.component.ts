@@ -133,6 +133,8 @@ interface NavItem { path: string; label: string; corto: string; }
 
     /* barra inferior (móvil): la navegación vuelve al pulgar */
     @media (max-width: 760px) {
+      /* Lo que mide la barra. Todo lo que se apoya en ella sale de aquí. */
+      :host { --barra: 50px; }
       .topbar { grid-template-columns: auto 1fr; padding: 9px 13px; gap: 10px; }
       .bs { display: none; }
       .bn { font-size: var(--t-md); }
@@ -146,7 +148,7 @@ interface NavItem { path: string; label: string; corto: string; }
          marca y el equipo, sin mezclar navegación con cuenta. */
       .acc { display: none; }
 
-      .content { padding: 16px 14px 88px; }
+      .content { padding: 16px 14px calc(var(--barra) + 38px); }
 
       /* Una fila que se desliza con el dedo. Las sombras de los lados salen
          solas cuando queda algo por ver en esa dirección. */
@@ -158,6 +160,11 @@ interface NavItem { path: string; label: string; corto: string; }
            tres primeras (Inicio, Plantilla, Alineación) quedaban fuera y no se
            podía llegar a ellas, porque scrollLeft ya estaba en su mínimo. */
         justify-content: flex-start;
+        /* Altura fija: el panel de cuenta y las flechas se colocan respecto a
+           ella, y cuando dependía de la fuente cargada bailaba un par de
+           píxeles y el panel acababa montado encima de las pestañas. */
+        height: calc(var(--barra) + env(safe-area-inset-bottom));
+        box-sizing: border-box;
         padding: 5px 22px calc(5px + env(safe-area-inset-bottom));
         scroll-padding: 0 22px;
         border-top: 1px solid var(--line);
@@ -197,7 +204,7 @@ interface NavItem { path: string; label: string; corto: string; }
       .navf { display: flex; align-items: center; justify-content: center;
         position: fixed; z-index: 52; width: 22px; padding: 0;
         bottom: calc(5px + env(safe-area-inset-bottom));
-        height: calc(var(--t-xs) * 1.5 + 20px);
+        height: calc(var(--barra) - 10px);
         border: none; background: var(--surface); color: var(--text2);
         font-family: var(--fb); font-size: var(--t-lg); line-height: 1; cursor: pointer;
         touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
@@ -206,7 +213,7 @@ interface NavItem { path: string; label: string; corto: string; }
 
       .masback { position: fixed; inset: 0; z-index: 49; background: rgba(22,19,15,.42); }
       .maspanel { position: fixed; z-index: 51; left: 0; right: 0;
-        bottom: calc(47px + env(safe-area-inset-bottom));
+        bottom: calc(var(--barra) + env(safe-area-inset-bottom));
         display: flex; flex-direction: column;
         background: var(--surface); border-top: 1px solid var(--line);
         box-shadow: 0 -1px 0 var(--line); }
