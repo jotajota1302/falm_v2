@@ -74,14 +74,23 @@ const PARTICULAS = new Set(['de', 'del', 'la', 'las', 'los', 'da', 'das', 'do', 
     .sline span { white-space: nowrap; }
 
     /* modo campo (Alineación): la banda ya dice la posición, así que sobra el badge */
-    .fut.campo .info { position: absolute; top: 4cqw; left: 5cqw; z-index: 3; }
-    .fut.campo .val { background: var(--surface2); border: 1px solid var(--line);
-      padding: 1px 6px; border-radius: 6px; font-size: var(--t-sm); }
+    /* En el campo los puntos van dentro de la franja de color que corona la
+       carta, no en una caja encima del jugador: antes parecía una pegatina
+       pegada sobre la foto, y en algunas se comía la camiseta. La franja hace
+       de borde superior, así que aquí el borde se quita. */
+    .fut.campo { border-top-width: 0; padding-top: 17cqw; }
+    /* Los negativos compensan el relleno de la carta: la referencia es .top, que
+       ya vive dentro de él, y sin esto la franja se quedaba corta por los lados.
+       Las esquinas las redondea el overflow de la carta. */
+    .fut.campo .info { position: absolute; top: -17cqw; left: -6cqw; right: -6cqw;
+      height: 13cqw; flex-direction: row; align-items: center; justify-content: flex-start;
+      padding: 0 5cqw; z-index: 3; background: var(--c, var(--line)); }
+    .fut.campo .val { background: none; border: 0; padding: 0; color: #fff;
+      font-family: var(--fb); font-weight: 700; line-height: 1;
+      font-size: min(var(--t-sm), 10cqw); }
     .fut.campo .top { justify-content: center; align-items: stretch; }
     .fut.campo .face { max-width: 88%; object-position: center bottom; }
     .fut.campo .face.esc { max-width: 58%; max-height: 74%; object-position: center; }
-    /* En una portería la cifra iba encima del escudo: le dejamos su sitio. */
-    .fut.campo.solo-escudo .top { padding-top: 16%; }
     .fut.campo.solo-escudo .face.esc { max-height: 84%; }
     /* Siempre una línea: el tamaño se ajusta a lo que mide el nombre. El ancho
        útil de la carta es ~88cqw y cada letra pesa ~0.52em, así que caben con
