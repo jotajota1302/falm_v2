@@ -135,46 +135,52 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
           </div>
         </div>
 
-        <!-- BANQUILLO: quién entra si falla alguien, por línea -->
+        <!-- BANQUILLO: se compone por zonas, no en global. La pregunta que se
+             hace uno es "si me falla un medio, ¿quién entra?". -->
         <div class="banco">
           <div class="bh">
             <h3>Banquillo</h3>
-            <button class="add" (click)="abrirBanca()">+ Añadir</button>
+            <span class="bn">{{ banca().length }} suplente@if (banca().length !== 1) { s }</span>
           </div>
 
-          @if (!banca().length) {
-            <p class="bvacio">Sin suplentes. Añade a quien deba entrar si alguno de tus
-              titulares no juega, y marca la línea que cubre.</p>
-          } @else {
-            @for (l of lineas; track l) {
-              <div class="bloque">
+          @for (l of lineas; track l) {
+            <div class="bloque">
+              <div class="bt">
                 <span class="btit">Si falla un {{ etiquetaPos(l).toLowerCase() }}</span>
-                @if (colaDe(l); as cola) {
-                  @for (b of cola; track b.id; let i = $index) {
-                    <div class="bfila">
-                      <span class="prio num">{{ i + 1 }}</span>
-                      <span class="bav">
-                        @if (fotoDe(b.id); as f) { <img [src]="f" alt="" loading="lazy" /> }
-                        @else { <span class="bini">{{ nombreDe(b.id).charAt(0) }}</span> }
-                      </span>
-                      <span class="bnm">{{ nombreDe(b.id) }}</span>
-                      <button class="mv" (click)="subirEn(l, i)" [disabled]="i === 0" title="Que entre antes">▲</button>
-                      <button class="mv" (click)="bajarEn(l, i)" [disabled]="i === cola.length - 1" title="Que entre después">▼</button>
-                      <button class="rm" (click)="quitarLinea(b, l)" title="Que no cubra esta línea">✕</button>
-                    </div>
-                  }
-                } @else {
-                  <p class="bnadie">Nadie lo cubre.</p>
-                }
+                <button class="add" [class]="abr(l)" (click)="abrirBanca(l)"
+                        [disabled]="cubren(l) >= 2"
+                        [title]="cubren(l) >= 2 ? 'Ya tienes 2, el máximo por zona' : 'Añadir suplente para esta zona'">+ Añadir</button>
               </div>
-            }
+              @if (colaDe(l); as cola) {
+                @for (b of cola; track b.id; let i = $index) {
+                  <div class="bfila">
+                    <span class="prio num">{{ i + 1 }}</span>
+                    <span class="bav">
+                      @if (fotoDe(b.id); as f) { <img [src]="f" alt="" loading="lazy" /> }
+                      @else { <span class="bini">{{ nombreDe(b.id).charAt(0) }}</span> }
+                    </span>
+                    <span class="bnm">
+                      {{ nombreDe(b.id) }}
+                      <!-- Un delantero puede tapar el hueco de un medio, pero juega
+                           de delantero: por eso se avisa de su posición real. -->
+                      @if (posDe(b.id) !== l) { <b class="cpos" [class]="abr(posDe(b.id))">{{ abr(posDe(b.id)) }}</b> }
+                    </span>
+                    <button class="mv" (click)="subirEn(l, i)" [disabled]="i === 0" title="Que entre antes">▲</button>
+                    <button class="mv" (click)="bajarEn(l, i)" [disabled]="i === cola.length - 1" title="Que entre después">▼</button>
+                    <button class="rm" (click)="quitarLinea(b, l)" title="Quitar de esta zona">✕</button>
+                  </div>
+                }
+              } @else {
+                <p class="bnadie">Nadie lo cubre.</p>
+              }
+            </div>
+          }
 
+          <!-- Siempre a la vista: quién está en el banquillo y qué tapa cada uno.
+               Estaba plegado y nadie lo abría, así que no se veía el reparto. -->
+          @if (banca().length) {
             <div class="bloque otros">
-              <button class="btog" (click)="verReparto.set(!verReparto())">
-                <span class="btit">Qué cubre cada uno</span>
-                <span class="chev">{{ verReparto() ? '−' : '+' }}</span>
-              </button>
-              @if (verReparto()) {
+              <span class="btit">Qué cubre cada uno</span>
               @for (b of banca(); track b.id) {
                 <div class="bfila">
                   <span class="bnm">{{ nombreDe(b.id) }}</span>
@@ -186,7 +192,6 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
                   </div>
                   <button class="rm" (click)="fueraId(b.id)" title="Sacar del banquillo">✕</button>
                 </div>
-              }
               }
             </div>
           }
@@ -225,6 +230,9 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
                 <span class="cw">
                   <span class="cn">
                     {{ j.nombre }}
+                    <!-- Al cubrir una zona que no es la suya conviene verlo: entra
+                         en el hueco, pero puntúa y juega en su posición. -->
+                    @if (otraPos(j); as o) { <b class="cpos" [class]="o">{{ o }}</b> }
                     <!-- Solo avisa. Nadie te impide alinear a un tocado. -->
                     @if (parte(j.activo_id); as e) {
                       <b class="parte" [class]="e.clase" [title]="e.title">{{ e.eti }}</b>
@@ -415,14 +423,18 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
     .banco { flex: 1 1 300px; min-width: 280px;
       background: var(--surface); border: 1px solid var(--line); border-radius: 18px;
       padding: 16px; margin: 0; }
-    .bh { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-    .bvacio { margin: 0; color: var(--text2); font-size: var(--t-sm); }
+    .bh { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px; }
+    .bh .bn { font-size: var(--t-sm); color: var(--text2); }
 
-    /* Un bloque por línea: la pregunta que se hace uno es "si me falla un
-       medio, ¿quién entra?", no "qué suplentes tengo". */
-    .bloque { margin-bottom: 11px; }
+    /* Un bloque por zona, y cada zona con su propio botón: se ficha suplente
+       "para la defensa", no a un montón que luego hay que repartir. */
+    .bloque { margin-bottom: 13px; }
     .bloque:last-child { margin-bottom: 0; }
-    .btit { display: block; margin-bottom: 6px; font-size: var(--t-xs); font-weight: 700;
+    .bt { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
+    /* Con el banquillo estrecho el rótulo cede antes que el botón: lo que hay
+       que poder tocar siempre es el "+ Añadir". */
+    .bt .btit { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .btit { display: block; font-size: var(--t-xs); font-weight: 700;
       letter-spacing: .1em; text-transform: uppercase; color: var(--text2); }
     .bnadie { margin: 0; font-size: var(--t-sm); color: var(--bad); }
     .bav { width: 26px; height: 26px; flex: 0 0 auto; border-radius: 50%; overflow: hidden;
@@ -430,15 +442,18 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
       display: flex; align-items: center; justify-content: center; }
     .bav img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
     .bini { font-size: var(--t-xs); font-weight: 700; color: var(--text2); }
-    /* El último bloque es el que reparte: quién está y qué líneas cubre. */
-    .otros { padding-top: 10px; border-top: 1px solid var(--line); }
-    .btog { width: 100%; display: flex; align-items: center; justify-content: space-between;
-      background: none; border: none; padding: 0 0 4px; cursor: pointer; }
-    .btog .chev { font-family: var(--fb); font-weight: 700; color: var(--text2); }
+    /* El último bloque es el que reparte: quién está y qué zonas cubre. */
+    .otros { margin-top: 14px; padding-top: 11px; border-top: 1px solid var(--line); }
+    .otros .btit { margin-bottom: 4px; }
     .otros .bfila { background: transparent; border-color: transparent; padding: 5px 0; }
-    .add { background: var(--surface); border: 1px solid var(--line); color: var(--text); border-radius: 11px;
-      padding: 8px 13px; cursor: pointer; font-weight: 600; font-size: var(--t-sm); }
-    .add:hover { border-color: var(--accent); }
+    .add { background: var(--surface); border: 1px solid var(--line); color: var(--text); border-radius: var(--pill);
+      padding: 5px 12px; cursor: pointer; font-family: var(--fb); font-weight: 700; font-size: var(--t-xs);
+      white-space: nowrap; }
+    .add:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+    .add:disabled { opacity: .38; cursor: not-allowed; }
+    .add.DEF:hover:not(:disabled) { border-color: var(--def); color: var(--def); }
+    .add.MED:hover:not(:disabled) { border-color: var(--med); color: var(--med); }
+    .add.DEL:hover:not(:disabled) { border-color: var(--del); color: var(--del); }
     .sm { font-size: var(--t-xs); } .faint { color: var(--text2); }
     .bfila { display: flex; align-items: center; gap: 8px; padding: 5px 9px; margin-top: 5px;
       background: var(--surface2); border: 1px solid var(--line); border-radius: 10px; }
@@ -446,6 +461,12 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
       display: flex; align-items: center; justify-content: center; font-family: var(--fm);
       font-weight: 700; font-size: var(--t-xs); flex: 0 0 auto; }
     .bnm { flex: 1; font-weight: 700; font-size: var(--t-sm); min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    /* Cubre una zona que no es la suya: se dice cuál es la suya de verdad. */
+    .cpos { display: inline-block; margin-left: 5px; padding: 1px 5px; border-radius: 5px;
+      font-family: var(--fb); font-size: var(--t-xs); font-weight: 700; letter-spacing: .04em;
+      color: var(--accent-ink); vertical-align: 1px; }
+    .cpos.POR { background: var(--por); } .cpos.DEF { background: var(--def); }
+    .cpos.MED { background: var(--med); } .cpos.DEL { background: var(--del); }
     .chips { display: flex; gap: 4px; }
     .ch { width: 28px; padding: 5px 0; border-radius: 6px; border: 1px solid var(--line); background: transparent;
       color: var(--text2); font-weight: 700; font-size: var(--t-xs); cursor: pointer; }
@@ -607,8 +628,6 @@ export class AlineacionComponent implements OnInit {
   titulares = signal<string[]>([]);
   banca = signal<{ id: string; lineas: string[] }[]>([]);
   picker = signal<{ pos?: string; banca?: boolean; reemplazar?: string } | null>(null);
-  /** El reparto de líneas se consulta poco: va plegado. */
-  verReparto = signal(false);
   cargando = signal(true);
   guardando = signal(false);
   aviso = signal('');
@@ -673,9 +692,15 @@ export class AlineacionComponent implements OnInit {
   candidatos = computed(() => {
     const p = this.picker();
     if (!p) return [] as ItemPlantilla[];
+    // Suplente para una zona concreta: puede valer cualquiera que no sea
+    // portero ni titular, pero delante van los de esa posición, que es lo
+    // normal, y detrás el resto por media.
     if (p.banca) {
-      const enBanca = new Set(this.banca().map((b) => b.id));
-      return this.plantilla().filter((j) => j.posicion !== 'PORTERO' && !this.esTitular(j.activo_id) && !enBanca.has(j.activo_id));
+      const l = p.pos!;
+      const yaCubre = new Set(this.banca().filter((b) => b.lineas.includes(l)).map((b) => b.id));
+      return this.plantilla()
+        .filter((j) => j.posicion !== 'PORTERO' && !this.esTitular(j.activo_id) && !yaCubre.has(j.activo_id))
+        .sort((a, b) => (Number(b.posicion === l) - Number(a.posicion === l)) || (this.media(b) - this.media(a)));
     }
     // sustituir: candidatos = jugadores de esa línea que NO están ya de titulares
     if (p.reemplazar) {
@@ -712,9 +737,9 @@ export class AlineacionComponent implements OnInit {
   }
 
   abrirLinea(pos: string, reemplazar?: string) { this.picker.set({ pos, reemplazar }); }
-  abrirBanca() { this.picker.set({ banca: true }); }
+  abrirBanca(linea: string) { this.picker.set({ banca: true, pos: linea }); }
   tituloPicker(p: { pos?: string; banca?: boolean; reemplazar?: string }) {
-    if (p.banca) return 'Añadir suplente';
+    if (p.banca) return 'Si falla un ' + this.etiquetaPos(p.pos!).toLowerCase() + ', entra…';
     if (p.reemplazar) return 'Cambiar ' + this.nombreDe(p.reemplazar);
     return 'Elegir ' + this.etiquetaPos(p.pos!) + ' · ' + this.enLinea(p.pos!).length + '/' + this.cupo(p.pos!);
   }
@@ -749,13 +774,18 @@ export class AlineacionComponent implements OnInit {
     const p = this.picker();
     if (!p) return;
     if (p.banca) {
-      const natural = LINEAS.includes(j.posicion) ? j.posicion : 'MEDIO';
-      if (this.cubren(natural) >= 2) {
-        this.aviso.set(`Ya tienes 2 suplentes para ${this.abr(natural)} (máximo por línea).`);
+      const l = p.pos!;
+      if (this.cubren(l) >= 2) {
+        this.aviso.set(`Ya tienes 2 suplentes para ${this.abr(l)} (máximo por zona).`);
         this.picker.set(null);
         return;
       }
-      this.banca.update((b) => [...b, { id: j.activo_id, lineas: [natural] }]);
+      // Si ya estaba en el banquillo cubriendo otra zona, se le suma esta en
+      // vez de duplicarlo: un mismo suplente puede tapar dos huecos distintos.
+      const ya = this.banca().some((x) => x.id === j.activo_id);
+      this.banca.update((b) => ya
+        ? b.map((x) => x.id === j.activo_id ? { ...x, lineas: [...x.lineas, l] } : x)
+        : [...b, { id: j.activo_id, lineas: [l] }]);
       this.aviso.set('');
       this.picker.set(null);
       return;
@@ -792,6 +822,12 @@ export class AlineacionComponent implements OnInit {
     return c.length ? c : null;
   }
   fotoDe(id: string) { return this.plantilla().find((p) => p.activo_id === id)?.foto ?? null; }
+  posDe(id: string) { return this.plantilla().find((p) => p.activo_id === id)?.posicion ?? ''; }
+  /** La posición del candidato cuando no es la de la zona que se está cubriendo. */
+  otraPos(j: ItemPlantilla) {
+    const p = this.picker();
+    return p?.banca && j.posicion !== p.pos ? this.abr(j.posicion) : null;
+  }
 
   /** Mover dentro de una línea mueve al suplente en la lista general, que es
    *  donde vive el orden: basta con intercambiarlo con su vecino en esa cola. */
@@ -808,28 +844,29 @@ export class AlineacionComponent implements OnInit {
   subirEn(l: string, i: number) { this.moverEn(l, i, -1); }
   bajarEn(l: string, i: number) { this.moverEn(l, i, 1); }
 
-  /** Dejar de cubrir una línea; si no cubre ninguna, sale del banquillo. */
+  /**
+   * Dejar de cubrir una zona. Si esa era la única que cubría, se va del
+   * banquillo entero: un suplente que no tapa ningún hueco no entra nunca.
+   * (Antes esto pasaba por toggleLinea, que se negaba a dejar a nadie sin
+   * líneas y salía sin hacer nada: el aspa no borraba.)
+   */
   quitarLinea(b: { id: string; lineas: string[] }, l: string) {
-    this.toggleLinea(b, l);
-    const actual = this.banca().find((x) => x.id === b.id);
-    if (actual && !actual.lineas.length) this.fueraId(b.id);
+    const next = b.lineas.filter((x) => x !== l);
+    this.aviso.set('');
+    if (!next.length) { this.fueraId(b.id); return; }
+    this.banca.update((arr) => arr.map((x) => x.id === b.id ? { ...x, lineas: next } : x));
   }
 
   cubren(l: string) { return this.banca().filter((b) => b.lineas.includes(l)).length; }
   toggleLinea(b: { id: string; lineas: string[] }, l: string) {
-    const adding = !b.lineas.includes(l);
-    if (adding && this.cubren(l) >= 2) {
-      this.aviso.set(`Ya hay 2 suplentes cubriendo ${this.abr(l)} (máximo por línea).`);
+    if (b.lineas.includes(l)) { this.quitarLinea(b, l); return; }
+    if (this.cubren(l) >= 2) {
+      this.aviso.set(`Ya hay 2 suplentes cubriendo ${this.abr(l)} (máximo por zona).`);
       return;
     }
-    const next = adding ? [...b.lineas, l] : b.lineas.filter((x) => x !== l);
-    if (next.length === 0) return;
     this.aviso.set('');
-    this.banca.update((arr) => arr.map((x) => x.id === b.id ? { ...x, lineas: next } : x));
+    this.banca.update((arr) => arr.map((x) => x.id === b.id ? { ...x, lineas: [...x.lineas, l] } : x));
   }
-  subir(i: number) { if (i > 0) this.swap(i, i - 1); }
-  bajar(i: number) { if (i < this.banca().length - 1) this.swap(i, i + 1); }
-  private swap(a: number, c: number) { this.banca.update((arr) => { const n = [...arr]; [n[a], n[c]] = [n[c], n[a]]; return n; }); }
 
   async ngOnInit() {
     try {
