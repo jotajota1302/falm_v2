@@ -230,9 +230,11 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
                 <span class="cw">
                   <span class="cn">
                     {{ j.nombre }}
-                    <!-- Al cubrir una zona que no es la suya conviene verlo: entra
-                         en el hueco, pero puntúa y juega en su posición. -->
-                    @if (otraPos(j); as o) { <b class="cpos" [class]="o">{{ o }}</b> }
+                    <!-- La posición de cada uno, siempre: es lo primero que se
+                         mira al elegir suplente. Quien no es de la zona que se
+                         está cubriendo la lleva en sólido, porque entra en el
+                         hueco pero juega y puntúa en la suya. -->
+                    @if (posCand(j); as o) { <b class="cpos" [class]="o.eti" [class.suave]="!o.distinta">{{ o.eti }}</b> }
                     <!-- Solo avisa. Nadie te impide alinear a un tocado. -->
                     @if (parte(j.activo_id); as e) {
                       <b class="parte" [class]="e.clase" [title]="e.title">{{ e.eti }}</b>
@@ -467,6 +469,11 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
       color: var(--accent-ink); vertical-align: 1px; }
     .cpos.POR { background: var(--por); } .cpos.DEF { background: var(--def); }
     .cpos.MED { background: var(--med); } .cpos.DEL { background: var(--del); }
+    /* El que sí es de la zona que se está cubriendo la lleva en contorno: se
+       ve la posición de todos, pero destaca el que va a jugar fuera de sitio. */
+    .cpos.suave { background: none; border: 1px solid currentColor; padding: 0 4px; }
+    .cpos.suave.POR { color: var(--por); } .cpos.suave.DEF { color: var(--def); }
+    .cpos.suave.MED { color: var(--med); } .cpos.suave.DEL { color: var(--del); }
     .chips { display: flex; gap: 4px; }
     .ch { width: 28px; padding: 5px 0; border-radius: 6px; border: 1px solid var(--line); background: transparent;
       color: var(--text2); font-weight: 700; font-size: var(--t-xs); cursor: pointer; }
@@ -823,10 +830,12 @@ export class AlineacionComponent implements OnInit {
   }
   fotoDe(id: string) { return this.plantilla().find((p) => p.activo_id === id)?.foto ?? null; }
   posDe(id: string) { return this.plantilla().find((p) => p.activo_id === id)?.posicion ?? ''; }
-  /** La posición del candidato cuando no es la de la zona que se está cubriendo. */
-  otraPos(j: ItemPlantilla) {
+  /** La posición del candidato, solo al elegir suplente (en el campo sobra:
+   *  ahí todos son de la línea que se está llenando). */
+  posCand(j: ItemPlantilla) {
     const p = this.picker();
-    return p?.banca && j.posicion !== p.pos ? this.abr(j.posicion) : null;
+    if (!p?.banca) return null;
+    return { eti: this.abr(j.posicion), distinta: j.posicion !== p.pos };
   }
 
   /** Mover dentro de una línea mueve al suplente en la lista general, que es
