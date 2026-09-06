@@ -1,9 +1,12 @@
-import { Component, HostListener, OnInit, computed, signal } from '@angular/core';
+import { Component, OnInit, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ActivoLibre, ContextoActivo, FalmService, PuntosJugador } from '../../core/falm.service';
 import { FichaService } from '../../shared/ficha.service';
 import { carasDePorterias } from '../../shared/caras-libres';
+import { crearLista } from '../../shared/lista';
+import { OrdDirective } from '../../shared/orden.directive';
+import { PaginasComponent } from '../../shared/paginas.component';
 
 const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
 
@@ -11,7 +14,7 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
 @Component({
   selector: 'app-mercado',
   standalone: true,
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, OrdDirective, PaginasComponent],
   template: `
     <header class="phead">
       <div>
@@ -29,23 +32,27 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
       <section class="tabla">
         <div class="barra">
           <span class="lb">Libres</span>
-          <button [class.on]="!posFiltro()" (click)="posFiltro.set(''); limite.set(30)">Todos</button>
+          <button [class.on]="!posFiltro()" (click)="posFiltro.set(''); l.reset()">Todos</button>
           @for (p of pos; track p) {
             <button class="pos-f" [class]="abr(p)" [class.on]="posFiltro() === p" (click)="togglePos(p)">{{ abr(p) }}</button>
           }
           <input class="buscar" type="search" placeholder="Buscar jugador o club…"
-                 [ngModel]="texto()" (ngModelChange)="texto.set($event); limite.set(30)" />
+                 [ngModel]="texto()" (ngModelChange)="texto.set($event); l.reset()" />
+          <!-- Las flechas también arriba: pasar de página sin bajar al fondo. -->
+          <falm-paginas [l]="l" [compacto]="true" />
         </div>
 
         <div class="fila cab">
-          <span>Pos</span><span></span><span>Jugador</span><span>Club</span>
-          <button class="ord der" [class.on]="orden() === 'pts'" (click)="ordenar('pts')">Pts</button>
+          <span falmOrd="pos" [l]="l">Pos</span><span></span>
+          <span falmOrd="nombre" [l]="l">Jugador</span>
+          <span falmOrd="club" [l]="l">Club</span>
+          <span class="der" falmOrd="pts" [l]="l">Pts</span>
         </div>
 
-        @if (visibles().length === 0) {
+        @if (!l.total()) {
           <p class="vacio muted">No hay jugadores para ese filtro.</p>
         } @else {
-          @for (a of visibles().slice(0, limite()); track a.activo_id) {
+          @for (a of l.visibles(); track a.activo_id) {
             <button class="fila" (click)="abrir(a)">
               <span class="pos" [class]="abr(a.posicion)">{{ abr(a.posicion) }}</span>
               @if (foto(a)) {
@@ -67,12 +74,7 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
         }
       </section>
 
-      <div class="pie">
-        <span class="muted">{{ visibles().length }} libres · {{ mostrados() }} en pantalla</span>
-        @if (visibles().length > limite()) {
-          <button class="btn-sec" (click)="limite.set(limite() + 30)">Ver 30 más</button>
-        }
-      </div>
+      <falm-paginas [l]="l" unidad="libres" />
     }
   `,
   styles: [`
@@ -94,10 +96,6 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
     .barra .buscar { margin-left: auto; flex: 0 1 250px; padding: 7px 13px; font-size: var(--t-sm); border-radius: var(--pill); }
 
     .fila { grid-template-columns: 46px 26px 1.9fr 170px 60px; padding: 7px 18px; }
-    .ord { background: none; border: none; padding: 0; cursor: pointer; font-family: var(--fb);
-      font-size: var(--t-xs); font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
-      color: var(--text2); }
-    .ord.on { color: var(--accent); }
     .nom { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
     /* Misma cara y mismo escudo que en Inicio: retrato redondo, y el escudo del
@@ -115,9 +113,6 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
     .pts.cero { color: var(--text2); }
     .vacio { padding: 22px 18px; margin: 0; font-size: var(--t-sm); }
 
-    .pie { display: flex; align-items: center; justify-content: space-between;
-      gap: 12px; margin-top: 14px; flex-wrap: wrap; }
-    .pie .muted { font-size: var(--t-sm); }
 
     @media (max-width: 760px) {
       /* Sin sitio para el club: se queda el escudo pegado al retrato. */
@@ -136,8 +131,6 @@ export class MercadoComponent implements OnInit {
   acum = signal<Record<number, PuntosJugador>>({});
   texto = signal('');
   posFiltro = signal('');
-  orden = signal<'pts'>('pts');
-  limite = signal(30);
   cargando = signal(true);
   error = signal('');
   estados = signal<Record<string, ContextoActivo>>({});
@@ -155,37 +148,31 @@ export class MercadoComponent implements OnInit {
              title: [c.detalle, c.vuelve].filter(Boolean).join(' · ') || eti };
   }
 
-  visibles = computed(() => {
+  /** Lo que pasa los filtros; el orden y la página los lleva la lista. */
+  filtrados = computed(() => {
     const f = this.texto().trim().toLowerCase();
     const p = this.posFiltro();
-    const o = this.orden();
-    return this.todos()
-      .filter((a) =>
-        (!p || a.posicion === p) &&
-        (!f || a.nombre.toLowerCase().includes(f) || a.club.toLowerCase().includes(f)))
-      // Con los puntos empatados (pretemporada) manda el alfabético, que si no
-      // la lista sale agrupada por posición sin querer.
-      .sort((a, b) => (this.ptsDe(b) - this.ptsDe(a))
-        || a.nombre.localeCompare(b.nombre, 'es'));
+    return this.todos().filter((a) =>
+      (!p || a.posicion === p) &&
+      (!f || a.nombre.toLowerCase().includes(f) || a.club.toLowerCase().includes(f)));
   });
 
-  mostrados = computed(() => Math.min(this.limite(), this.visibles().length));
-
-  /** Al llegar al final de la lista entran las siguientes 30, sin buscar el botón. */
-  @HostListener('window:scroll')
-  alDesplazar() {
-    if (this.visibles().length <= this.limite()) return;
-    const e = document.documentElement;
-    if (e.scrollHeight - e.scrollTop - e.clientHeight < 700) this.limite.update((n) => n + 30);
-  }
+  /** Con los puntos empatados (media temporada por delante) manda el
+   *  alfabético: si no, la lista sale agrupada por posición sin querer. */
+  l = crearLista(() => this.filtrados(), {
+    valor: (a, c) => c === 'pos' ? POS.indexOf(a.posicion) : c === 'nombre' ? a.nombre
+      : c === 'club' ? a.club : this.ptsDe(a),
+    campo: 'pts', dir: 'desc',
+    inicial: { pos: 'asc', nombre: 'asc', club: 'asc', pts: 'desc' },
+    desempate: (a, b) => a.nombre.localeCompare(b.nombre, 'es'),
+  });
 
   constructor(private falm: FalmService, public ficha: FichaService) {}
   abr(p: string) { return ({ PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'MED', DELANTERO: 'DEL' } as Record<string, string>)[p] ?? p; }
   abrir(a: ActivoLibre) {
     if (a.ext_id) this.ficha.open({ id: a.ext_id, nombre: a.nombre, equipo: a.club, escudo: a.escudo ?? '', foto: a.foto ?? '', posicion: a.posicion });
   }
-  togglePos(p: string) { this.posFiltro.set(this.posFiltro() === p ? '' : p); this.limite.set(30); }
-  ordenar(o: 'pts') { this.orden.set(o); this.limite.set(30); }
+  togglePos(p: string) { this.posFiltro.set(this.posFiltro() === p ? '' : p); this.l.reset(); }
 
   ptsDe(a: ActivoLibre) { return a.ext_id != null ? Number(this.acum()[a.ext_id]?.puntosTotales ?? 0) : 0; }
 

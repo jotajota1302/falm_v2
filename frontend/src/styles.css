@@ -152,6 +152,27 @@ h3 { font-family: var(--fh); font-weight: 500; font-size: var(--t-sm); text-tran
 }
 .der { text-align: right; }
 
+/* Ordenar por columna: la clase la pone la directiva [falmOrd]. Vive aquí y
+   no en un componente porque la cabecera es una fila del grid de cada
+   pantalla, y el CSS encapsulado de un hijo no respetaría sus columnas. */
+.ord { cursor: pointer; user-select: none; white-space: nowrap; }
+.ord::after { content: '↕'; margin-left: 4px; opacity: .3; font-weight: 400; }
+.ord:hover { color: var(--text); }
+.ord.ord-on { color: var(--accent); }
+.ord.ord-on::after { content: '▼'; opacity: 1; font-size: .82em; }
+.ord.ord-on.asc::after { content: '▲'; }
+.ord:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+/* Barra de orden para las listas que no son de columnas (Admin › Jugadores). */
+.ordbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px;
+  font-size: var(--t-xs); font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--text2); }
+.ordbar .ord { padding: 5px 11px; border: 1px solid var(--line); border-radius: var(--pill);
+  background: var(--surface); }
+.ordbar .ord.ord-on { border-color: var(--accent); }
+
+@media (max-width: 560px) { .ordbar { justify-content: center; } }
+
 /* pie de lista: recuento a la izquierda, "ver más" a la derecha */
 .pie { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 14px; flex-wrap: wrap; }
 .pie .muted { font-size: var(--t-sm); }

@@ -2,6 +2,9 @@ import { Component, OnInit, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { environment } from '../../../environments/environment';
 import { AdminJugador, AdminService } from './admin.service';
+import { crearLista } from '../../shared/lista';
+import { OrdDirective } from '../../shared/orden.directive';
+import { PaginasComponent } from '../../shared/paginas.component';
 
 const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
 const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'MED', DELANTERO: 'DEL' };
@@ -10,20 +13,29 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
 @Component({
   selector: 'app-admin-jugadores',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, OrdDirective, PaginasComponent],
   template: `
     @if (aviso()) { <p class="aviso">{{ aviso() }}</p> }
     @if (error()) { <p class="err">{{ error() }}</p> }
 
     <input class="buscar" type="search" placeholder="Buscar jugador o club…"
-           [ngModel]="filtro()" (ngModelChange)="filtro.set($event); limite.set(40)" />
+           [ngModel]="filtro()" (ngModelChange)="filtro.set($event); l.reset()" />
 
     @if (cargando()) {
       <p class="muted">Cargando catálogo…</p>
     } @else {
-      <p class="total faint">{{ visibles().length }} jugadores</p>
+      <!-- Esta lista no es de columnas (cada fila se despliega para editar),
+           así que el orden va en su propia barra. -->
+      <div class="ordbar">
+        <span>Ordenar</span>
+        <span falmOrd="nombre" [l]="l">Nombre</span>
+        <span falmOrd="club" [l]="l">Club</span>
+        <span falmOrd="pos" [l]="l">Posición</span>
+        <span falmOrd="precio" [l]="l">Precio</span>
+        <falm-paginas [l]="l" [compacto]="true" />
+      </div>
       <div class="tabla card">
-        @for (j of visibles().slice(0, limite()); track j.activoId) {
+        @for (j of l.visibles(); track j.activoId) {
           <div class="fila">
             <span class="pos" [class]="abr(j.posicion)">{{ abr(j.posicion) }}</span>
             <div class="info">
@@ -73,16 +85,13 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
           }
         }
       </div>
-      @if (visibles().length > limite()) {
-        <button class="mas" (click)="limite.set(limite() + 40)">Ver más ({{ visibles().length - limite() }})</button>
-      }
+      <falm-paginas [l]="l" unidad="jugadores" />
     }
   `,
   styles: [`
     .aviso { background: color-mix(in oklab, var(--por) 8%, var(--surface)); border: 1px solid color-mix(in oklab, var(--por) 32%, var(--line)); color: var(--por); padding: 10px 14px; border-radius: 10px; margin-bottom: 12px; }
     .err { color: var(--bad); }
     .buscar { width: 100%; margin-bottom: 10px; }
-    .total { margin: 0 0 10px; font-size: var(--t-sm); }
     .tabla { overflow: hidden; }
     .fila { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-bottom: 1px solid var(--line); }
     .fila:last-child { border-bottom: none; }
@@ -107,8 +116,6 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
       text-transform: none; letter-spacing: 0; font-weight: 600; }
     .editor .acc { display: flex; gap: 7px; align-items: center; }
     .editor .nota { flex: 1 1 100%; margin: 0; font-size: var(--t-xs); line-height: 1.4; }
-    .mas { display: block; margin: 16px auto 0; background: var(--surface); border: 1px solid var(--line);
-      color: var(--text); border-radius: 12px; padding: 10px 20px; cursor: pointer; font-weight: 700; }
     .muted { color: var(--text2); }
   `],
 })
@@ -116,7 +123,6 @@ export class AdminJugadoresComponent implements OnInit {
   pos = POS;
   todos = signal<AdminJugador[]>([]);
   filtro = signal('');
-  limite = signal(40);
   cargando = signal(true);
   aviso = signal('');
   error = signal('');
@@ -129,9 +135,18 @@ export class AdminJugadoresComponent implements OnInit {
   edPrim = signal(true);
   clubes = signal<{ id: string; nombre: string }[]>([]);
 
-  visibles = computed(() => {
+  filtrados = computed(() => {
     const f = this.filtro().trim().toLowerCase();
     return this.todos().filter((j) => !f || j.nombre.toLowerCase().includes(f) || j.club.toLowerCase().includes(f));
+  });
+
+  /** Entra por precio, que es el orden en que lo sirve el catálogo. */
+  l = crearLista(() => this.filtrados(), {
+    valor: (j, c) => c === 'nombre' ? j.nombre : c === 'club' ? j.club
+      : c === 'pos' ? POS.indexOf(j.posicion) : Number(j.precio ?? 0),
+    campo: 'precio', dir: 'desc',
+    inicial: { nombre: 'asc', club: 'asc', pos: 'asc', precio: 'desc' },
+    desempate: (a, b) => a.nombre.localeCompare(b.nombre, 'es'),
   });
 
   constructor(private admin: AdminService) {}

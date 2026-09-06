@@ -2,6 +2,9 @@ import { Component, OnInit, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { FalmService, JornadaLfp, PuntosJugador } from '../../core/falm.service';
 import { FichaService } from '../../shared/ficha.service';
+import { crearLista } from '../../shared/lista';
+import { OrdDirective } from '../../shared/orden.directive';
+import { PaginasComponent } from '../../shared/paginas.component';
 
 const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: 'DEF', DEFENSA: 'DEF',
   Mediocampista: 'MED', MEDIO: 'MED', Delantero: 'DEL', DELANTERO: 'DEL' };
@@ -10,7 +13,7 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
 @Component({
   selector: 'app-puntuaciones',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, OrdDirective, PaginasComponent],
   template: `
     <header class="phead">
       <h1>Estadísticas</h1>
@@ -39,15 +42,26 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
         <div class="barra">
           <span class="lb">{{ modo() === 'acumulada' ? 'Más puntuados' : 'Jornada ' + sel() }}</span>
           <input class="buscar" type="search" placeholder="Buscar jugador o equipo…"
-                 [ngModel]="texto()" (ngModelChange)="texto.set($event); limite.set(30)" />
+                 [ngModel]="texto()" (ngModelChange)="texto.set($event); l.reset()" />
+          <!-- Las flechas también arriba: pasar de página sin bajar al fondo. -->
+          <falm-paginas [l]="l" [compacto]="true" />
         </div>
 
-        @if (visibles().length === 0) {
+        <!-- Esta lista no tenía cabecera: sin ella no había dónde ordenar. -->
+        <div class="fila cab">
+          <span class="rk">#</span><span></span>
+          <span falmOrd="nombre" [l]="l">Jugador</span>
+          <span class="hechos" falmOrd="goles" [l]="l">Goles</span>
+          <span class="barra-p"></span>
+          <span class="der" falmOrd="pts" [l]="l">Pts</span>
+        </div>
+
+        @if (!l.total()) {
           <p class="vacio muted">Sin resultados.</p>
         } @else {
-          @for (p of visibles().slice(0, limite()); track p.jugador.id; let i = $index) {
+          @for (p of l.visibles(); track p.jugador.id; let i = $index) {
             <button class="fila" (click)="abrirFicha(p)">
-              <span class="rk num">{{ i + 1 }}</span>
+              <span class="rk num">{{ l.desde() + i + 1 }}</span>
               <span class="av">
                 @if (p.jugador.escudo) { <img class="wm" [src]="p.jugador.escudo" alt="" /> }
                 @if (p.jugador.foto) { <img class="pl" [src]="p.jugador.foto" alt="" loading="lazy" (error)="p.jugador.foto = ''" /> }
@@ -75,12 +89,7 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
         }
       </section>
 
-      <div class="pie">
-        <span class="muted">{{ visibles().length }} jugadores</span>
-        @if (visibles().length > limite()) {
-          <button class="btn-sec" (click)="limite.set(limite() + 30)">Ver 30 más</button>
-        }
-      </div>
+      <falm-paginas [l]="l" unidad="jugadores" />
     }
   `,
   styles: [`
@@ -127,14 +136,14 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
 
     /* La barra da la escala de un vistazo: el líder ocupa el ancho entero. */
     .barra-p { height: 8px; border-radius: var(--pill); background: var(--surface2); overflow: hidden; }
+    /* En la cabecera esa celda solo guarda el hueco de la columna. */
+    .fila.cab .barra-p { height: auto; background: none; }
     .barra-p .rel { display: block; height: 100%; background: var(--accent); }
 
     .pts { text-align: right; font-size: var(--t-lg); font-weight: 700; }
     .pts.neg { color: var(--bad); }
     .vacio { padding: 22px 18px; margin: 0; font-size: var(--t-sm); }
 
-    .pie { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 14px; }
-    .pie .muted { font-size: var(--t-sm); }
     .muted { color: var(--text2); } .err { color: var(--bad); }
 
     @media (max-width: 900px) { .fila { grid-template-columns: 28px 42px 1fr 90px 52px; } .hechos { display: none; } }
@@ -153,18 +162,28 @@ export class PuntuacionesComponent implements OnInit {
   modo = signal<'jornada' | 'acumulada'>('acumulada');
   jugadores = signal<PuntosJugador[]>([]);
   texto = signal('');
-  limite = signal(30);
   cargando = signal(true);
   error = signal('');
 
-  visibles = computed(() => {
+  /** Lo que pasa el buscador; el orden y la página los lleva la lista. */
+  filtrados = computed(() => {
     const f = this.texto().trim().toLowerCase();
-    const arr = [...this.jugadores()].sort((a, b) => b.puntosTotales - a.puntosTotales);
+    const arr = this.jugadores();
     return f ? arr.filter((p) => p.jugador.nombre.toLowerCase().includes(f) || (p.jugador.equipo || '').toLowerCase().includes(f)) : arr;
   });
 
-  /** Tope de la escala de barras: el jugador más puntuado de la lista visible. */
-  tope = computed(() => Math.max(1, ...this.visibles().map((p) => Number(p.puntosTotales) || 0)));
+  l = crearLista(() => this.filtrados(), {
+    valor: (p, c) => c === 'nombre' ? p.jugador.nombre
+      : c === 'goles' ? Number(p.goles ?? 0) + Number(p.golesPenalti ?? 0)
+      : Number(p.puntosTotales ?? 0),
+    campo: 'pts', dir: 'desc',
+    inicial: { nombre: 'asc', goles: 'desc', pts: 'desc' },
+    desempate: (a, b) => a.jugador.nombre.localeCompare(b.jugador.nombre, 'es'),
+  });
+
+  /** Tope de la escala de barras: el más puntuado de todo lo filtrado, no de
+   *  la página, para que la barra siga significando lo mismo al pasar hoja. */
+  tope = computed(() => Math.max(1, ...this.filtrados().map((p) => Number(p.puntosTotales) || 0)));
 
   subtitulo = computed(() => {
     const n = this.jugadores().length;
@@ -203,7 +222,7 @@ export class PuntuacionesComponent implements OnInit {
 
   async setModo(m: 'jornada' | 'acumulada') {
     if (m === this.modo()) return;
-    this.modo.set(m); this.limite.set(30); this.error.set('');
+    this.modo.set(m); this.l.reset(); this.error.set('');
     if (m === 'acumulada') await this.cargarAcumulada();
     else await this.elegir(this.sel() || this.jornadas()[0]?.numero || 0);
   }
@@ -217,7 +236,7 @@ export class PuntuacionesComponent implements OnInit {
 
   async elegir(n: number) {
     this.modo.set('jornada');
-    this.sel.set(n); this.cargando.set(true); this.error.set(''); this.limite.set(30);
+    this.sel.set(n); this.cargando.set(true); this.error.set(''); this.l.reset();
     try { this.jugadores.set(await this.falm.puntuacionesJornada(n)); }
     catch (e: any) { this.error.set(e?.message ?? 'Error cargando la jornada'); }
     finally { this.cargando.set(false); }

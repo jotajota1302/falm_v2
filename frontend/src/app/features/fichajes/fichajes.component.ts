@@ -1,4 +1,4 @@
-import { Component, HostListener, OnInit, computed, signal } from '@angular/core';
+import { Component, OnInit, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { NavFichajesComponent } from '../../shared/nav-fichajes.component';
 import { RouterLink } from '@angular/router';
@@ -6,6 +6,9 @@ import { environment } from '../../../environments/environment';
 import { ActivoLibre, Equipo, FalmService, ItemPlantilla, JornadaFalm, PuntosJugador } from '../../core/falm.service';
 import { carasDePorterias } from '../../shared/caras-libres';
 import { FichaService } from '../../shared/ficha.service';
+import { crearLista } from '../../shared/lista';
+import { OrdDirective } from '../../shared/orden.directive';
+import { PaginasComponent } from '../../shared/paginas.component';
 
 const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
 
@@ -13,7 +16,7 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
 @Component({
   selector: 'app-fichajes',
   standalone: true,
-  imports: [FormsModule, RouterLink, NavFichajesComponent],
+  imports: [FormsModule, RouterLink, NavFichajesComponent, OrdDirective, PaginasComponent],
   template: `
     <header class="phead">
       <div>
@@ -34,24 +37,28 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
           <div class="barra">
             <span class="lb">Libres</span>
             <div class="chips">
-              <button [class.on]="!posFiltro()" (click)="posFiltro.set(''); limite.set(30)">Todos</button>
+              <button [class.on]="!posFiltro()" (click)="posFiltro.set(''); l.reset()">Todos</button>
               @for (p of pos; track p) {
                 <button [class.on]="posFiltro() === p" (click)="togglePos(p)">{{ abr(p) }}</button>
               }
             </div>
             <input class="buscar" type="search" placeholder="Buscar jugador o club…"
-                   [ngModel]="texto()" (ngModelChange)="texto.set($event); limite.set(30)" />
+                   [ngModel]="texto()" (ngModelChange)="texto.set($event); l.reset()" />
+            <!-- Las flechas también arriba: pasar de página sin bajar al fondo. -->
+            <falm-paginas [l]="l" [compacto]="true" />
           </div>
 
           <div class="fila cab">
-            <span>Pos</span><span></span><span>Jugador</span><span>Club</span>
-            <span class="der">Pts</span><span></span>
+            <span falmOrd="pos" [l]="l">Pos</span><span></span>
+            <span falmOrd="nombre" [l]="l">Jugador</span>
+            <span falmOrd="club" [l]="l">Club</span>
+            <span class="der" falmOrd="pts" [l]="l">Pts</span><span></span>
           </div>
 
-          @if (visibles().length === 0) {
+          @if (!l.total()) {
             <p class="vacio muted">No hay jugadores para ese filtro.</p>
           } @else {
-            @for (a of visibles().slice(0, limite()); track a.activo_id) {
+            @for (a of l.visibles(); track a.activo_id) {
               <div class="fila" [class.pedido]="prioridadDe(a)">
                 <span class="pos" [class]="abr(a.posicion)">{{ abr(a.posicion) }}</span>
                 @if (foto(a)) {
@@ -141,12 +148,7 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
         </aside>
       </div>
 
-      <div class="pie">
-        <span class="muted">{{ mostrados() }} de {{ visibles().length }} libres</span>
-        @if (visibles().length > limite()) {
-          <button class="btn-sec" (click)="limite.set(limite() + 30)">Ver 30 más</button>
-        }
-      </div>
+      <falm-paginas [l]="l" unidad="libres" />
     }
   `,
   styles: [`
@@ -248,18 +250,6 @@ export class FichajesComponent implements OnInit {
   p2 = signal<ActivoLibre | null>(null);
   texto = signal('');
   posFiltro = signal('');
-  limite = signal(30);
-
-  /** Cuántos se pintan de verdad: el pie decía el total y solo salían 30. */
-  mostrados = computed(() => Math.min(this.limite(), this.visibles().length));
-
-  /** Al llegar al final de la lista entran las siguientes 30, sin buscar el botón. */
-  @HostListener('window:scroll')
-  alDesplazar() {
-    if (this.visibles().length <= this.limite()) return;
-    const e = document.documentElement;
-    if (e.scrollHeight - e.scrollTop - e.clientHeight < 700) this.limite.update((n) => n + 30);
-  }
   cargando = signal(true);
   enviando = signal(false);
   error = signal('');
@@ -272,14 +262,22 @@ export class FichajesComponent implements OnInit {
   urlLesion = signal('');
   enviandoLesion = signal(false);
 
-  visibles = computed(() => {
+  /** Lo que pasa los filtros; el orden y la página los lleva la lista. */
+  filtrados = computed(() => {
     const f = this.texto().trim().toLowerCase();
     const p = this.posFiltro();
-    return this.mercado()
-      .filter((a) =>
-        (!p || a.posicion === p) &&
-        (!f || a.nombre.toLowerCase().includes(f) || a.club.toLowerCase().includes(f)))
-      .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+    return this.mercado().filter((a) =>
+      (!p || a.posicion === p) &&
+      (!f || a.nombre.toLowerCase().includes(f) || a.club.toLowerCase().includes(f)));
+  });
+
+  /** Aquí se viene a buscar un nombre concreto, así que entra por alfabético. */
+  l = crearLista(() => this.filtrados(), {
+    valor: (a, c) => c === 'pos' ? POS.indexOf(a.posicion) : c === 'nombre' ? a.nombre
+      : c === 'club' ? a.club : this.ptsDe(a),
+    campo: 'nombre', dir: 'asc',
+    inicial: { pos: 'asc', nombre: 'asc', club: 'asc', pts: 'desc' },
+    desempate: (a, b) => a.nombre.localeCompare(b.nombre, 'es'),
   });
 
   constructor(private falm: FalmService, public ficha: FichaService) {}
@@ -299,7 +297,7 @@ export class FichajesComponent implements OnInit {
     if (this.p2()?.activo_id === a.activo_id) return 2;
     return null;
   }
-  togglePos(p: string) { this.posFiltro.set(this.posFiltro() === p ? '' : p); this.limite.set(30); }
+  togglePos(p: string) { this.posFiltro.set(this.posFiltro() === p ? '' : p); this.l.reset(); }
 
   /** Pedir: si ya está elegido lo quita; si no, ocupa la primera prioridad libre. */
   toggle(a: ActivoLibre) {
