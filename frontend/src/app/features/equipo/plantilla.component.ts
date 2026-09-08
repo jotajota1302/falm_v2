@@ -54,7 +54,7 @@ const ETI: Record<string, string> = { PORTERO: 'Porteros', DEFENSA: 'Defensas', 
                 }
               </span>
               <span class="nom">
-                {{ j.nombre }}
+                <span class="txt">{{ j.nombre }}</span>
                 @if (parte(j.activo_id); as e) { <b class="parte" [class]="e.clase" [title]="e.title">{{ e.eti }}</b> }
               </span>
               @if (porterosDe(j); as ps) {
@@ -80,13 +80,10 @@ const ETI: Record<string, string> = { PORTERO: 'Porteros', DEFENSA: 'Defensas', 
     .phead { margin-bottom: 18px; }
     .phead .sub { margin: 5px 0 0; color: var(--text2); font-size: var(--t-sm); }
 
-    .kpis { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
-    .kpi { flex: 1 1 190px; background: var(--surface); border: 1px solid var(--line);
-      border-radius: var(--r); padding: 15px 17px; }
-    .kpi .lb { display: block; font-size: var(--t-xs); font-weight: 700; letter-spacing: .16em;
-      text-transform: uppercase; color: var(--text2); }
-    .kpi .v { display: block; margin-top: 4px; font-family: var(--fh); font-size: var(--t-xl); font-weight: 600; }
-    .kpi .v small { font-size: var(--t-md); color: var(--text2); }
+    /* .kpis y .kpi son de styles.css. Estaban repetidos aqui con otro padding y
+       otro cuerpo, y como el CSS de un componente pesa mas que el global, ganaba
+       esta copia y se perdia su @media: en el movil las tarjetas no bajaban a
+       dos por fila. Aqui solo lo que es propio de la pantalla. */
     .kpi .v.neg { color: var(--bad); }
     /* El desglose por líneas, junto al número que desglosa. */
     .dato { display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap; }
@@ -112,7 +109,10 @@ const ETI: Record<string, string> = { PORTERO: 'Porteros', DEFENSA: 'Defensas', 
     .caras img { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; object-position: top;
       background: var(--surface2); border: 1.5px solid var(--surface); margin-left: -8px; }
     .caras img:first-child { margin-left: 2px; }
-    .nom { font-weight: 700; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    /* El aviso de estado no entra en el recorte: se acorta el nombre, no el
+       "Lesionado", que es justo lo que hay que ver. */
+    .nom { font-weight: 700; min-width: 0; display: flex; align-items: center; gap: 6px; }
+    .nom .txt { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .club { display: flex; align-items: center; gap: 6px; color: var(--text2); font-size: var(--t-sm);
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .club img { width: 16px; height: 16px; object-fit: contain; }

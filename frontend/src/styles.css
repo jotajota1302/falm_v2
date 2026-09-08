@@ -122,7 +122,7 @@ h3 { font-family: var(--fh); font-weight: 500; font-size: var(--t-sm); text-tran
 .kpis { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
 .kpi {
   flex: 1 1 190px; background: var(--surface);
-  border: 1px solid var(--line); border-radius: 14px; padding: 11px 15px;
+  border: 1px solid var(--line); border-radius: var(--r-sm); padding: 11px 15px;
 }
 .kpi .lb { display: block; }
 .kpi .v { display: block; margin-top: 2px; font-family: var(--fh); font-size: var(--t-lg); font-weight: 600; }
@@ -138,7 +138,7 @@ h3 { font-family: var(--fh); font-weight: 500; font-size: var(--t-sm); text-tran
 .chips button.on, .chip-btn.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
 
 /* tabla-tarjeta: el patrón de lista de toda la app */
-.tabla { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; }
+.tabla { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; }
 .tabla .barra {
   display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
   padding: 14px 18px; border-bottom: 1px solid var(--line);
@@ -168,7 +168,7 @@ h3 { font-family: var(--fh); font-weight: 500; font-size: var(--t-sm); text-tran
 .ord.ord-on { color: var(--accent); }
 .ord.ord-on::after { content: '▼'; opacity: 1; font-size: .82em; }
 .ord.ord-on.asc::after { content: '▲'; }
-.ord:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+.ord:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--r-2xs); }
 
 /* Barra de orden para las listas que no son de columnas (Admin › Jugadores). */
 .ordbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px;
@@ -213,19 +213,22 @@ h3 { font-family: var(--fh); font-weight: 500; font-size: var(--t-sm); text-tran
 /* badge de posición */
 .pos {
   display: inline-flex; align-items: center; justify-content: center;
-  min-width: 38px; padding: 4px 8px; border-radius: 6px;
+  min-width: 38px; padding: 4px 8px; border-radius: var(--r-2xs);
   font-family: var(--fb); font-size: var(--t-xs); font-weight: 700;
   letter-spacing: .06em; text-transform: uppercase;
-  color: #fff;
+  color: var(--accent-ink);
 }
 .pos.POR { background: var(--por); }
 
 /* Parte médico: rojo el que no juega, ámbar el que puede que sí. Lo usan la
    alineación, el mercado y la plantilla, así que vive aquí. */
-.parte { display: inline-block; margin-left: 6px; padding: 1px 6px;
-  border-radius: var(--pill); font-family: var(--fb); font-size: 9px;
+/* Va dentro de una fila que recorta el nombre: no se encoge ni se parte, para
+   que la elipsis se coma el nombre y nunca el aviso. El margen se lo pone el
+   gap del contenedor. */
+.parte { display: inline-block; flex: 0 0 auto; padding: 1px 6px;
+  border-radius: var(--pill); font-family: var(--fb); font-size: var(--t-xs);
   font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
-  vertical-align: middle; color: #fff; white-space: nowrap; }
+  vertical-align: middle; color: var(--accent-ink); white-space: nowrap; }
 .parte.lesionado, .parte.sancionado { background: var(--bad); }
 .parte.duda { background: var(--por); }
 
@@ -264,7 +267,7 @@ input:focus, select:focus { outline: none; border-color: var(--accent); }
 /* botón primario */
 .btn {
   border: none; cursor: pointer; font-family: var(--fb);
-  font-weight: 700; border-radius: 11px;
+  font-weight: 700; border-radius: var(--r-xs);
   padding: 11px 22px; font-size: var(--t-md);
   background: var(--accent); color: var(--accent-ink);
   transition: opacity .12s ease;
@@ -275,7 +278,7 @@ input:focus, select:focus { outline: none; border-color: var(--accent); }
 /* botón secundario */
 .btn-sec {
   cursor: pointer; font-family: var(--fb); font-weight: 600;
-  border-radius: 11px; padding: 10px 15px; font-size: var(--t-sm);
+  border-radius: var(--r-xs); padding: 10px 15px; font-size: var(--t-sm);
   background: var(--surface); color: var(--text);
   border: 1px solid var(--line);
   transition: border-color .12s ease;

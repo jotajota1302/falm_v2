@@ -292,7 +292,6 @@ interface Once { equipo: string; formacion: string; campo: EnCampo[]; banca: EnB
          puntos se caían a una segunda línea. */
       .j11 { grid-template-columns: 30px 24px 1fr 16px 34px; gap: 7px; }
       .tabla .fila { padding: 6px 12px; }
-      .cola { grid-template-columns: 30px 1fr; gap: 7px; }
     }
   `],
 })

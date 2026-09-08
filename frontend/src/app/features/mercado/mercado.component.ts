@@ -61,7 +61,7 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
                 <img class="fo es" [src]="a.escudo" alt="" loading="lazy" />
               } @else { <span class="fo"></span> }
               <span class="nom">
-                {{ a.nombre }}
+                <span class="txt">{{ a.nombre }}</span>
                 @if (parte(a.activo_id); as e) { <b class="parte" [class]="e.clase" [title]="e.title">{{ e.eti }}</b> }
               </span>
               <span class="club">
@@ -96,7 +96,10 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
     .barra .buscar { margin-left: auto; flex: 0 1 250px; padding: 7px 13px; font-size: var(--t-sm); border-radius: var(--pill); }
 
     .fila { grid-template-columns: 46px 26px 1.9fr 170px 60px; padding: 7px 18px; }
-    .nom { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    /* El aviso de estado no entra en el recorte: se acorta el nombre, no el
+       "Lesionado", que es justo lo que hay que ver. */
+    .nom { font-weight: 700; min-width: 0; display: flex; align-items: center; gap: 6px; }
+    .nom .txt { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
     /* Misma cara y mismo escudo que en Inicio: retrato redondo, y el escudo del
        club sobre un disco porque los casi blancos se perdían sobre el papel. */
