@@ -40,7 +40,13 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
           } @else {
             <div class="acum">
               <div class="s"><b class="num">{{ acum().puntos }}</b><span>Puntos</span></div>
-              <div class="s"><b class="num">{{ acum().goles }}</b><span>Goles</span></div>
+              <!-- Al portero y a la portería del club los goles marcados no les
+                   dicen nada: son cero siempre. Lo suyo son los que le meten. -->
+              @if (esPortero()) {
+                <div class="s"><b class="num">{{ acum().encajados }}</b><span>Encajados</span></div>
+              } @else {
+                <div class="s"><b class="num">{{ acum().goles }}</b><span>Goles</span></div>
+              }
               <!-- La casilla que cambia según a quién se mire: al portero y al
                    defensa les interesa la portería a cero, que la cobran; a los
                    demás, las asistencias, que ni cobran ni les afectan pero se
@@ -206,6 +212,12 @@ export class FichaJugadorComponent {
     return p === 'POR' || p === 'DEF';
   });
 
+  /**
+   * Los goles encajados y el penalti parado solo puntúan al PORTERO (baremo J e I),
+   * y la portería del club se expone con posición PORTERO, así que entra aquí.
+   */
+  esPortero = computed(() => this.abr(this.ficha.abierto()?.posicion ?? '') === 'POR');
+
   acum = computed(() => {
     const h = this.jornadas();
     const cero = this.puntuaImbatido();
@@ -214,6 +226,7 @@ export class FichaJugadorComponent {
       return {
         puntos: +sum('puntosJornada').toFixed(1),
         goles: sum('goles') + sum('golesPenalti'),
+        encajados: sum('golesEnContra'),
         asis: sum('asistencias'),
         estrellas: sum('estrellas'),
         // Mismo criterio que stats_equipo: hay que pasar de 45 minutos.
@@ -226,8 +239,8 @@ export class FichaJugadorComponent {
     }
     // respaldo: totales ya conocidos (Estadísticas/Equipo)
     const t = this.ficha.abierto()?.tot;
-    return { puntos: 0, goles: 0, asis: 0, estrellas: 0, imbatidos: 0, jugadas: 0,
-             ...(t ?? {}), minutos: 0 };
+    return { puntos: 0, goles: 0, encajados: 0, asis: 0, estrellas: 0, imbatidos: 0,
+             jugadas: 0, ...(t ?? {}), minutos: 0 };
   });
 
   barras = computed(() => {
@@ -258,12 +271,17 @@ export class FichaJugadorComponent {
     if (n(x.golesPenalti)) p.push(plural(n(x.golesPenalti), 'gol de penalti', 'goles de penalti'));
     if (n(x.asistencias)) p.push(plural(n(x.asistencias), 'asistencia', 'asistencias'));
     if (n(x.estrellas)) p.push(`${n(x.estrellas)} ${Math.abs(n(x.estrellas)) === 1 ? 'estrella' : 'estrellas'}`);
-    if (x.imbatido && n(x.minutosJugados) > 45) p.push('portería a cero');
-    if (n(x.penaltiParado)) p.push(plural(n(x.penaltiParado), 'penalti parado', 'penaltis parados'));
+    // Lo que sigue solo puntua a quien le corresponde por posicion, asi que solo a ese
+    // se le cuenta: la porteria a cero al portero (+2) y al defensa (+1), y el penalti
+    // parado y los goles encajados solo al portero. Enumerarselos a un medio o a un
+    // delantero hacia leer como suma o resta algo que no le toco un punto.
+    if (this.puntuaImbatido() && x.imbatido && n(x.minutosJugados) > 45) p.push('portería a cero');
+    if (this.esPortero() && n(x.penaltiParado)) p.push(plural(n(x.penaltiParado), 'penalti parado', 'penaltis parados'));
     if (n(x.penaltiFallado)) p.push(plural(n(x.penaltiFallado), 'penalti fallado', 'penaltis fallados'));
     if (n(x.golesEnPropia)) p.push(plural(n(x.golesEnPropia), 'gol en propia', 'goles en propia'));
     if (n(x.tarjetasRojas)) p.push(plural(n(x.tarjetasRojas), 'roja', 'rojas'));
-    if (n(x.golesEnContra) > 1) p.push(`${n(x.golesEnContra)} goles encajados`);
+    // El baremo solo descuenta a partir del segundo, de ahi el > 1.
+    if (this.esPortero() && n(x.golesEnContra) > 1) p.push(`${n(x.golesEnContra)} goles encajados`);
     const res = x.resultado === 'VICTORIA' ? 'victoria' : x.resultado === 'EMPATE' ? 'empate'
       : x.resultado === 'DERROTA' ? 'derrota' : '';
     if (res) p.push(res);
