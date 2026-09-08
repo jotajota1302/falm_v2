@@ -27,6 +27,15 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
 
     <falm-nav-fichajes />
 
+    <!-- La jornada dice si hay mercado; quien manda es la base, que rebota la
+         peticion aunque alguien se salte la pantalla. Aqui solo se avisa. -->
+    @if (!cargando() && jornada() && !hayMercado()) {
+      <p class="cerrado">
+        <strong>El mercado está cerrado en la jornada {{ jornada()!.numero }}.</strong>
+        Puedes mirar quién hay libre, pero todavía no se puede pedir.
+      </p>
+    }
+
     @if (cargando()) {
       <p class="muted">Cargando…</p>
     } @else if (error()) {
@@ -115,8 +124,9 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
               semana pasada; si sigue el empate, el peor clasificado.</p>
 
             <div class="pieCaja">
-              <span class="lb">La plantilla no puede pasar de 23 jugadores</span>
-              <button class="btn" [disabled]="!p1() || enviando()" (click)="enviar()">
+              <span class="lb">{{ hayMercado() ? 'La plantilla no puede pasar de 23 jugadores'
+                                                 : 'Todavía no hay mercado en esta jornada' }}</span>
+              <button class="btn" [disabled]="!p1() || enviando() || !hayMercado()" (click)="enviar()">
                 {{ enviando() ? 'Enviando…' : peticion() ? 'Actualizar' : 'Enviar' }}
               </button>
             </div>
@@ -162,6 +172,11 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
     .tabla { flex: 1 1 560px; min-width: 0; }
     .lado { flex: 1 1 300px; min-width: 280px; display: flex; flex-direction: column; gap: 14px; }
 
+    .cerrado { margin: 0 0 16px; padding: 12px 15px; border-radius: var(--r-sm);
+      background: color-mix(in oklab, var(--por) 9%, var(--surface));
+      border: 1px solid color-mix(in oklab, var(--por) 34%, var(--line));
+      color: var(--por); font-size: var(--t-sm); }
+    .cerrado strong { display: block; margin-bottom: 2px; }
     .puesta { margin: 0 0 11px; padding: 9px 11px; border-radius: var(--r-xs);
       background: var(--accent-soft); border: 1px solid var(--accent-line);
       color: var(--accent); font-size: var(--t-sm); }
@@ -272,6 +287,8 @@ export class FichajesComponent implements OnInit {
   enviandoLesion = signal(false);
   /** Lo que ya tengo pedido para esta jornada, si hay algo. */
   peticion = signal<PeticionViva | null>(null);
+  /** Si la jornada admite fichajes; sin jornada cargada no se bloquea nada. */
+  hayMercado = computed(() => this.jornada()?.admiteFichajes !== false);
 
   /**
    * Rellena el formulario con lo que ya esta pedido. Sin esto la pantalla

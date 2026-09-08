@@ -64,6 +64,8 @@ export interface JornadaFalm {
   id: string;
   numero: number;
   fecha?: string | null;   // fecha_cierre (para emparejar Liga↔Champions por fin de semana)
+  /** Si esta jornada tiene mercado. Lo decide la base; la pantalla solo avisa. */
+  admiteFichajes?: boolean;
 }
 
 export interface EnfrentamientoFila {
@@ -418,11 +420,12 @@ export class FalmService {
   async jornadas(competicionId: string): Promise<JornadaFalm[]> {
     const { data, error } = await this.sb.client
       .from('jornada_falm')
-      .select('id, numero, fecha_cierre')
+      .select('id, numero, fecha_cierre, admite_fichajes')
       .eq('competicion_id', competicionId)
       .order('numero', { ascending: true });
     if (error) throw error;
-    return (data ?? []).map((j: any) => ({ id: j.id, numero: j.numero, fecha: j.fecha_cierre }));
+    return (data ?? []).map((j: any) => ({
+      id: j.id, numero: j.numero, fecha: j.fecha_cierre, admiteFichajes: j.admite_fichajes !== false }));
   }
 
   /** Enfrentamientos de una jornada (puntos reales importados) + reparto 3/2/1.5. */

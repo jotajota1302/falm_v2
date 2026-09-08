@@ -1,6 +1,6 @@
 import { Component, OnInit, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { AdminPeticion, AdminService } from './admin.service';
+import { AdminPeticion, AdminService, JornadaAdmin } from './admin.service';
 
 const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'MED', DELANTERO: 'DEL' };
 
@@ -22,6 +22,25 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     @if (cargando()) {
       <p class="muted">Cargando peticiones…</p>
     } @else {
+      <!-- El mercado, jornada a jornada. Cerrarlo aqui no es un aviso de
+           pantalla: la base rebota la peticion aunque alguien se la salte. -->
+      <section class="tabla mercado">
+        <div class="barra">
+          <span class="lb">Mercado abierto</span>
+          <span class="muted mini">Una jornada cerrada no admite peticiones de fichaje</span>
+        </div>
+        <div class="jors">
+          @for (j of jornadasLiga(); track j.id) {
+            <button class="jm" [class.on]="j.admiteFichajes" [disabled]="moviendo() === j.id"
+                    [title]="j.admiteFichajes ? 'Con mercado; toca para cerrarlo' : 'Sin mercado; toca para abrirlo'"
+                    (click)="alternarMercado(j)">
+              J{{ j.numero }}
+              <i>{{ j.admiteFichajes ? 'abierto' : 'cerrado' }}</i>
+            </button>
+          }
+        </div>
+      </section>
+
       <section class="tabla">
         <div class="barra chips">
           <span class="lb">Peticiones</span>
@@ -116,6 +135,20 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
 
     .obs { grid-column: 1 / -1; margin: 4px 0 0; color: var(--text2); font-size: var(--t-sm); }
 
+    .mercado { margin-bottom: 14px; }
+    .jors { display: flex; flex-wrap: wrap; gap: 8px; padding: 14px 18px; }
+    .jm { display: flex; flex-direction: column; align-items: center; gap: 2px;
+      min-width: 74px; padding: 8px 10px; cursor: pointer;
+      background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-xs);
+      font-family: var(--fb); font-weight: 700; font-size: var(--t-sm); color: var(--text2); }
+    .jm i { font-style: normal; font-size: var(--t-xs); font-weight: 600; letter-spacing: .06em;
+      text-transform: uppercase; }
+    /* Abierto es lo normal; el que llama la atencion es el cerrado. */
+    .jm.on { color: var(--text); }
+    .jm:not(.on) { border-color: color-mix(in oklab, var(--bad) 40%, var(--line));
+      background: color-mix(in oklab, var(--bad) 7%, var(--surface)); color: var(--bad); }
+    .jm:disabled { opacity: .5; cursor: default; }
+
     .motivo { margin-top: 14px; padding: 14px 16px; }
     .motivo label { display: flex; flex-direction: column; gap: 6px; }
     .motivo input { width: 100%; }
@@ -129,6 +162,8 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
 })
 export class AdminFichajesComponent implements OnInit {
   peticiones = signal<AdminPeticion[]>([]);
+  jornadas = signal<JornadaAdmin[]>([]);
+  moviendo = signal('');
   solo = signal<'PENDIENTE' | ''>('PENDIENTE');
   motivo = signal('En esta jornada no había mercado de fichajes.');
   cargando = signal(true);
@@ -136,6 +171,8 @@ export class AdminFichajesComponent implements OnInit {
   error = signal('');
   aviso = signal('');
 
+  /** Solo la liga: la copa y la clausura no tienen mercado propio. */
+  jornadasLiga = computed(() => this.jornadas().filter((j) => j.competicion === 'LIGA'));
   pendientes = computed(() => this.peticiones().filter((p) => p.estado === 'PENDIENTE'));
   visibles = computed(() =>
     this.solo() ? this.pendientes() : this.peticiones());
@@ -147,7 +184,8 @@ export class AdminFichajesComponent implements OnInit {
   private async cargar() {
     this.cargando.set(true);
     try {
-      this.peticiones.set(await this.admin.peticiones());
+      const [ps, js] = await Promise.all([this.admin.peticiones(), this.admin.jornadasFalm()]);
+      this.peticiones.set(ps); this.jornadas.set(js);
     } catch (e: any) {
       this.error.set(e?.message ?? 'Error cargando las peticiones');
     } finally {
@@ -166,6 +204,20 @@ export class AdminFichajesComponent implements OnInit {
   etiqueta(p: AdminPeticion) {
     if (p.estado === 'PROCESADA') return p.fichado ? 'Fichado' : 'Sin fichaje';
     return p.estado;
+  }
+
+  async alternarMercado(j: JornadaAdmin) {
+    this.aviso.set(''); this.error.set('');
+    this.moviendo.set(j.id);
+    try {
+      await this.admin.abrirMercado(j.id, !j.admiteFichajes);
+      await this.cargar();
+      this.aviso.set(`Jornada ${j.numero}: mercado ${j.admiteFichajes ? 'cerrado' : 'abierto'}.`);
+    } catch (e: any) {
+      this.error.set(e?.message ?? 'No se pudo cambiar el mercado');
+    } finally {
+      this.moviendo.set('');
+    }
   }
 
   async rechazar(p: AdminPeticion) {

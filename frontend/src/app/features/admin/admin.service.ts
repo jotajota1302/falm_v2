@@ -64,7 +64,7 @@ export class AdminService {
   async jornadasFalm(): Promise<JornadaAdmin[]> {
     const { data, error } = await this.sb.client
       .from('jornada_falm')
-      .select('id, numero, fecha_cierre, fichajes_procesados_en, alineaciones_heredadas_en, ' +
+      .select('id, numero, fecha_cierre, admite_fichajes, fichajes_procesados_en, alineaciones_heredadas_en, ' +
         'competicion:competicion_id!inner (tipo, temporada:temporada_id!inner (activa))')
       .eq('competicion.temporada.activa', true)
       .order('numero', { ascending: true });
@@ -76,7 +76,15 @@ export class AdminService {
       fechaCierre: j.fecha_cierre,
       fichajesProcesados: j.fichajes_procesados_en,
       alineacionesHeredadas: j.alineaciones_heredadas_en,
+      admiteFichajes: j.admite_fichajes !== false,
     }));
+  }
+
+  /** Abre o cierra el mercado de una jornada. La regla la aplica la base. */
+  async abrirMercado(jornadaId: string, abierto: boolean): Promise<void> {
+    const { error } = await this.sb.client.rpc('mercado_jornada',
+      { p_jornada: jornadaId, p_abierto: abierto });
+    if (error) throw error;
   }
 
   /** Tareas automáticas: horario, si están activas y cuándo corrieron. */
@@ -431,6 +439,7 @@ export interface JornadaAdmin {
   fechaCierre: string | null;
   fichajesProcesados: string | null;
   alineacionesHeredadas: string | null;
+  admiteFichajes: boolean;
 }
 
 export interface CronAdmin {
