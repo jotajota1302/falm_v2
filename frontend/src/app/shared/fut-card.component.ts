@@ -57,7 +57,7 @@ const PARTICULAS = new Set(['de', 'del', 'la', 'las', 'los', 'da', 'das', 'do', 
     .info { display: flex; flex-direction: column; align-items: flex-start; gap: 3cqw; }
     .val { font-family: var(--fm); font-weight: 700; font-size: var(--t-lg); line-height: 1; }
     .val small { font-size: var(--t-xs); opacity: .7; margin-left: 1px; }
-    .pos { min-width: 0; padding: 2px 6px; border-radius: 5px; font-size: var(--t-xs); letter-spacing: .06em; }
+    .pos { min-width: 0; padding: 2px 6px; border-radius: var(--r-2xs); font-size: var(--t-xs); letter-spacing: .06em; }
 
     .face { height: 100%; max-width: 62%; object-fit: contain; object-position: top right; align-self: stretch; z-index: 1; }
     /* El escudo de una portería no es un retrato: ocupa bastante menos. */

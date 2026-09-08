@@ -336,20 +336,20 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
     .fsel { position: absolute; z-index: 2; top: 22px; left: 22px;
       display: flex; flex-direction: column; gap: 2px;
       background: var(--surface); border: 1px solid var(--line);
-      border-radius: 9px; padding: 6px 8px; }
+      border-radius: var(--r-xs); padding: 6px 8px; }
     .fsel select { padding: 2px 4px; border: none; background: none;
       font-size: var(--t-sm); font-weight: 700; }
     .fsel select:focus { outline: none; }
 
     .atajos { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
-    .atajo { background: var(--surface); border: 1px solid var(--line); color: var(--text); border-radius: 11px;
+    .atajo { background: var(--surface); border: 1px solid var(--line); color: var(--text); border-radius: var(--r-xs);
       padding: 10px 15px; cursor: pointer; font-weight: 600; font-size: var(--t-sm); }
     .atajo:hover { border-color: var(--accent); }
     .aviso { background: var(--surface); border: 1px solid var(--accent); color: var(--accent);
-      padding: 10px 15px; border-radius: 11px; margin-bottom: 12px; font-size: var(--t-sm); font-weight: 600; }
+      padding: 10px 15px; border-radius: var(--r-xs); margin-bottom: 12px; font-size: var(--t-sm); font-weight: 600; }
 
     /* Si el once está mandado o es solo un borrador copiado. */
-    .estado { padding: 9px 15px; border-radius: 11px; margin: 0 0 12px;
+    .estado { padding: 9px 15px; border-radius: var(--r-xs); margin: 0 0 12px;
       font-size: var(--t-sm); line-height: 1.5; border: 1px solid var(--line); }
     .estado.ok { color: var(--text2); background: var(--surface2); }
     .estado.borrador { color: var(--text); background: var(--surface2);
@@ -366,11 +366,11 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
 
     .pitch { position: relative; overflow: hidden; max-width: 760px; margin: 0 auto;
       background: repeating-linear-gradient(180deg, #e3e9d8 0 52px, #dde4d0 52px 104px);
-      border: 1px solid var(--line); border-radius: 14px;
+      border: 1px solid var(--line); border-radius: var(--r-sm);
       padding: 26px 14px; display: flex; flex-direction: column; gap: 6px;
       min-height: 660px; justify-content: space-between; }
     .lineas { position: absolute; inset: 14px; pointer-events: none; z-index: 0;
-      border: 2px solid rgba(255,255,255,.8); border-radius: 4px;
+      border: 2px solid rgba(255,255,255,.8); border-radius: var(--r-2xs);
       background:
         linear-gradient(rgba(255,255,255,.8), rgba(255,255,255,.8)) center / 100% 2px no-repeat,
         radial-gradient(circle at 50% 50%, transparent 56px, rgba(255,255,255,.8) 56px,
@@ -379,8 +379,8 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
     .lineas::before, .lineas::after { content: ''; position: absolute; left: 50%;
       transform: translateX(-50%); width: 54%; height: 74px;
       border: 2px solid rgba(255,255,255,.8); }
-    .lineas::before { top: -2px; border-top: none; border-radius: 0 0 4px 4px; }
-    .lineas::after { bottom: -2px; border-bottom: none; border-radius: 4px 4px 0 0; }
+    .lineas::before { top: -2px; border-top: none; border-radius: 0 0 var(--r-2xs) var(--r-2xs); }
+    .lineas::after { bottom: -2px; border-bottom: none; border-radius: var(--r-2xs) var(--r-2xs) 0 0; }
 
     .fila { position: relative; z-index: 1; display: flex; justify-content: center;
       align-items: center; gap: 10px; flex-wrap: wrap; padding: 4px; }
@@ -461,13 +461,13 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
     .add.DEL:hover:not(:disabled) { border-color: var(--del); color: var(--del); }
     .sm { font-size: var(--t-xs); } .faint { color: var(--text2); }
     .bfila { display: flex; align-items: center; gap: 8px; padding: 5px 9px; margin-top: 5px;
-      background: var(--surface2); border: 1px solid var(--line); border-radius: 10px; }
+      background: var(--surface2); border: 1px solid var(--line); border-radius: var(--r-xs); }
     .prio { width: 20px; height: 20px; border-radius: 50%; background: var(--surface); border: 1px solid var(--line);
       display: flex; align-items: center; justify-content: center; font-family: var(--fm);
       font-weight: 700; font-size: var(--t-xs); flex: 0 0 auto; }
     .bnm { flex: 1; font-weight: 700; font-size: var(--t-sm); min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     /* Cubre una zona que no es la suya: se dice cuál es la suya de verdad. */
-    .cpos { display: inline-block; margin-left: 5px; padding: 1px 5px; border-radius: 5px;
+    .cpos { display: inline-block; margin-left: 5px; padding: 1px 5px; border-radius: var(--r-2xs);
       font-family: var(--fb); font-size: var(--t-xs); font-weight: 700; letter-spacing: .04em;
       color: var(--accent-ink); vertical-align: 1px; }
     .cpos.POR { background: var(--por); } .cpos.DEF { background: var(--def); }
@@ -478,24 +478,24 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
     .cpos.suave.POR { color: var(--por); } .cpos.suave.DEF { color: var(--def); }
     .cpos.suave.MED { color: var(--med); } .cpos.suave.DEL { color: var(--del); }
     .chips { display: flex; gap: 4px; }
-    .ch { width: 28px; padding: 5px 0; border-radius: 6px; border: 1px solid var(--line); background: transparent;
+    .ch { width: 28px; padding: 5px 0; border-radius: var(--r-2xs); border: 1px solid var(--line); background: transparent;
       color: var(--text2); font-weight: 700; font-size: var(--t-xs); cursor: pointer; }
     .ch.on.DEF { background: var(--def); color: var(--accent-ink); border-color: var(--def); }
     .ch.on.MED { background: var(--med); color: var(--accent-ink); border-color: var(--med); }
     .ch.on.DEL { background: var(--del); color: var(--accent-ink); border-color: var(--del); }
     .mv { width: 24px; padding: 3px 0; border: 1px solid var(--line); background: var(--surface); color: var(--text2);
-      border-radius: 7px; cursor: pointer; font-size: var(--t-xs); }
+      border-radius: var(--r-xs); cursor: pointer; font-size: var(--t-xs); }
     .mv:disabled { opacity: .3; }
     .rm { width: 24px; padding: 3px 0; border: 1px solid var(--line); background: var(--surface); color: var(--bad);
-      border-radius: 7px; cursor: pointer; font-size: var(--t-xs); }
+      border-radius: var(--r-xs); cursor: pointer; font-size: var(--t-xs); }
 
     /* bottom sheet selector */
     .back { position: fixed; inset: 0; z-index: 60; background: rgba(22,19,15,.42);
       display: flex; align-items: flex-end; justify-content: center; }
     .sheet { width: 100%; max-width: 520px; max-height: 82vh; display: flex; flex-direction: column;
       background: var(--surface); border: 1px solid var(--line);
-      border-top: 3px solid var(--accent); border-radius: 20px 20px 0 0; padding: 16px; }
-    @media (min-width: 560px) { .back { align-items: center; } .sheet { border-radius: 22px; } }
+      border-top: 3px solid var(--accent); border-radius: var(--r-lg) var(--r-lg) 0 0; padding: 16px; }
+    @media (min-width: 560px) { .back { align-items: center; } .sheet { border-radius: var(--r-lg); } }
 
     /* En el teléfono el campo se estrecha para que la línea no se parta en dos. */
     /* Cuando el banquillo dejaría el campo demasiado estrecho, vuelve abajo. */
@@ -527,7 +527,7 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
       width: 30px; height: 30px; border-radius: var(--r-xs); cursor: pointer; font-size: var(--t-sm); }
     .cands { overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
     .cand { display: grid; grid-template-columns: 32px 40px 1fr 22px; align-items: center; gap: 10px; padding: 8px 10px;
-      background: var(--surface); border: 1px solid var(--line); border-radius: 11px; cursor: pointer; text-align: left; }
+      background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-xs); cursor: pointer; text-align: left; }
     .cand:hover { background: var(--surface2); }
 
     /* Contra quién juega y dónde, debajo del club. */
@@ -553,7 +553,7 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
 
     .cand.sel { border-color: var(--accent); background: var(--accent-soft); }
     .cm { font-family: var(--fm); font-weight: 700; color: var(--accent); text-align: center; }
-    .cav { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+    .cav { width: 40px; height: 40px; border-radius: var(--r-xs); display: flex; align-items: center; justify-content: center;
       font-family: var(--fb); font-weight: 700; font-size: var(--t-md); color: var(--accent-ink); overflow: hidden; }
     .cav img { width: 100%; height: 100%; object-fit: cover; } .cav img.esc { object-fit: contain; padding: 5px; }
     .cav.POR { background: var(--por); } .cav.DEF { background: var(--def); }
@@ -566,7 +566,7 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .cc img { width: 14px; height: 14px; flex: 0 0 auto; object-fit: contain; }
     .ck { color: var(--accent); font-weight: 700; text-align: center; }
-    .listo { margin-top: 12px; background: var(--accent); color: var(--accent-ink); border: none; border-radius: 11px;
+    .listo { margin-top: 12px; background: var(--accent); color: var(--accent-ink); border: none; border-radius: var(--r-xs);
       padding: 12px; cursor: pointer; font-family: var(--fb); font-weight: 700; font-size: var(--t-sm); }
     .muted { color: var(--text2); }
   `],

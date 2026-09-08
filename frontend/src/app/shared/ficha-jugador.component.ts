@@ -86,7 +86,7 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
                     <span class="jl">J{{ d.j }}</span>
                     <!-- Los minutos debajo: de un vistazo se ve si esos puntos
                          son de un partido entero o de un cuarto de hora. -->
-                    <span class="ml">@if (d.jugo) { {{ d.min }}' } @else { — }</span>
+                    <span class="ml">{{ minutosDe(d) }}</span>
                   </button>
                 }
               </div>
@@ -119,8 +119,8 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
     .panel { position: relative; width: 100%; max-width: 520px; max-height: 88vh; overflow-y: auto;
       background: var(--surface); border: 1px solid var(--line);
       border-top: 3px solid var(--c, var(--accent));
-      border-radius: 22px 22px 0 0; padding: 22px; }
-    @media (min-width: 560px) { .back { align-items: center; } .panel { border-radius: 22px; } }
+      border-radius: var(--r-lg) var(--r-lg) 0 0; padding: 22px; }
+    @media (min-width: 560px) { .back { align-items: center; } .panel { border-radius: var(--r-lg); } }
     @media (max-width: 560px) {
       .panel { padding: 18px 15px; }
       .head { gap: 12px; }
@@ -132,10 +132,10 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
     .panel[data-pos=MED] { --c: var(--med); } .panel[data-pos=DEL] { --c: var(--del); }
 
     .x { position: absolute; top: 14px; right: 14px; background: var(--surface2); border: 1px solid var(--line);
-      color: var(--text2); width: 32px; height: 32px; border-radius: 9px; cursor: pointer; font-size: var(--t-sm); }
+      color: var(--text2); width: 32px; height: 32px; border-radius: var(--r-xs); cursor: pointer; font-size: var(--t-sm); }
 
     .head { display: flex; gap: 16px; align-items: center; margin-bottom: 18px; }
-    .av { position: relative; width: 84px; height: 84px; border-radius: 16px; overflow: hidden; flex: 0 0 auto;
+    .av { position: relative; width: 84px; height: 84px; border-radius: var(--r); overflow: hidden; flex: 0 0 auto;
       background: var(--surface2); border: 1px solid var(--line);
       display: flex; align-items: flex-end; justify-content: center; }
     .av .wm { position: absolute; width: 124%; left: 50%; top: 50%; transform: translate(-50%,-50%); opacity: .16; object-fit: contain; }
@@ -150,7 +150,7 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
     .esc { width: 18px; height: 18px; object-fit: contain; }
 
     .acum { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; margin-bottom: 20px;
-      background: var(--line); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+      background: var(--line); border: 1px solid var(--line); border-radius: var(--r-sm); overflow: hidden; }
     .acum .s { background: var(--surface); padding: 12px 10px; text-align: center; }
     .acum .s b { display: block; font-family: var(--fm); font-size: var(--t-lg); font-weight: 700; }
     .acum .s span { font-size: var(--t-xs); font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--text2); }
@@ -163,24 +163,27 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
     .up { display: flex; align-items: flex-end; }
     .chart.conneg .up { border-bottom: 1px solid var(--line); }
     .dn { flex: 1 1 auto; display: flex; align-items: flex-start; }
-    .fill { width: 100%; min-height: 19px; background: var(--accent); border-radius: 4px 4px 0 0;
+    .fill { width: 100%; min-height: 19px; background: var(--accent); border-radius: var(--r-2xs) var(--r-2xs) 0 0;
       display: flex; align-items: flex-start; justify-content: center; padding-top: 3px; }
-    .fill.neg { background: var(--bad); border-radius: 0 0 4px 4px;
+    .fill.neg { background: var(--bad); border-radius: 0 0 var(--r-2xs) var(--r-2xs);
       align-items: flex-end; padding: 0 0 3px; }
     /* Sin registro en esa jornada: no es un cero, es que no estuvo. */
     .fill.nojugo { height: 19px; background: repeating-linear-gradient(135deg,
         var(--surface2) 0 4px, var(--surface) 4px 8px);
-      border: 1px solid var(--line); border-radius: 4px; }
-    .fill.nojugo i { font-family: var(--fb); font-size: 10px; letter-spacing: .04em;
-      color: var(--text2); }
+      border: 1px solid var(--line); border-radius: var(--r-2xs); }
+    .fill.nojugo i { font-family: var(--fb); font-size: var(--t-xs); letter-spacing: .04em;
+      line-height: 1; color: var(--text2); }
     .fill i { font-family: var(--fm); font-style: normal; font-size: var(--t-xs);
       font-weight: 700; color: var(--accent-ink); line-height: 1; }
-    .jl { text-align: center; margin-top: 4px; font-size: var(--t-xs);
+    /* La jornada manda y los minutos acompanan: como los dos estan ya en el
+       minimo de la escala, la distancia la da un paso de tamano entre ellos. */
+    .jl { display: block; text-align: center; margin-top: 4px; font-size: var(--t-sm);
       color: var(--text2); font-weight: 600; }
     /* Los minutos, en segunda línea y más apagados: acompañan a la jornada sin
        competir con ella ni con la cifra de puntos. */
     .ml { display: block; text-align: center; font-family: var(--fm);
-      font-size: 9px; line-height: 1.4; color: var(--text2); opacity: .75; }
+      font-variant-numeric: tabular-nums; font-size: var(--t-xs); line-height: 1.3;
+      color: var(--text2); opacity: .75; }
     .bar { border: none; background: none; cursor: pointer; font-family: var(--fb); }
     .bar.sel .jl { color: var(--accent); }
     .bar.sel .fill { outline: 2px solid var(--accent); outline-offset: 1px; }
@@ -287,6 +290,11 @@ export class FichaJugadorComponent {
     if (res) p.push(res);
     p.push(`${n(x.minutosJugados)} min`);
     return p.join(' · ');
+  }
+
+  /** Los minutos de esa barra, en un solo trozo: ver comentario del span. */
+  minutosDe(d: { jugo: boolean; min: number }): string {
+    return d.jugo ? `${d.min}'` : '—';
   }
 
   hayNegativos = computed(() => this.barras().some((d) => d.p < 0));

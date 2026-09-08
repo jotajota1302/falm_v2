@@ -110,7 +110,7 @@ interface NavItem { path: string; label: string; corto: string; }
 
     .right { display: flex; align-items: center; gap: 14px; justify-self: end; }
     .temp { background: var(--surface2); border: 1px solid var(--line); color: var(--text);
-      border-radius: 9px; padding: 6px 8px; font-size: var(--t-sm); font-weight: 600; max-width: 150px; }
+      border-radius: var(--r-xs); padding: 6px 8px; font-size: var(--t-sm); font-weight: 600; max-width: 150px; }
     .yo { display: flex; align-items: center; gap: 9px; min-width: 0; }
     .ava { width: 30px; height: 30px; border-radius: 50%; flex: 0 0 auto;
       background: var(--surface2); border: 1px solid var(--line); color: var(--text2);

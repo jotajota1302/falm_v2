@@ -141,7 +141,7 @@ const CAMPOS: Campo[] = [
     }
   `,
   styles: [`
-    .aviso { background: color-mix(in oklab, var(--por) 8%, var(--surface)); border: 1px solid color-mix(in oklab, var(--por) 32%, var(--line)); color: var(--por); padding: 10px 14px; border-radius: 10px; margin-bottom: 12px; }
+    .aviso { background: color-mix(in oklab, var(--por) 8%, var(--surface)); border: 1px solid color-mix(in oklab, var(--por) 32%, var(--line)); color: var(--por); padding: 10px 14px; border-radius: var(--r-xs); margin-bottom: 12px; }
     .err { color: var(--bad); }
     .barra { display: flex; gap: 10px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
     .barra label { font-size: var(--t-sm); color: var(--text2); font-weight: 700; display: flex; gap: 6px; align-items: center; }
@@ -151,7 +151,7 @@ const CAMPOS: Campo[] = [
       border-bottom: 1px solid var(--line); cursor: pointer; }
     .fila:hover { background: var(--surface2); }
     .fila.abierta { background: var(--surface2); }
-    .pos { flex: 0 0 auto; width: 34px; padding: 3px 0; text-align: center; border-radius: 6px; font-size: var(--t-xs); font-weight: 700; color: var(--accent-ink); }
+    .pos { flex: 0 0 auto; width: 34px; padding: 3px 0; text-align: center; border-radius: var(--r-2xs); font-size: var(--t-xs); font-weight: 700; color: var(--accent-ink); }
     .pos.POR { background: var(--por); } .pos.DEF { background: var(--def); }
     .pos.MED { background: var(--med); } .pos.DEL { background: var(--del); }
     .info { flex: 1; min-width: 0; display: flex; flex-direction: column; }

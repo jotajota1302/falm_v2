@@ -42,7 +42,7 @@ import { colorEquipo } from '../../shared/equipo-colores';
     }
   `,
   styles: [`
-    .aviso { background: color-mix(in oklab, var(--por) 8%, var(--surface)); border: 1px solid color-mix(in oklab, var(--por) 32%, var(--line)); color: var(--por); padding: 10px 14px; border-radius: 10px; margin-bottom: 12px; }
+    .aviso { background: color-mix(in oklab, var(--por) 8%, var(--surface)); border: 1px solid color-mix(in oklab, var(--por) 32%, var(--line)); color: var(--por); padding: 10px 14px; border-radius: var(--r-xs); margin-bottom: 12px; }
     .err { color: var(--bad); } .muted { color: var(--text2); }
     .der input { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-xs);
       padding: 6px 9px; font-size: var(--t-sm); }
@@ -50,7 +50,7 @@ import { colorEquipo } from '../../shared/equipo-colores';
     .bn.no { color: var(--bad); }
     .grid { display: flex; flex-direction: column; gap: 10px; }
     .eq { display: flex; align-items: center; gap: 14px; padding: 14px 16px; }
-    .av { flex: 0 0 auto; width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center;
+    .av { flex: 0 0 auto; width: 42px; height: 42px; border-radius: var(--r-sm); display: flex; align-items: center;
       justify-content: center; font-weight: 700; color: var(--accent-ink); }
     .info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
     .info strong { font-size: var(--t-md); }

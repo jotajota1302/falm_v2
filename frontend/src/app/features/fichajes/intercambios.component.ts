@@ -162,17 +162,17 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     .cl { font-size: var(--t-xs); text-transform: uppercase; letter-spacing: .16em; color: var(--text2); font-weight: 700; }
     .swap { align-self: center; font-size: var(--t-lg); color: var(--text2); }
     .mini { display: flex; align-items: center; gap: 8px; background: var(--surface2); border: 1px solid var(--line);
-      border-radius: 9px; padding: 6px 9px; font-size: var(--t-sm); font-weight: 600; min-width: 0; }
+      border-radius: var(--r-xs); padding: 6px 9px; font-size: var(--t-sm); font-weight: 600; min-width: 0; }
     .mini img { width: 22px; height: 22px; border-radius: 50%; object-fit: cover;
       object-position: top center; background: var(--surface); flex: 0 0 auto; }
-    .mini i { width: 26px; padding: 3px 0; border-radius: 5px; text-align: center; flex: 0 0 auto;
+    .mini i { width: 26px; padding: 3px 0; border-radius: var(--r-2xs); text-align: center; flex: 0 0 auto;
       font-size: var(--t-xs); font-weight: 700; letter-spacing: .06em; font-style: normal;
       color: #fff; background: var(--text2); }
     .mini[data-pos=POR] i { background: var(--por); } .mini[data-pos=DEF] i { background: var(--def); }
     .mini[data-pos=MED] i { background: var(--med); } .mini[data-pos=DEL] i { background: var(--del); }
     .coment { margin: 13px 0 0; color: var(--text2); font-size: var(--t-sm); }
     .acc { display: flex; gap: 8px; margin-top: 14px; }
-    .bn { border: 1px solid var(--line); border-radius: 10px; padding: 9px 18px; cursor: pointer;
+    .bn { border: 1px solid var(--line); border-radius: var(--r-xs); padding: 9px 18px; cursor: pointer;
       font-family: var(--fb); font-weight: 700; font-size: var(--t-sm); background: var(--surface); color: var(--text); }
     .bn.ok { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
     .bn.no, .bn.cancel { color: var(--bad); }
@@ -188,7 +188,7 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     .fila { width: 100%; display: grid; align-items: center; gap: 8px;
       grid-template-columns: 40px 26px 1fr 18px 16px;
       padding: 7px 10px; margin-bottom: 5px;
-      background: var(--surface); border: 1px solid var(--line); border-radius: 9px; cursor: pointer; }
+      background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-xs); cursor: pointer; }
     .fila:hover { background: var(--surface2); }
     .fila.sel { border-color: var(--accent); background: var(--accent-soft); }
     .fo { width: 26px; height: 26px; border-radius: 50%; object-fit: cover;

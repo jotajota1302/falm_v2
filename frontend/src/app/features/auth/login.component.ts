@@ -45,7 +45,7 @@ import { AuthService } from '../../core/auth.service';
     label { display: flex; flex-direction: column; gap: 6px; font-size: var(--t-xs); text-transform: uppercase;
       letter-spacing: .16em; color: var(--text2); font-weight: 700; }
     input { width: 100%; text-transform: none; letter-spacing: normal; }
-    button[type=submit] { padding: 13px; border: none; border-radius: 11px; background: var(--accent);
+    button[type=submit] { padding: 13px; border: none; border-radius: var(--r-xs); background: var(--accent);
       color: var(--accent-ink); font-family: var(--fb); font-weight: 700; cursor: pointer; font-size: var(--t-md); margin-top: 4px; }
     button:disabled { opacity: .55; cursor: not-allowed; }
     .err { color: var(--bad); font-size: var(--t-sm); margin: 0; }

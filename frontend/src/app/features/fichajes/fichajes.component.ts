@@ -186,7 +186,7 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
     .ch .sm { font-size: var(--t-sm); color: var(--text2); }
 
     .slot { display: flex; align-items: center; gap: 10px; padding: 10px 12px; margin-bottom: 8px;
-      border: 1px dashed var(--line); border-radius: 12px; }
+      border: 1px dashed var(--line); border-radius: var(--r-sm); }
     .slot.lleno { border-style: solid; background: var(--surface2); }
     .prio { width: 22px; height: 22px; border-radius: 50%; flex: 0 0 auto;
       display: flex; align-items: center; justify-content: center; font-size: var(--t-xs);
@@ -197,7 +197,7 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
     .smeta { font-size: var(--t-xs); color: var(--text2); }
     .vacia { color: var(--text2); font-size: var(--t-sm); }
     .rm { background: transparent; border: 1px solid var(--line); color: var(--bad);
-      width: 26px; height: 26px; border-radius: 7px; cursor: pointer; font-size: var(--t-xs); flex: 0 0 auto; }
+      width: 26px; height: 26px; border-radius: var(--r-xs); cursor: pointer; font-size: var(--t-xs); flex: 0 0 auto; }
 
     .regla { margin: 12px 0 0; font-size: var(--t-xs); color: var(--text2); line-height: 1.5; }
 
@@ -215,7 +215,7 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
     .lhead .chev { color: var(--text2); font-family: var(--fm); font-size: var(--t-md); }
     .lhint { margin: 12px 0; color: var(--text2); font-size: var(--t-sm); }
     .lrow { display: flex; align-items: center; gap: 10px; padding: 8px 10px; margin-bottom: 7px;
-      background: var(--surface2); border: 1px solid var(--line); border-radius: 9px; }
+      background: var(--surface2); border: 1px solid var(--line); border-radius: var(--r-xs); }
     .lrow .ln { flex: 1; font-weight: 700; font-size: var(--t-sm); }
     .lurl { color: var(--accent); font-size: var(--t-xs); }
     .lest { font-size: var(--t-xs); font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--good); }

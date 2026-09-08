@@ -50,7 +50,7 @@ export interface EquipoSorteo { id: string; nombre: string }
   `,
   styles: [`
     .sorteo { padding: 12px; background: var(--surface2); border: 1px solid var(--line);
-              border-radius: 10px; margin-bottom: 12px; }
+              border-radius: var(--r-xs); margin-bottom: 12px; }
     .hint { color: var(--text2); font-size: var(--t-sm); margin: 0 0 10px; }
     .lb { font-size: var(--t-xs); text-transform: uppercase; letter-spacing: .05em;
           color: var(--text2); font-weight: 700; margin: 12px 0 6px; }

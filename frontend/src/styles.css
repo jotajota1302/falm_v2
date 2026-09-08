@@ -54,10 +54,17 @@
   --t-2xl: calc(38px * var(--esc));
   --t-3xl: calc(50px * var(--esc));
 
-  /* ---- forma ---- */
-  --r: 18px;
-  --r-sm: 13px;
-  --r-xs: 8px;
+  /* ---- forma ----
+     Cinco escalones, del chip a la hoja que sube desde abajo. Los dos de los
+     extremos se anadieron al auditar: el codigo llevaba tiempo escribiendo
+     5-6px para los chips y 20-22px para los paneles, que no tenian token, y
+     cada pantalla elegia el suyo.
+     ------------------------------------------------------------------ */
+  --r-lg: 22px;   /* hojas y paneles que suben desde abajo */
+  --r: 18px;      /* tarjetas */
+  --r-sm: 13px;   /* bloques dentro de una tarjeta */
+  --r-xs: 8px;    /* botones, celdas, avatares */
+  --r-2xs: 5px;   /* chips: la posicion, las marcas de linea */
   --pill: 999px;
 
 }

@@ -58,7 +58,7 @@ import { AdminService } from './admin.service';
   `,
   styles: [`
     .intro { font-size: var(--t-sm); margin: 0 0 14px; } .muted { color: var(--text2); }
-    .ok { background: var(--accent-soft); border: 1px solid var(--accent-line); color: var(--accent); padding: 10px 14px; border-radius: 10px; margin-bottom: 12px; }
+    .ok { background: var(--accent-soft); border: 1px solid var(--accent-line); color: var(--accent); padding: 10px 14px; border-radius: var(--r-xs); margin-bottom: 12px; }
     .err { color: var(--bad); }
     .acc { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
     .btn.ghost { background: var(--surface2); color: var(--text); border: 1px solid var(--line); }

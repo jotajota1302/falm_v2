@@ -49,7 +49,7 @@ import { Lista } from './lista';
     .cnt i { font-style: normal; }
     .ctrl { display: flex; align-items: center; gap: 4px; }
     .ctrl button { min-width: 32px; padding: 6px 8px; border: 1px solid var(--line);
-      background: var(--surface); color: var(--text2); border-radius: 9px; cursor: pointer;
+      background: var(--surface); color: var(--text2); border-radius: var(--r-xs); cursor: pointer;
       font-family: var(--fb); font-size: var(--t-sm); font-weight: 700; line-height: 1; }
     .ctrl button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
     .ctrl button:disabled { opacity: .32; cursor: not-allowed; }
@@ -57,7 +57,7 @@ import { Lista } from './lista';
     .np i { font-style: normal; font-weight: 400; color: var(--text2); }
     .tam { display: flex; align-items: center; gap: 7px; font-size: var(--t-sm); color: var(--text2); }
     .tam select { padding: 5px 8px; border: 1px solid var(--line); background: var(--surface);
-      border-radius: 9px; font-family: var(--fb); font-size: var(--t-sm); }
+      border-radius: var(--r-xs); font-family: var(--fb); font-size: var(--t-sm); }
 
     @media (max-width: 560px) {
       .pg { justify-content: center; }

@@ -268,7 +268,7 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     .rconf input { width: 130px; }
     .racc { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
     .form { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
-    .form input { background: var(--surface); border: 1px solid var(--line); border-radius: 9px; padding: 8px 10px; }
+    .form input { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-xs); padding: 8px 10px; }
     .form label { font-size: var(--t-sm); color: var(--text2); display: flex; gap: 6px; align-items: center; }
     .buscarj { width: 100%; margin-bottom: 9px; }
     .cands { display: flex; flex-direction: column; gap: 5px; margin-bottom: 6px; }
@@ -287,13 +287,13 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     .btn.ghost.peligro { background: var(--surface); color: var(--bad); border-color: var(--bad); }
     .btn.ghost { background: var(--surface2); color: var(--text); border: 1px solid var(--line); }
     .lista { display: flex; flex-direction: column; gap: 6px; }
-    .row { display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: var(--surface2); border: 1px solid var(--line); border-radius: 9px; }
+    .row { display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: var(--surface2); border: 1px solid var(--line); border-radius: var(--r-xs); }
     .nm { font-weight: 700; } .anio { font-size: var(--t-sm); } .row .badge { margin-left: auto; }
     .badge { font-size: var(--t-xs); font-weight: 700; padding: 2px 8px; border-radius: var(--pill); background: var(--surface2); color: var(--text2); }
     .badge.on, .badge[data-e=EN_CURSO] { background: var(--accent-soft); color: var(--accent); }
     .badge[data-e=COMPLETADO] { background: color-mix(in oklab, var(--por) 13%, var(--surface)); color: var(--por); }
     .mini { background: var(--surface2); border: 1px solid var(--line); color: var(--text); border-radius: var(--r-xs); padding: 5px 11px; cursor: pointer; font-weight: 700; font-size: var(--t-sm); }
-    .aviso { background: color-mix(in oklab, var(--por) 8%, var(--surface)); border: 1px solid color-mix(in oklab, var(--por) 32%, var(--line)); color: var(--por); padding: 10px 14px; border-radius: 10px; margin-bottom: 12px; }
+    .aviso { background: color-mix(in oklab, var(--por) 8%, var(--surface)); border: 1px solid color-mix(in oklab, var(--por) 32%, var(--line)); color: var(--por); padding: 10px 14px; border-radius: var(--r-xs); margin-bottom: 12px; }
     .err { color: var(--bad); }
     .dhead { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
     .dnombre { font-weight: 700; }
@@ -301,11 +301,11 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     .bar { flex: 1; height: 8px; background: var(--surface2); border-radius: var(--pill); overflow: hidden; }
     .bar span { display: block; height: 100%; background: var(--accent); border-radius: var(--pill); }
     .pcttxt { font-size: var(--t-sm); color: var(--text2); font-weight: 700; white-space: nowrap; }
-    .turno { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: var(--accent-soft); border: 1px solid var(--accent-line); border-radius: 10px; font-size: var(--t-md); flex-wrap: wrap; }
+    .turno { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: var(--accent-soft); border: 1px solid var(--accent-line); border-radius: var(--r-xs); font-size: var(--t-md); flex-wrap: wrap; }
     .turno .tl { font-size: var(--t-xs); text-transform: uppercase; letter-spacing: .05em; color: var(--text2); font-weight: 700; }
     .picks { display: flex; flex-direction: column; gap: 5px; }
     .pk { display: flex; align-items: center; gap: 9px; padding: 6px 9px; background: var(--surface2); border: 1px solid var(--line); border-radius: var(--r-xs); font-size: var(--t-sm); }
-    .pos { flex: 0 0 auto; width: 32px; text-align: center; padding: 2px 0; border-radius: 5px; font-size: var(--t-xs); font-weight: 700; color: var(--accent-ink); }
+    .pos { flex: 0 0 auto; width: 32px; text-align: center; padding: 2px 0; border-radius: var(--r-2xs); font-size: var(--t-xs); font-weight: 700; color: var(--accent-ink); }
     .pos.POR { background: var(--por); } .pos.DEF { background: var(--def); }
     .pos.MED { background: var(--med); } .pos.DEL { background: var(--del); }
     .turno a.mini { margin-left: auto; text-decoration: none; display: inline-block; }

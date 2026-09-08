@@ -531,7 +531,7 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     .cola li.tomado { color: var(--text2); }
     .cola li.tomado .nom { text-decoration: line-through; }
     .cola .p, .orden .p { color: var(--text2); font-size: var(--t-xs); }
-    .cola .pos { font-size: 8.5px; padding: 2px 0; }
+    .cola .pos { font-size: var(--t-xs); padding: 2px 0; }
     .mv { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-xs);
       color: var(--text2); cursor: pointer; font-size: var(--t-xs); line-height: 1; padding: 3px 0; }
     .mv:hover { border-color: var(--accent); color: var(--accent); }

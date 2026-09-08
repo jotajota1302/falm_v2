@@ -98,12 +98,12 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
 
     .modos { display: flex; gap: 8px; margin-bottom: 12px; }
     .modos button { flex: 1; background: var(--surface); border: 1px solid var(--line); color: var(--text2);
-      border-radius: 12px; padding: 10px; cursor: pointer; font-family: var(--fb); font-weight: 700; font-size: var(--t-sm); }
+      border-radius: var(--r-sm); padding: 10px; cursor: pointer; font-family: var(--fb); font-weight: 700; font-size: var(--t-sm); }
     .modos button.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
 
     .jchips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 12px; }
     .jchips button { flex: 0 0 auto; min-width: 44px; padding: 8px 10px; border: 1px solid var(--line);
-      background: var(--surface); color: var(--text2); border-radius: 10px; cursor: pointer;
+      background: var(--surface); color: var(--text2); border-radius: var(--r-xs); cursor: pointer;
       font-family: var(--fm); font-weight: 600; font-size: var(--t-sm); }
     .jchips button.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
 
@@ -115,7 +115,7 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
       gap: 12px; padding: 9px 18px; }
     .rk { text-align: center; color: var(--text2); font-size: var(--t-sm); }
 
-    .av { position: relative; width: 42px; height: 42px; border-radius: 10px; overflow: hidden;
+    .av { position: relative; width: 42px; height: 42px; border-radius: var(--r-xs); overflow: hidden;
       background: var(--surface2); border: 1px solid var(--line);
       display: flex; align-items: flex-end; justify-content: center; }
     .av .wm { position: absolute; width: 118%; left: 50%; top: 50%; transform: translate(-50%,-50%); opacity: .16; object-fit: contain; }

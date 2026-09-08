@@ -128,14 +128,14 @@ import { colorEquipo } from '../../shared/equipo-colores';
     .jnav { display: flex; align-items: center; justify-content: center;
       gap: 8px; margin-bottom: 14px; }
     .jb { flex: 0 0 auto; width: 34px; height: 38px; border: 1px solid var(--line);
-      background: var(--surface); color: var(--text2); border-radius: 10px; cursor: pointer;
+      background: var(--surface); color: var(--text2); border-radius: var(--r-xs); cursor: pointer;
       font-family: var(--fb); font-size: var(--t-lg); line-height: 1; }
     .jb:disabled { opacity: .35; cursor: default; }
     .jb:not(:disabled):hover { border-color: var(--accent); color: var(--accent); }
     .jchips { flex: 0 1 auto; min-width: 0; display: flex; justify-content: center;
       gap: 6px; overflow-x: auto; padding-bottom: 2px; }
     .jchips button { flex: 0 0 auto; min-width: 44px; padding: 8px 10px; border: 1px solid var(--line);
-      background: var(--surface); color: var(--text2); border-radius: 10px; cursor: pointer;
+      background: var(--surface); color: var(--text2); border-radius: var(--r-xs); cursor: pointer;
       font-family: var(--fm); font-weight: 600; font-size: var(--t-sm); }
     .jchips button.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
     /* Las dobles se marcan en la tira: cambian lo que vale la alineación. */
@@ -172,10 +172,10 @@ import { colorEquipo } from '../../shared/equipo-colores';
       display: flex; align-items: flex-end; justify-content: center; }
     .panel { position: relative; width: 100%; max-width: 640px; max-height: 88vh; overflow-y: auto;
       background: var(--surface); border: 1px solid var(--line); border-top: 3px solid var(--accent);
-      border-radius: 22px 22px 0 0; padding: 22px; }
-    @media (min-width: 680px) { .back { align-items: center; } .panel { border-radius: 22px; } }
+      border-radius: var(--r-lg) var(--r-lg) 0 0; padding: 22px; }
+    @media (min-width: 680px) { .back { align-items: center; } .panel { border-radius: var(--r-lg); } }
     .x { position: absolute; top: 14px; right: 14px; background: var(--surface2); border: 1px solid var(--line);
-      color: var(--text2); width: 32px; height: 32px; border-radius: 9px; cursor: pointer; font-size: var(--t-sm); z-index: 1; }
+      color: var(--text2); width: 32px; height: 32px; border-radius: var(--r-xs); cursor: pointer; font-size: var(--t-sm); z-index: 1; }
     .pad { padding: 18px 0; }
     .dmarcador { display: grid; grid-template-columns: 1fr auto 1fr; align-items: baseline; gap: 12px;
       margin-bottom: 18px; padding-right: 40px; }

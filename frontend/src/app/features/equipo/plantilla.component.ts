@@ -82,7 +82,7 @@ const ETI: Record<string, string> = { PORTERO: 'Porteros', DEFENSA: 'Defensas', 
 
     .kpis { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
     .kpi { flex: 1 1 190px; background: var(--surface); border: 1px solid var(--line);
-      border-radius: 16px; padding: 15px 17px; }
+      border-radius: var(--r); padding: 15px 17px; }
     .kpi .lb { display: block; font-size: var(--t-xs); font-weight: 700; letter-spacing: .16em;
       text-transform: uppercase; color: var(--text2); }
     .kpi .v { display: block; margin-top: 4px; font-family: var(--fh); font-size: var(--t-xl); font-weight: 600; }
@@ -97,7 +97,7 @@ const ETI: Record<string, string> = { PORTERO: 'Porteros', DEFENSA: 'Defensas', 
     .fila { grid-template-columns: 46px 2fr 150px 74px 78px; }
     /* El retrato del jugador, si lo hay, junto a su nombre. */
     .quien { display: flex; align-items: center; gap: 10px; min-width: 0; }
-    .av { position: relative; width: 36px; height: 36px; flex: 0 0 auto; border-radius: 9px;
+    .av { position: relative; width: 36px; height: 36px; flex: 0 0 auto; border-radius: var(--r-xs);
       overflow: hidden; background: var(--surface2); border: 1px solid var(--line);
       display: flex; align-items: flex-end; justify-content: center; }
     .av .wm { position: absolute; width: 116%; left: 50%; top: 50%;
