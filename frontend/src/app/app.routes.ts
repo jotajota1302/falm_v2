@@ -90,6 +90,7 @@ export const routes: Routes = [
           { path: 'simulacion', loadComponent: () => import('./features/admin/simulacion.component').then((m) => m.AdminSimulacionComponent) },
           { path: 'jugadores', loadComponent: () => import('./features/admin/jugadores.component').then((m) => m.AdminJugadoresComponent) },
           { path: 'puntuaciones', loadComponent: () => import('./features/admin/puntuaciones.component').then((m) => m.AdminPuntuacionesComponent) },
+          { path: 'fichajes', loadComponent: () => import('./features/admin/fichajes.component').then((m) => m.AdminFichajesComponent) },
           { path: 'operaciones', loadComponent: () => import('./features/admin/operaciones.component').then((m) => m.AdminOperacionesComponent) },
           { path: 'equipos', loadComponent: () => import('./features/admin/equipos.component').then((m) => m.AdminEquiposComponent) },
         ],

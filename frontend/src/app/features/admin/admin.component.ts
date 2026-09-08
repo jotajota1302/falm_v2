@@ -24,6 +24,7 @@ import { environment } from '../../../environments/environment';
       <a routerLink="pretemporada" routerLinkActive="on">Pretemporada</a>
       <a routerLink="jugadores" routerLinkActive="on">Jugadores</a>
       <a routerLink="puntuaciones" routerLinkActive="on">Puntuaciones</a>
+      <a routerLink="fichajes" routerLinkActive="on">Fichajes</a>
       <a routerLink="operaciones" routerLinkActive="on">Operaciones</a>
       <a routerLink="equipos" routerLinkActive="on">Equipos</a>
     </nav>

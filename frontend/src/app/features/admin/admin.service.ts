@@ -147,6 +147,51 @@ export class AdminService {
   }
 
   // ---- Equipos FALM ---------------------------------------------------------
+  /**
+   * Las peticiones de fichaje de la temporada, la mas nueva primero. El gestor
+   * no tenia donde verlas: lo unico que habia era procesarlas, que es
+   * concederlas. En la jornada 1, que no tenia mercado, se colaron cuatro.
+   */
+  async peticiones(): Promise<AdminPeticion[]> {
+    const { data, error } = await this.sb.client
+      .from('peticion_fichaje')
+      .select('id, estado, fecha_creacion, observaciones, activo_fichado_id, ' +
+        'equipo:equipo_falm_id (nombre), jornada:jornada_objetivo_id (numero), ' +
+        'peticion_fichaje_opcion (prioridad, ' +
+          'activo:activo_id (tipo, jugador_lfp:jugador_lfp_id (nombre, apellido, posicion), ' +
+            'equipo_lfp:equipo_lfp_id (nombre)))')
+      .order('fecha_creacion', { ascending: false })
+      .limit(60);
+    if (error) throw error;
+    return (data ?? []).map((p: any) => ({
+      id: p.id,
+      equipo: p.equipo?.nombre ?? '—',
+      jornada: p.jornada?.numero ?? null,
+      estado: p.estado,
+      fecha: p.fecha_creacion,
+      observaciones: p.observaciones ?? '',
+      fichado: p.activo_fichado_id != null,
+      pide: (p.peticion_fichaje_opcion ?? [])
+        .sort((a: any, b: any) => a.prioridad - b.prioridad)
+        .map((o: any) => {
+          const jl = o.activo?.jugador_lfp;
+          const nombre = jl ? [jl.nombre, jl.apellido].filter(Boolean).join(' ')
+                            : `Portería ${o.activo?.equipo_lfp?.nombre ?? ''}`.trim();
+          return { prioridad: o.prioridad, nombre, posicion: jl?.posicion ?? 'PORTERO' };
+        }),
+    }));
+  }
+
+  /** Rechaza una peticion dejando dicho por que; el equipo lo ve en su pantalla. */
+  async rechazarPeticion(id: string, motivo: string): Promise<void> {
+    const { error } = await this.sb.client
+      .from('peticion_fichaje')
+      .update({ estado: 'RECHAZADA', fecha_procesamiento: new Date().toISOString(),
+                observaciones: motivo })
+      .eq('id', id);
+    if (error) throw error;
+  }
+
   async equipos(): Promise<AdminEquipo[]> {
     const { data, error } = await this.sb.client
       .from('equipo_falm')
@@ -422,6 +467,17 @@ export interface EstadoPretemporada {
   con_alineacion: number;
   /** La liga ya tiene resultados o alineaciones: no se regenera nada. */
   bloqueado: boolean;
+}
+
+export interface AdminPeticion {
+  id: string;
+  equipo: string;
+  jornada: number | null;
+  estado: string;
+  fecha: string;
+  observaciones: string;
+  fichado: boolean;
+  pide: { prioridad: number; nombre: string; posicion: string }[];
 }
 
 export interface AdminEquipo {
