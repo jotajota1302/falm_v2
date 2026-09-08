@@ -142,7 +142,9 @@ const ORDEN = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
       gap: 6px; padding-bottom: 2px; }
     .jchips button { flex: 0 0 auto; min-width: 44px; padding: 8px 10px; border: 1px solid var(--line);
       background: var(--surface); color: var(--text2); border-radius: var(--r-xs); cursor: pointer;
-      font-family: var(--fm); font-weight: 600; font-size: var(--t-sm); }
+      /* J1, J2x2: es una etiqueta, no una cifra. La mono es solo para
+         numeros y aqui cantaba al lado del resto de pildoras. */
+      font-family: var(--fb); font-weight: 700; font-size: var(--t-sm); }
     .jchips button.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
     /* Las dobles se marcan en la tira: cambian lo que vale la alineación. */
     .jchips button.doble { border-color: var(--por); }

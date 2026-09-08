@@ -104,7 +104,9 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
     .jchips { display: flex; gap: 6px; padding-bottom: 6px; margin-bottom: 12px; }
     .jchips button { flex: 0 0 auto; min-width: 44px; padding: 8px 10px; border: 1px solid var(--line);
       background: var(--surface); color: var(--text2); border-radius: var(--r-xs); cursor: pointer;
-      font-family: var(--fm); font-weight: 600; font-size: var(--t-sm); }
+      /* J1, J2x2: es una etiqueta, no una cifra. La mono es solo para
+         numeros y aqui cantaba al lado del resto de pildoras. */
+      font-family: var(--fb); font-weight: 700; font-size: var(--t-sm); }
     .jchips button.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
 
     /* La caja, la barra y las filas salen de styles.css. */

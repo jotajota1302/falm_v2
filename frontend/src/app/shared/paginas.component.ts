@@ -54,7 +54,8 @@ import { Lista } from './lista';
     .ctrl button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
     .ctrl button:disabled { opacity: .32; cursor: not-allowed; }
     .np { padding: 0 8px; font-family: var(--fm); font-size: var(--t-sm); font-weight: 700; white-space: nowrap; }
-    .np i { font-style: normal; font-weight: 400; color: var(--text2); }
+    /* Las cifras van en mono; el "de" que las separa es una palabra. */
+    .np i { font-style: normal; font-weight: 400; color: var(--text2); font-family: var(--fb); }
     .tam { display: flex; align-items: center; gap: 7px; font-size: var(--t-sm); color: var(--text2); }
     .tam select { padding: 5px 8px; border: 1px solid var(--line); background: var(--surface);
       border-radius: var(--r-xs); font-family: var(--fb); font-size: var(--t-sm); }

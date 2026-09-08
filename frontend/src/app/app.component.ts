@@ -116,7 +116,7 @@ interface NavItem { path: string; label: string; corto: string; }
     .ava { width: 30px; height: 30px; border-radius: 50%; flex: 0 0 auto;
       background: var(--surface2); border: 1px solid var(--line); color: var(--text2);
       display: flex; align-items: center; justify-content: center;
-      font-family: var(--fm); font-size: var(--t-xs); font-weight: 700; }
+      font-family: var(--fb); font-size: var(--t-xs); font-weight: 700; }
     .team { font-size: var(--t-sm); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .acc { display: flex; align-items: center; gap: 12px; padding-left: 14px; border-left: 1px solid var(--line); }
     .tlink { background: none; border: none; padding: 0; cursor: pointer;

@@ -116,7 +116,7 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     .fila.cab { flex: 0 0 4.4vh; align-items: center; }
 
     .rn { display: flex; align-items: center; justify-content: center;
-      font-family: var(--fm); font-size: 1.8vh; color: var(--text2); }
+      font-family: var(--fb); font-size: 1.8vh; color: var(--text2); }
     .fila.actual .rn { color: var(--accent); font-weight: 700; }
 
     .eq { display: flex; align-items: center; justify-content: center;
