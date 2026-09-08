@@ -71,7 +71,7 @@ import { SubnavComponent, SubnavItem } from '../../shared/subnav.component';
           <span class="der">Beneficio</span>
         </div>
         @for (f of filas(); track f.equipo_falm_id; let i = $index) {
-          <div class="fila" [class.podio]="i < 3">
+          <div class="fila" [class.podio]="i < 3 && f.partidos_jugados > 0">
             <span class="puesto">
               <span class="marca" [style.background]="color(f.equipo_nombre)"></span>
               <span class="num">{{ f.posicion || i + 1 }}</span>
@@ -83,7 +83,8 @@ import { SubnavComponent, SubnavItem } from '../../shared/subnav.component';
             <span class="der num sec">{{ f.derrotas }}</span>
             <span class="der num pts">{{ f.puntos_clasificacion }}</span>
             <span class="der num sec">{{ f.puntos_favor }}</span>
-            <span class="der num ben" [class.neg]="beneficio(f.equipo_nombre) < 0">
+            <span class="der num ben" [class.neg]="beneficio(f.equipo_nombre) < 0"
+                  [class.cero]="beneficio(f.equipo_nombre) === 0">
               {{ beneficio(f.equipo_nombre) > 0 ? '+' : '' }}{{ beneficio(f.equipo_nombre) }}<small>€</small>
             </span>
           </div>
@@ -102,7 +103,9 @@ import { SubnavComponent, SubnavItem } from '../../shared/subnav.component';
 
     /* La caja y las filas salen de styles.css; aquí, las columnas y lo propio. */
     .fila { grid-template-columns: 52px 1.9fr 42px 40px 40px 40px 66px 74px 92px; }
-    /* Los tres primeros cobran el premio: el papel se tiñe, sin medallas. */
+    /* Los tres primeros cobran el premio: el papel se tiñe, sin medallas.
+       Solo con la liga empezada: con todos a cero el orden es el que salga, y
+       teñir tres filas anunciaba un podio que todavía no existe. */
     .fila.podio { background: var(--accent-soft); }
     .puesto { display: flex; align-items: center; gap: 8px; }
     .marca { width: 3px; height: 20px; border-radius: 2px; flex: 0 0 auto; }
@@ -111,6 +114,8 @@ import { SubnavComponent, SubnavItem } from '../../shared/subnav.component';
     .pts { font-weight: 700; }
     .ben { font-weight: 700; color: var(--good); }
     .ben.neg { color: var(--bad); }
+    /* Cero no es ganar dinero: en verde parecía que ya se había cobrado algo. */
+    .ben.cero { color: var(--text2); font-weight: 600; }
     .ben small { font-size: var(--t-xs); opacity: .75; margin-left: 1px; }
     .nota { margin: 12px 2px 0; font-size: var(--t-xs); color: var(--text2); }
 

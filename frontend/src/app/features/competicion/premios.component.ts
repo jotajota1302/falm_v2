@@ -26,7 +26,8 @@ import { SubnavComponent, SubnavItem } from '../../shared/subnav.component';
     } @else {
       <div class="hero">
         <span class="lb">Tu beneficio · {{ miEquipo() }}</span>
-        <span class="big num" [class.neg]="miBeneficio() < 0">{{ miBeneficio() }}<small>€</small></span>
+        <span class="big num" [class.neg]="miBeneficio() < 0"
+              [class.cero]="miBeneficio() === 0">{{ miBeneficio() }}<small>€</small></span>
       </div>
 
       <div class="tabla">
@@ -38,7 +39,8 @@ import { SubnavComponent, SubnavItem } from '../../shared/subnav.component';
               <span class="num">{{ i + 1 }}</span>
             </span>
             <span class="nm">{{ e.nombre }}</span>
-            <span class="der num ben" [class.neg]="e.beneficio < 0">{{ e.beneficio }}<small>€</small></span>
+            <span class="der num ben" [class.neg]="e.beneficio < 0"
+                  [class.cero]="e.beneficio === 0">{{ e.beneficio }}<small>€</small></span>
           </div>
         }
       </div>
@@ -59,6 +61,8 @@ import { SubnavComponent, SubnavItem } from '../../shared/subnav.component';
     .marca { width: 3px; height: 20px; border-radius: 2px; flex: 0 0 auto; }
     .nm { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .ben { font-weight: 700; color: var(--good); } .ben.neg { color: var(--bad); }
+    /* Cero no es ganar dinero: en verde parecía que ya se había cobrado algo. */
+    .ben.cero, .hero .big.cero { color: var(--text2); }
     .ben small { font-size: var(--t-xs); opacity: .75; margin-left: 1px; }
     .muted { color: var(--text2); } .err { color: var(--bad); }
 
