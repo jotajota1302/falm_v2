@@ -2,6 +2,9 @@ import { Component, OnInit, computed, signal } from '@angular/core';
 import { Competicion, EnfrentamientoFila, FalmService, JornadaFalm } from '../../core/falm.service';
 import { colorEquipo } from '../../shared/equipo-colores';
 
+/** Las cuatro lineas, en el orden en que se lee un once. */
+const ORDEN = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
+
 /** Resultados de los enfrentamientos por jornada, con el detalle del once. */
 @Component({
   selector: 'app-jornadas',
@@ -308,11 +311,19 @@ export class JornadasComponent implements OnInit {
   }
 
   /** El once y el banquillo, cada uno con su rótulo. */
+  /**
+   * Por lineas, como se lee un once en cualquier sitio. La consulta los
+   * devuelve en el orden en que se guardo la alineacion, y asi salia la
+   * porteria al final del once y un defensa detras de los medios.
+   */
   grupos(lado: any) {
     const js = (lado?.jugadores ?? []) as any[];
+    // Una posicion que no reconozcamos se va al final, no al principio.
+    const linea = (j: any) => (ORDEN.indexOf(j?.pos) + 1) || ORDEN.length + 1;
+    const porLinea = (a: any, b: any) => linea(a) - linea(b);
     return [
-      { rol: 'TITULAR', js: js.filter((j) => j.rol === 'TITULAR') },
-      { rol: 'SUPLENTE', js: js.filter((j) => j.rol !== 'TITULAR') },
+      { rol: 'TITULAR', js: js.filter((j) => j.rol === 'TITULAR').sort(porLinea) },
+      { rol: 'SUPLENTE', js: js.filter((j) => j.rol !== 'TITULAR').sort(porLinea) },
     ];
   }
 
