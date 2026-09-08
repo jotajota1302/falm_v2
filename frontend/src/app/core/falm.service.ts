@@ -138,7 +138,29 @@ export interface Alineado {
   orden: number;      // prioridad (en el banquillo)
 }
 
+/**
+ * Como queda el once una vez sabido quien jugo: lo resuelve falm.once_resuelto,
+ * el mismo calculo del que sale el marcador. No se repite aqui a proposito.
+ */
+export interface ActivoResuelto {
+  activo_id: string;
+  rol: RolAlineacion;
+  pos: string;
+  orden: number;
+  lineas: string[] | null;
+  /** Tiene puntuacion en esa jornada; si no, no jugo y deja hueco. */
+  jugo: boolean;
+  puntos: number;
+  /** Sus puntos entran en el total del equipo. */
+  cuenta: boolean;
+  /** Suplente que entra: el titular al que sustituye. */
+  entra_por: string | null;
+  /** La linea del hueco que tapa. */
+  hueco: string | null;
+}
+
 export interface AlineacionGuardada {
+  id?: string;
   formacion: string;
   jugadores: Alineado[];
   /** Solo en ultimaAlineacion: de qué jornada se copió, para poder decirlo. */
@@ -556,13 +578,26 @@ export class FalmService {
   async getAlineacion(equipoId: string, jornadaFalmId: string): Promise<AlineacionGuardada | null> {
     const { data, error } = await this.sb.client
       .from('alineacion')
-      .select('formacion, alineacion_activo(activo_id, rol, lineas, orden)')
+      .select('id, formacion, alineacion_activo(activo_id, rol, lineas, orden)')
       .eq('equipo_falm_id', equipoId)
       .eq('jornada_falm_id', jornadaFalmId)
       .maybeSingle();
     if (error) throw error;
     if (!data) return null;
-    return { formacion: (data as any).formacion, jugadores: this.aMapa((data as any).alineacion_activo) };
+    return { id: (data as any).id, formacion: (data as any).formacion,
+             jugadores: this.aMapa((data as any).alineacion_activo) };
+  }
+
+  /**
+   * Quien suma y quien no de una alineacion ya jugada: titulares que no
+   * jugaron, suplentes que entran y por quien. Sale de la misma funcion que
+   * calcula el marcador, para que la pantalla no invente su propia version.
+   */
+  async onceResuelto(alineacionId: string): Promise<ActivoResuelto[]> {
+    const { data, error } = await this.sb.client.rpc('once_resuelto', { p_ali: alineacionId });
+    if (error) throw error;
+    const d = typeof data === 'string' ? JSON.parse(data) : data;
+    return (Array.isArray(d) ? d : []) as ActivoResuelto[];
   }
 
   /**

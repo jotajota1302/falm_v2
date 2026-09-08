@@ -1,13 +1,23 @@
 import { Component, OnDestroy, OnInit, computed, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { Agenda, AgendaItem, Alineado, FalmService, ItemPlantilla, PorteroClub, RolAlineacion } from '../../core/falm.service';
+import { ActivoResuelto, Agenda, AgendaItem, Alineado, FalmService, ItemPlantilla, PorteroClub, RolAlineacion } from '../../core/falm.service';
 
 const ORDEN = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'] as const;
 /** Las líneas que puede cubrir un suplente: una portería no deja hueco. */
 const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'MED', DELANTERO: 'DEL' };
 
-/** Un titular ya cruzado con su ficha de plantilla. */
-interface EnCampo { pos: string; nombre: string; foto: string | null; escudo: string | null; club_id: string | null; pts: number | null; }
+/**
+ * Un titular ya cruzado con su ficha de plantilla y con el desenlace de la
+ * jornada: si jugo, si sus puntos entran en el total y con quien se releva.
+ * Eso ultimo no se calcula aqui, lo resuelve falm.once_resuelto.
+ */
+interface EnCampo {
+  pos: string; nombre: string; foto: string | null; escudo: string | null;
+  club_id: string | null; pts: number | null;
+  jugo: boolean; cuenta: boolean;
+  /** Titular: quien entro en su lugar. Suplente: a quien sustituye. */
+  releva: string | null;
+}
 /** Un suplente: quién es, qué líneas cubre y lo que lleva sumado. */
 interface EnBanca extends EnCampo { cubre: string[]; }
 /** La alineación de un equipo en la jornada, lista para pintar. */
@@ -82,7 +92,9 @@ interface Once { equipo: string; formacion: string; campo: EnCampo[]; banca: EnB
                     <span></span><span></span><span>Once</span><span></span><span class="der">Pts</span>
                   </div>
                   @for (j of once(o); track $index) {
-                    <div class="fila j11">
+                    <!-- El que no jugo se apaga: antes salia un 0 igual que el
+                         de quien jugo y no sumo, y no habia forma de verlo. -->
+                    <div class="fila j11" [class.fuera]="!j.cuenta" [title]="porQue(j, true)">
                       <span class="p" [class]="abr(j.pos)">{{ abr(j.pos) }}</span>
                       <img class="fo" [class.es]="!j.foto" [src]="j.foto || j.escudo" alt=""
                            loading="lazy" (error)="j.foto = null" />
@@ -90,21 +102,36 @@ interface Once { equipo: string; formacion: string; campo: EnCampo[]; banca: EnB
                       @if (j.escudo) {
                         <img class="cl" [src]="j.escudo" alt="" loading="lazy" />
                       } @else { <span></span> }
-                      <span class="pts num" [class.cero]="!j.pts">{{ j.pts ?? 0 }}</span>
+                      @if (j.jugo) {
+                        <span class="pts num" [class.cero]="!j.pts">{{ j.pts ?? 0 }}</span>
+                      } @else {
+                        <span class="pts num nj">–</span>
+                      }
                     </div>
                   }
                   @if (o.banca.length) {
                     <div class="fila cab">Banquillo</div>
+                    <!-- En el banquillo no cuenta nadie hasta que se cae un
+                         titular: los que no entran van apagados y el que entra
+                         lleva flecha y dice por quien. -->
                     @for (b of suplentes(o); track $index) {
-                      <div class="fila j11">
-                        <span class="p" [class]="abr(b.pos)">{{ abr(b.pos) }}</span>
+                      <div class="fila j11" [class.fuera]="!b.cuenta" [title]="porQue(b, false)">
+                        <span class="p" [class]="abr(b.pos)">
+                          @if (b.cuenta) { <i class="sube">↑</i> }{{ abr(b.pos) }}
+                        </span>
                         <img class="fo" [class.es]="!b.foto" [src]="b.foto || b.escudo" alt=""
                              loading="lazy" (error)="b.foto = null" />
-                        <span class="nb">{{ b.nombre }}</span>
+                        <span class="nb">
+                          {{ b.nombre }}@if (b.cuenta && b.releva) { <b class="por">por {{ b.releva }}</b> }
+                        </span>
                         @if (b.escudo) {
                           <img class="cl" [src]="b.escudo" alt="" loading="lazy" />
                         } @else { <span></span> }
-                        <span class="pts num" [class.cero]="!b.pts">{{ b.pts ?? 0 }}</span>
+                        @if (b.jugo) {
+                          <span class="pts num" [class.cero]="!b.pts">{{ b.pts ?? 0 }}</span>
+                        } @else {
+                          <span class="pts num nj">–</span>
+                        }
                       </div>
                     }
                   }
@@ -204,6 +231,12 @@ interface Once { equipo: string; formacion: string; campo: EnCampo[]; banca: EnB
        igual que se vería un 7. Se distingue por el gris, no por un círculo:
        un número dentro de un aro y otro sin él no parecen la misma columna. */
     .pts.cero { color: var(--text2); }
+    /* Quien no suma al total se apaga: el titular que no jugo y el suplente que
+       se queda en el banquillo porque no se le cayo nadie delante. */
+    .fila.fuera { opacity: .45; }
+    .pts.nj { color: var(--text2); }
+    .sube { font-style: normal; color: var(--accent); margin-right: 3px; }
+    .por { font-size: var(--t-xs); font-weight: 700; color: var(--accent); margin-left: 5px; }
 
     /* El banquillo va en las mismas filas que el once, bajo su cabecera: iba en
        píldoras agrupadas por la línea que cubría cada uno y era el único bloque
@@ -272,6 +305,23 @@ export class DashboardComponent implements OnInit, OnDestroy {
   lados = computed<Once[]>(() => [this.mio(), this.rival()].filter((o): o is Once => !!o));
   /** Los once, de portería a delantera. */
   once(o: Once) { return ORDEN.flatMap((pos) => o.campo.filter((j) => j.pos === pos)); }
+  /**
+   * Por que suma o no suma cada uno, en palabras. El color y la flecha dan el
+   * golpe de vista; esto lo explica cuando no basta con eso.
+   */
+  porQue(j: EnCampo, titular: boolean): string {
+    if (!j.jugo) {
+      return titular && j.releva ? `No jugó · entra ${j.releva} en su lugar` : 'No jugó';
+    }
+    if (j.cuenta) {
+      return titular ? `Suma ${j.pts ?? 0}`
+        : `Entra por ${j.releva ?? 'un titular caído'} y suma ${j.pts ?? 0}`;
+    }
+    // Un suplente puede haber jugado y hasta puntuado, pero si no se cae nadie
+    // de las lineas que cubre, sus puntos no entran.
+    return `Jugó y sumó ${j.pts ?? 0}, pero se queda en el banquillo`;
+  }
+
   /** El banquillo, en el mismo orden que el once: de portería a delantera. */
   suplentes(o: Once) { return ORDEN.flatMap((pos) => o.banca.filter((b) => b.pos === pos)); }
 
@@ -283,6 +333,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
   gane(ac: AgendaItem) { return ac.mis_puntos != null && ac.rival_puntos != null && ac.mis_puntos > ac.rival_puntos; }
   perdi(ac: AgendaItem) { return ac.mis_puntos != null && ac.rival_puntos != null && ac.rival_puntos > ac.mis_puntos; }
   abr(pos: string) { return ABR[pos] ?? pos; }
+  /** En una fila estrecha del relevo cabe el apellido; una porteria, su club. */
+  corto(nombre: string) {
+    if (nombre.startsWith('Porter')) return nombre.replace(/^Porter[íi]a\s*/, '');
+    const p = nombre.trim().split(/\s+/);
+    return p.length > 1 ? p[p.length - 1] : nombre;
+  }
   fechaLarga(iso: string) {
     const d = new Date(iso);
     return d.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' }) +
@@ -317,17 +373,38 @@ export class DashboardComponent implements OnInit, OnDestroy {
     const vacio: Once = { equipo, formacion: '', campo: [], banca: [], enviada: false };
     const al = await this.falm.getAlineacion(equipoId, jornadaId);
     if (!al) return vacio;
-    const [plantilla, pts] = await Promise.all([
+    const [plantilla, pts, resuelto] = await Promise.all([
       this.falm.miPlantilla(equipoId),
       this.falm.puntosDeJornada(jornadaId, al.jugadores.map((j: Alineado) => j.activo_id))
         .catch(() => ({} as Record<string, number>)),
+      al.id ? this.falm.onceResuelto(al.id).catch(() => [] as ActivoResuelto[])
+            : Promise.resolve([] as ActivoResuelto[]),
     ]);
     const ficha = new Map<string, ItemPlantilla>(plantilla.map((p) => [p.activo_id, p]));
+    const res = new Map<string, ActivoResuelto>(resuelto.map((r) => [r.activo_id, r]));
+    // El titular caido no sabe quien le sustituye; el suplente si sabe a quien
+    // tapa, asi que se da la vuelta a esa relacion para poder decirlo en ambos.
+    const releva = new Map<string, string>();
+    for (const r of resuelto) {
+      if (r.entra_por) releva.set(r.entra_por, r.activo_id);
+    }
+    const apellido = (id: string | null | undefined) =>
+      id ? this.corto(ficha.get(id)?.nombre ?? '') || null : null;
+
     const dentro = (rol: RolAlineacion) => al.jugadores.filter((j: Alineado) => j.rol === rol);
-    const datos = (p: ItemPlantilla): EnCampo => ({
-      pos: p.posicion, nombre: p.nombre, foto: p.foto ?? null, escudo: p.escudo ?? null,
-      club_id: p.club_id ?? null, pts: pts[p.activo_id] ?? null,
-    });
+    const datos = (p: ItemPlantilla): EnCampo => {
+      const r = res.get(p.activo_id);
+      return {
+        pos: p.posicion, nombre: p.nombre, foto: p.foto ?? null, escudo: p.escudo ?? null,
+        club_id: p.club_id ?? null,
+        pts: r ? r.puntos : (pts[p.activo_id] ?? null),
+        // Sin resolucion (jornada aun sin puntuar) nadie esta caido ni fuera:
+        // se pinta como siempre y no se inventa un relevo.
+        jugo: r ? r.jugo : true,
+        cuenta: r ? r.cuenta : true,
+        releva: r ? apellido(r.entra_por ?? releva.get(p.activo_id)) : null,
+      };
+    };
     const once: Once = {
       equipo,
       formacion: al.formacion,
