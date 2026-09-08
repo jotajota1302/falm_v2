@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { NavFichajesComponent } from '../../shared/nav-fichajes.component';
 import { RouterLink } from '@angular/router';
 import { environment } from '../../../environments/environment';
-import { ActivoLibre, Equipo, FalmService, ItemPlantilla, JornadaFalm, PuntosJugador } from '../../core/falm.service';
+import { PeticionViva, ActivoLibre, Equipo, FalmService, ItemPlantilla, JornadaFalm, PuntosJugador } from '../../core/falm.service';
 import { carasDePorterias } from '../../shared/caras-libres';
 import { FichaService } from '../../shared/ficha.service';
 import { crearLista } from '../../shared/lista';
@@ -86,6 +86,12 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
               <h2>Mis peticiones</h2>
               <span class="sm">{{ p2() ? 2 : p1() ? 1 : 0 }} de 2</span>
             </div>
+            <!-- Sin esto la caja empezaba en blanco aunque ya hubieras pedido,
+                 y se volvia a dar a Enviar: cuatro peticiones en la jornada 1. -->
+            @if (peticion()) {
+              <p class="puesta">Ya tienes una petición puesta. Si cambias algo y envías,
+                sustituye a la anterior: solo cuenta la última.</p>
+            }
             @for (s of [1, 2]; track s) {
               @if (sel(s); as a) {
                 <div class="slot lleno">
@@ -111,7 +117,7 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
             <div class="pieCaja">
               <span class="lb">La plantilla no puede pasar de 23 jugadores</span>
               <button class="btn" [disabled]="!p1() || enviando()" (click)="enviar()">
-                {{ enviando() ? 'Enviando…' : 'Enviar' }}
+                {{ enviando() ? 'Enviando…' : peticion() ? 'Actualizar' : 'Enviar' }}
               </button>
             </div>
           </div>
@@ -156,6 +162,9 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
     .tabla { flex: 1 1 560px; min-width: 0; }
     .lado { flex: 1 1 300px; min-width: 280px; display: flex; flex-direction: column; gap: 14px; }
 
+    .puesta { margin: 0 0 11px; padding: 9px 11px; border-radius: var(--r-xs);
+      background: var(--accent-soft); border: 1px solid var(--accent-line);
+      color: var(--accent); font-size: var(--t-sm); }
     .barra .buscar { margin-left: auto; flex: 0 1 220px; padding: 7px 13px; font-size: var(--t-sm); border-radius: var(--pill); }
     .fila { grid-template-columns: 46px 26px 1.8fr 130px 56px 92px; padding: 7px 18px; }
     /* Misma cara, mismo escudo y misma cifra que en Mercado: es la misma lista. */
@@ -261,6 +270,25 @@ export class FichajesComponent implements OnInit {
   lesionadoId = signal('');
   urlLesion = signal('');
   enviandoLesion = signal(false);
+  /** Lo que ya tengo pedido para esta jornada, si hay algo. */
+  peticion = signal<PeticionViva | null>(null);
+
+  /**
+   * Rellena el formulario con lo que ya esta pedido. Sin esto la pantalla
+   * empezaba siempre en blanco y parecia que no habias mandado nada, asi que
+   * se volvia a dar a Enviar: cuatro peticiones sueltas en la jornada 1.
+   */
+  private async cargarPeticion() {
+    const eq = this.equipo(); const jor = this.jornada();
+    if (!eq || !jor) return;
+    const p = await this.falm.miPeticion(eq.id, jor.id);
+    this.peticion.set(p);
+    const de = (n: number) => {
+      const o = p?.opciones.find((x) => x.prioridad === n);
+      return o ? this.mercado().find((a) => a.activo_id === o.activo_id) ?? null : null;
+    };
+    this.p1.set(de(1)); this.p2.set(de(2));
+  }
 
   /** Lo que pasa los filtros; el orden y la página los lleva la lista. */
   filtrados = computed(() => {
@@ -327,6 +355,7 @@ export class FichajesComponent implements OnInit {
       if (eq) {
         const [mp, ex] = await Promise.all([this.falm.miPlantilla(eq.id), this.falm.fichajesExtra(eq.id)]);
         this.miPlantilla.set(mp); this.extras.set(ex);
+        await this.cargarPeticion();
       }
     } catch (e: any) {
       this.error.set(e?.message ?? 'Error cargando fichajes');
@@ -365,9 +394,12 @@ export class FichajesComponent implements OnInit {
     if (this.p2()) opciones.push({ activo_id: this.p2()!.activo_id, prioridad: 2 });
     this.enviando.set(true);
     try {
+      const habia = this.peticion() !== null;
       await this.falm.crearPeticion(eq.id, jor.id, opciones);
-      this.aviso.set('Petición enviada.');
-      this.p1.set(null); this.p2.set(null);
+      await this.cargarPeticion();
+      this.aviso.set(habia
+        ? 'Petición actualizada: cuenta esta y se anula la anterior.'
+        : 'Petición enviada.');
     } catch (e: any) {
       this.error.set(e?.message ?? 'Error al enviar');
     } finally {

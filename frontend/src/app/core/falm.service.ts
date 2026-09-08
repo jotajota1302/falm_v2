@@ -131,6 +131,13 @@ export interface OfertaIntercambio {
 export type RolAlineacion = 'TITULAR' | 'SUPLENTE';
 
 /** Un activo en la alineación: titular, o suplente que cubre un conjunto de líneas. */
+/** Lo que un equipo tiene pedido ahora mismo en una jornada. */
+export interface PeticionViva {
+  id: string;
+  fecha: string;
+  opciones: { activo_id: string; prioridad: number }[];
+}
+
 export interface Alineado {
   activo_id: string;
   rol: RolAlineacion;
@@ -846,12 +853,53 @@ export class FalmService {
     return (data ?? []) as ActivoLibre[];
   }
 
-  /** Crea una petición de fichaje con opciones por prioridad (escritura; RLS dueño). */
+  /**
+   * La peticion viva de un equipo en una jornada, si la hay. La pantalla la
+   * necesita para no dejar mandar otra a ciegas: se mandaron cuatro seguidas
+   * en la jornada 1 porque nada decia que ya habia una.
+   */
+  async miPeticion(equipoId: string, jornadaObjetivoId: string): Promise<PeticionViva | null> {
+    const { data, error } = await this.sb.client
+      .from('peticion_fichaje')
+      .select('id, fecha_creacion, peticion_fichaje_opcion (prioridad, activo_id)')
+      .eq('equipo_falm_id', equipoId)
+      .eq('jornada_objetivo_id', jornadaObjetivoId)
+      .eq('estado', 'PENDIENTE')
+      .order('fecha_creacion', { ascending: false })
+      .limit(1);
+    if (error) throw error;
+    const p: any = (data ?? [])[0];
+    if (!p) return null;
+    return {
+      id: p.id,
+      fecha: p.fecha_creacion,
+      opciones: (p.peticion_fichaje_opcion ?? [])
+        .map((o: any) => ({ activo_id: o.activo_id, prioridad: o.prioridad }))
+        .sort((a: any, b: any) => a.prioridad - b.prioridad),
+    };
+  }
+
+  /**
+   * Crea una petición de fichaje con opciones por prioridad (escritura; RLS dueño).
+   * Manda una sola: si ya habia otra viva de este equipo para esta jornada, la
+   * cierra antes. La misma regla la aplica falm.procesar_fichajes al repartir,
+   * pero cerrarla aqui evita que se amontonen y que el gestor tenga que mirar
+   * cuatro peticiones del mismo equipo para saber que quiere.
+   */
   async crearPeticion(
     equipoId: string,
     jornadaObjetivoId: string,
     opciones: { activo_id: string; prioridad: number }[]
   ): Promise<void> {
+    const { error: e0 } = await this.sb.client
+      .from('peticion_fichaje')
+      .update({ estado: 'RECHAZADA', fecha_procesamiento: new Date().toISOString(),
+                observaciones: 'Sustituida por una petición posterior del mismo equipo' })
+      .eq('equipo_falm_id', equipoId)
+      .eq('jornada_objetivo_id', jornadaObjetivoId)
+      .eq('estado', 'PENDIENTE');
+    if (e0) throw e0;
+
     const { data: pet, error } = await this.sb.client
       .from('peticion_fichaje')
       .insert({ equipo_falm_id: equipoId, jornada_objetivo_id: jornadaObjetivoId, estado: 'PENDIENTE' })
