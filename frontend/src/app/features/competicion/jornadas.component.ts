@@ -63,9 +63,9 @@ import { colorEquipo } from '../../shared/equipo-colores';
             </span>
             <span class="centro">
               <span class="marcador num">{{ e.puntos_local }}<i>–</i>{{ e.puntos_visitante }}</span>
-              <span class="est">
-                {{ e.jornada_jugada ? e.puntos_clasif_local + ' – ' + e.puntos_clasif_visitante + ' en la tabla' : 'Sin jugar' }}
-              </span>
+            </span>
+            <span class="est">
+              {{ e.jornada_jugada ? e.puntos_clasif_local + ' – ' + e.puntos_clasif_visitante + ' en la tabla' : 'Sin jugar' }}
             </span>
             <span class="lado der" [class.gana]="e.puntos_clasif_visitante > e.puntos_clasif_local">
               <span class="marca" [style.background]="color(e.equipo_visitante)"></span>
@@ -157,10 +157,22 @@ import { colorEquipo } from '../../shared/equipo-colores';
       background: var(--surface); border: 1px solid var(--line);
       border-left: 3px solid var(--por); border-radius: var(--r-sm); color: var(--text2); }
 
-    .lista { display: flex; flex-direction: column; gap: 10px; }
+    /* Un partido no ocupa mas de lo que ocupa: a 1280px la tarjeta se estiraba
+       entera y dejaba los dos nombres y el marcador apinados en el centro con
+       350px de papel en blanco a cada lado. */
+    .lista { display: flex; flex-direction: column; gap: 10px;
+      max-width: 680px; margin: 0 auto; }
+    /* Dos nombres y un marcador. El rotulo de estado va en su propia fila para
+       poder soltarlo a lo ancho en el movil: dentro de la columna del centro
+       mandaba el ancho de la columna, y "2 - 1 en la tabla" -lo que pone en
+       cuanto se juega una jornada- se comia el nombre de los dos equipos. */
     .match { width: 100%; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
-      gap: 12px; padding: 15px 16px; cursor: pointer; text-align: left;
+      gap: 12px; row-gap: 3px; padding: 15px 16px; cursor: pointer; text-align: left;
       background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); }
+    .match .lado.izq { grid-column: 1; grid-row: 1 / 3; }
+    .match .centro { grid-column: 2; grid-row: 1; }
+    .match .est { grid-column: 2; grid-row: 2; text-align: center; }
+    .match .lado.der { grid-column: 3; grid-row: 1 / 3; }
     .match:hover { border-color: var(--accent-line); }
     .lado { display: flex; align-items: center; gap: 10px; min-width: 0; }
     .lado.izq { justify-content: flex-end; } .lado.der { justify-content: flex-start; }
@@ -222,7 +234,12 @@ import { colorEquipo } from '../../shared/equipo-colores';
       /* Dos nombres de equipo y el marcador en 393px: el nombre baja un
          escalón y el partido respira menos por los lados. */
       .nm { font-size: var(--t-sm); }
-      .match { padding: 13px 12px; gap: 8px; }
+      .match { padding: 13px 12px; gap: 8px; row-gap: 4px; }
+      /* El estado, a lo ancho debajo: asi la columna del centro solo mide lo
+         que el marcador y el nombre de cada equipo cabe entero. */
+      .match .lado.izq, .match .lado.der { grid-row: 1; }
+      .match .est { grid-column: 1 / -1; grid-row: 2; }
+      .lado { gap: 7px; }
       .centro { padding: 0 2px; }
       .panel { padding: 18px 15px; }
       .dcols { grid-template-columns: 1fr; }
