@@ -225,7 +225,7 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
 
     .muted { color: var(--text2); } .err { color: var(--bad); }
 
-    @media (max-width: 860px) {
+    @media (max-width: 900px) {
       /* Lo que has pedido, primero: es a lo que se viene a esta pantalla. */
       .lado { order: -1; }
       /* Se va el club, no los puntos: quedan cinco celdas y cinco columnas. */

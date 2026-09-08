@@ -324,7 +324,7 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
     .envio .btn-sec { order: 2; }
     .envio .btn { order: 3; }
 
-    @media (max-width: 480px) {
+    @media (max-width: 620px) {
       .envio { gap: 8px; padding: 11px 13px; }
       .envio .est { flex: 1 1 100%; text-align: center; }
       .envio .btn-sec, .envio .btn { flex: 1 1 0; padding: 12px 10px; text-align: center; }
@@ -495,11 +495,11 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
     .sheet { width: 100%; max-width: 520px; max-height: 82vh; display: flex; flex-direction: column;
       background: var(--surface); border: 1px solid var(--line);
       border-top: 3px solid var(--accent); border-radius: var(--r-lg) var(--r-lg) 0 0; padding: 16px; }
-    @media (min-width: 560px) { .back { align-items: center; } .sheet { border-radius: var(--r-lg); } }
+    @media (min-width: 621px) { .back { align-items: center; } .sheet { border-radius: var(--r-lg); } }
 
     /* En el teléfono el campo se estrecha para que la línea no se parta en dos. */
     /* Cuando el banquillo dejaría el campo demasiado estrecho, vuelve abajo. */
-    @media (max-width: 1000px) {
+    @media (max-width: 1180px) {
       .zona { flex-direction: column; align-items: stretch; }
       .lado-campo, .banco { max-width: 760px; width: 100%; margin: 0 auto; }
     }

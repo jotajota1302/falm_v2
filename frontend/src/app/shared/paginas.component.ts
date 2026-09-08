@@ -59,7 +59,7 @@ import { Lista } from './lista';
     .tam select { padding: 5px 8px; border: 1px solid var(--line); background: var(--surface);
       border-radius: var(--r-xs); font-family: var(--fb); font-size: var(--t-sm); }
 
-    @media (max-width: 560px) {
+    @media (max-width: 620px) {
       .pg { justify-content: center; }
       .pg .cnt { flex: 1 1 100%; text-align: center; }
       /* En el teléfono el de la barra de filtros cae en su propia línea: que

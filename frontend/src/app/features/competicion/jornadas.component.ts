@@ -132,8 +132,19 @@ import { colorEquipo } from '../../shared/equipo-colores';
       font-family: var(--fb); font-size: var(--t-lg); line-height: 1; }
     .jb:disabled { opacity: .35; cursor: default; }
     .jb:not(:disabled):hover { border-color: var(--accent); color: var(--accent); }
+    /* La tira esconde la mitad: a 380px se ven 258px de 508. Las flechas de los
+       lados ya dejan pasar jornada, pero nada decia que la tira estuviera
+       cortada por el medio. Se le ponen las mismas sombras de scroll que a la
+       barra de pestanas, con el papel de fondo en vez del de la tarjeta. */
     .jchips { flex: 0 1 auto; min-width: 0; display: flex; justify-content: center;
-      gap: 6px; overflow-x: auto; padding-bottom: 2px; }
+      gap: 6px; overflow-x: auto; padding-bottom: 2px;
+      scrollbar-width: none;
+      background:
+        linear-gradient(to right, var(--bg) 40%, transparent) left center / 22px 100% no-repeat local,
+        linear-gradient(to left, var(--bg) 40%, transparent) right center / 22px 100% no-repeat local,
+        radial-gradient(farthest-side at 0 50%, rgba(22,19,15,.16), transparent) left center / 11px 100% no-repeat scroll,
+        radial-gradient(farthest-side at 100% 50%, rgba(22,19,15,.16), transparent) right center / 11px 100% no-repeat scroll; }
+    .jchips::-webkit-scrollbar { display: none; }
     .jchips button { flex: 0 0 auto; min-width: 44px; padding: 8px 10px; border: 1px solid var(--line);
       background: var(--surface); color: var(--text2); border-radius: var(--r-xs); cursor: pointer;
       font-family: var(--fm); font-weight: 600; font-size: var(--t-sm); }
@@ -173,7 +184,7 @@ import { colorEquipo } from '../../shared/equipo-colores';
     .panel { position: relative; width: 100%; max-width: 640px; max-height: 88vh; overflow-y: auto;
       background: var(--surface); border: 1px solid var(--line); border-top: 3px solid var(--accent);
       border-radius: var(--r-lg) var(--r-lg) 0 0; padding: 22px; }
-    @media (min-width: 680px) { .back { align-items: center; } .panel { border-radius: var(--r-lg); } }
+    @media (min-width: 621px) { .back { align-items: center; } .panel { border-radius: var(--r-lg); } }
     .x { position: absolute; top: 14px; right: 14px; background: var(--surface2); border: 1px solid var(--line);
       color: var(--text2); width: 32px; height: 32px; border-radius: var(--r-xs); cursor: pointer; font-size: var(--t-sm); z-index: 1; }
     .pad { padding: 18px 0; }
@@ -205,7 +216,7 @@ import { colorEquipo } from '../../shared/equipo-colores';
     .dleg { margin: 14px 0 0; font-size: var(--t-xs); color: var(--text2); }
     .muted { color: var(--text2); } .err { color: var(--bad); }
 
-    @media (max-width: 560px) {
+    @media (max-width: 620px) {
       /* Aquí sí necesita todo el ancho: las diez no caben y hay que arrastrar. */
       .jchips { flex: 1 1 auto; justify-content: flex-start; }
       /* Dos nombres de equipo y el marcador en 393px: el nombre baja un

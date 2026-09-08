@@ -54,6 +54,22 @@
   --t-2xl: calc(38px * var(--esc));
   --t-3xl: calc(50px * var(--esc));
 
+  /* ---- cortes de pantalla ----
+     CSS no admite variables en un @media, asi que esto no son tokens: es el
+     acuerdo de que en toda la app solo se usan estos cuatro numeros. Habia
+     once repartidos -480, 560, 620, 680, 700, 760, 800, 860, 900, 1000 y
+     1180-, cada pantalla con el suyo, y el mismo cambio de disposicion pasaba
+     a anchos distintos segun donde estuvieras.
+
+       620px   movil: una columna, tipografia y botones de dedo
+       760px   se acaban las dos columnas
+       900px   tablet: se ocultan columnas de tabla que ya no caben
+       1180px  escritorio estrecho
+
+     Para lo que va al reves (paneles que dejan de subir desde abajo y se
+     centran) se usa min-width: 621px, el complemento de 620.
+     ------------------------------------------------------------------ */
+
   /* ---- forma ----
      Cinco escalones, del chip a la hoja que sube desde abajo. Los dos de los
      extremos se anadieron al auditar: el codigo llevaba tiempo escribiendo
@@ -178,7 +194,7 @@ h3 { font-family: var(--fh); font-weight: 500; font-size: var(--t-sm); text-tran
   background: var(--surface); }
 .ordbar .ord.ord-on { border-color: var(--accent); }
 
-@media (max-width: 560px) { .ordbar { justify-content: center; } }
+@media (max-width: 620px) { .ordbar { justify-content: center; } }
 
 /* pie de lista: recuento a la izquierda, "ver más" a la derecha */
 .pie { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 14px; flex-wrap: wrap; }

@@ -129,7 +129,7 @@ import { SubnavComponent, SubnavItem } from '../../shared/subnav.component';
     .leg { font-size: var(--t-xs); color: var(--text2); }
     .muted { color: var(--text2); } .err { color: var(--bad); }
 
-    @media (max-width: 860px) {
+    @media (max-width: 900px) {
       /* En el móvil solo caben los datos que deciden la liga. */
       .fila { grid-template-columns: 44px 1fr 56px 84px; }
       .fila > :nth-child(3), .fila > :nth-child(4), .fila > :nth-child(5),

@@ -90,7 +90,7 @@ import { EquipoSorteo } from './draft-sorteo.component';
       font-size: var(--t-xs); font-family: var(--fb); }
     .mini:disabled { opacity: .4; cursor: not-allowed; }
     .mini.inv { padding: 5px 0; }
-    @media (max-width: 700px) {
+    @media (max-width: 760px) {
       /* Los dos equipos y el cambio de localía arriba; guardar, debajo y de
          lado a lado, que si no cae suelto en una esquina. */
       .cruce { grid-template-columns: 1fr 30px 1fr; }

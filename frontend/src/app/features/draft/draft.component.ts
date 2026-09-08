@@ -564,7 +564,7 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     .aviso-mod { margin: 0 0 16px; font-size: var(--t-xs); color: var(--text2); line-height: 1.45; }
     .acciones { display: flex; gap: 9px; }
     .acciones .btn, .acciones .btn-sec { flex: 1; padding: 12px; font-size: var(--t-sm); }
-    @media (max-width: 480px) { .acciones { flex-direction: column-reverse; } }
+    @media (max-width: 620px) { .acciones { flex-direction: column-reverse; } }
 
     .global { margin-top: 16px; }
     .global .plegar { margin-left: auto; background: var(--surface); border: 1px solid var(--line);

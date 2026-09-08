@@ -232,7 +232,7 @@ interface Op {
       font-size: var(--t-sm); min-width: 180px; }
     .recuperar { margin: 12px 0 0; }
     .recuperar code { font-family: var(--fm); font-size: var(--t-xs); }
-    @media (max-width: 700px) {
+    @media (max-width: 760px) {
       .row { grid-template-columns: 1fr 1fr; }
       .row.bk { grid-template-columns: 1fr 84px; }
       .row.bk > :nth-child(2), .row.bk > :nth-child(3) { display: none; }

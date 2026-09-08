@@ -193,7 +193,7 @@ const CAMPOS: Campo[] = [
     .chip { font-size: var(--t-xs); }
     .nota-p { align-self: start; margin: 0; font-size: var(--t-sm); line-height: 1.5; }
 
-    @media (max-width: 800px) {
+    @media (max-width: 900px) {
       .detalle { grid-template-columns: 1fr; }
       .edit { grid-template-columns: repeat(2, 1fr); }
     }

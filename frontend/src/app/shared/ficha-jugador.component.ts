@@ -120,8 +120,8 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
       background: var(--surface); border: 1px solid var(--line);
       border-top: 3px solid var(--c, var(--accent));
       border-radius: var(--r-lg) var(--r-lg) 0 0; padding: 22px; }
-    @media (min-width: 560px) { .back { align-items: center; } .panel { border-radius: var(--r-lg); } }
-    @media (max-width: 560px) {
+    @media (min-width: 621px) { .back { align-items: center; } .panel { border-radius: var(--r-lg); } }
+    @media (max-width: 620px) {
       .panel { padding: 18px 15px; }
       .head { gap: 12px; }
       .av { width: 68px; height: 68px; }
