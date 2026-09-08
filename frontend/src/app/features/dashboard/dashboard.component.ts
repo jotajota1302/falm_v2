@@ -4,7 +4,6 @@ import { Agenda, AgendaItem, Alineado, FalmService, ItemPlantilla, PorteroClub, 
 
 const ORDEN = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'] as const;
 /** Las líneas que puede cubrir un suplente: una portería no deja hueco. */
-const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
 const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'MED', DELANTERO: 'DEL' };
 
 /** Un titular ya cruzado con su ficha de plantilla. */
@@ -95,22 +94,17 @@ interface Once { equipo: string; formacion: string; campo: EnCampo[]; banca: EnB
                     </div>
                   }
                   @if (o.banca.length) {
-                    <div class="fila cab">Banquillo · quién entra en cada línea</div>
-                    @for (c of colas(o); track c.linea) {
-                      <div class="fila cola">
-                        <span class="p" [class]="abr(c.linea)">{{ abr(c.linea) }}</span>
-                        <div class="cs">
-                          @for (b of c.js; track $index) {
-                            <span class="s">
-                              <i>{{ $index + 1 }}</i>
-                              <img class="fo" [class.es]="!b.foto" [src]="b.foto || b.escudo" alt=""
-                                   loading="lazy" (error)="b.foto = null" />
-                              {{ corto(b.nombre) }}
-                              <b class="real" [class]="abr(b.pos)">{{ abr(b.pos) }}</b>
-                              <em class="num" [class.cero]="!b.pts">{{ b.pts ?? 0 }}</em>
-                            </span>
-                          }
-                        </div>
+                    <div class="fila cab">Banquillo</div>
+                    @for (b of suplentes(o); track $index) {
+                      <div class="fila j11">
+                        <span class="p" [class]="abr(b.pos)">{{ abr(b.pos) }}</span>
+                        <img class="fo" [class.es]="!b.foto" [src]="b.foto || b.escudo" alt=""
+                             loading="lazy" (error)="b.foto = null" />
+                        <span class="nb">{{ b.nombre }}</span>
+                        @if (b.escudo) {
+                          <img class="cl" [src]="b.escudo" alt="" loading="lazy" />
+                        } @else { <span></span> }
+                        <span class="pts num" [class.cero]="!b.pts">{{ b.pts ?? 0 }}</span>
                       </div>
                     }
                   }
@@ -209,22 +203,13 @@ interface Once { equipo: string; formacion: string; campo: EnCampo[]; banca: EnB
     /* Sin puntuación todavía es un cero, no un hueco: se ve que jugó y no sumó
        igual que se vería un 7. Se distingue por el gris, no por un círculo:
        un número dentro de un aro y otro sin él no parecen la misma columna. */
-    .pts.cero, .s em.cero { color: var(--text2); }
+    .pts.cero { color: var(--text2); }
 
-    /* El banquillo, agrupado por la línea que cubre cada uno: de un vistazo se
-       ve quién entra si falla un defensa, un medio o un delantero. */
-    .cola { grid-template-columns: 32px 1fr; gap: 9px; }
-    .cs { display: flex; flex-wrap: wrap; gap: 6px; }
-    .s { display: inline-flex; align-items: center; gap: 5px; font-size: var(--t-sm);
-      padding: 2px 9px 2px 6px; border: 1px solid var(--line); border-radius: var(--pill); }
-    .s i { font-family: var(--fm); font-style: normal; font-size: var(--t-xs); color: var(--text2); }
-    .s .fo { width: 21px; height: 21px; }
-    .s em { font-style: normal; font-size: var(--t-xs); color: var(--text2); }
-    /* La posición real del suplente, que es la que juega aunque cubra otra
-       línea: de ahí salen las formaciones imposibles. */
-    .s .real { font-size: var(--t-xs); font-weight: 700; letter-spacing: .06em; }
-    .real.POR { color: var(--por); } .real.DEF { color: var(--def); }
-    .real.MED { color: var(--med); } .real.DEL { color: var(--del); }
+    /* El banquillo va en las mismas filas que el once, bajo su cabecera: iba en
+       píldoras agrupadas por la línea que cubría cada uno y era el único bloque
+       de la tabla con caja propia. Ahí el club no se veía y el orden de entrada
+       (1, 2) se leía como puntos, al lado de los puntos de verdad. Quién cubre
+       qué zona y en qué orden se gestiona en Alineación, que es su sitio. */
     .esperando { margin: 0; padding: 22px 14px; font-size: var(--t-sm); color: var(--text2); }
 
     .cambiar { display: block; text-align: center; margin: 14px 0 0;
@@ -287,17 +272,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
   lados = computed<Once[]>(() => [this.mio(), this.rival()].filter((o): o is Once => !!o));
   /** Los once, de portería a delantera. */
   once(o: Once) { return ORDEN.flatMap((pos) => o.campo.filter((j) => j.pos === pos)); }
-  /**
-   * El banquillo por líneas: quién entra si falla un defensa, un medio o un
-   * delantero, en el orden en que entrarían. Uno puede cubrir varias, y
-   * entonces sale en varias colas.
-   */
-  colas(o: Once) {
-    const cs = LINEAS.map((linea) => ({ linea, js: o.banca.filter((b) => b.cubre.includes(linea)) }))
-      .filter((c) => c.js.length);
-    const sueltos = o.banca.filter((b) => !b.cubre.length);
-    return sueltos.length ? [...cs, { linea: 'SIN LÍNEA', js: sueltos }] : cs;
-  }
+  /** El banquillo, en el mismo orden que el once: de portería a delantera. */
+  suplentes(o: Once) { return ORDEN.flatMap((pos) => o.banca.filter((b) => b.pos === pos)); }
 
   constructor(private falm: FalmService) {}
   ngOnDestroy() { if (this.timer) clearInterval(this.timer); }
@@ -307,13 +283,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
   gane(ac: AgendaItem) { return ac.mis_puntos != null && ac.rival_puntos != null && ac.mis_puntos > ac.rival_puntos; }
   perdi(ac: AgendaItem) { return ac.mis_puntos != null && ac.rival_puntos != null && ac.rival_puntos > ac.mis_puntos; }
   abr(pos: string) { return ABR[pos] ?? pos; }
-  /** En una línea de once cabe el apellido; una portería se nombra por su club. */
-  corto(nombre: string) {
-    if (nombre.startsWith('Porter')) return nombre.replace(/^Porter[íi]a\s*/, '');
-    const p = nombre.trim().split(/\s+/);
-    return p.length > 1 ? p[p.length - 1] : nombre;
-  }
-
   fechaLarga(iso: string) {
     const d = new Date(iso);
     return d.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' }) +
