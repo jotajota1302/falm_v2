@@ -136,8 +136,12 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
   styles: [`
     /* Bandeja y Nueva oferta son el mismo control que los filtros del resto de
        la app, asi que usan .chips y no una copia: la copia se quedaba fuera del
-       trato tactil que styles.css le da a las pildoras en movil. */
-    .subtabs { margin-bottom: 14px; }
+       trato tactil que styles.css le da a las pildoras en movil.
+       Lo unico propio es el color del elegido: en tinta y no en granate. Con
+       las dos filas en granate parecian cuatro pestanas del mismo nivel, y
+       esta cuelga de la de arriba. */
+    .subtabs { margin: -6px 0 14px; }
+    .subtabs button.on { background: var(--text); border-color: var(--text); color: var(--surface); }
     .dot { background: var(--bad); color: #fff; border-radius: var(--pill); padding: 0 7px;
       font-family: var(--fm); font-size: var(--t-xs); margin-left: 6px; }
 
