@@ -6,11 +6,19 @@
 -- jornada cuya jornada FALM ya hubiese CERRADO. Con el calendario real hay jornadas que
 -- acaban en jueves (la 2 termina el 17/09) y no se puntuarian hasta el lunes siguiente.
 --
--- Ahora: cron cada hora ('25 * * * *'). Se procesa la jornada mas antigua que ya termino
+-- Ahora: cron cada dos horas ('25 */2 * * *'). Se procesa la jornada mas antigua que ya termino
 -- (ultimo partido + 3 h) y no tiene puntuaciones. Antes de puntuar refresca los marcadores
 -- desde football-data, y solo cuando hay algo pendiente, para no gastar cuota de la API.
 -- Si falta algun resultado (partido aplazado) espera, y pasados 3 dias puntua con lo que
 -- haya para no dejar la liga colgada.
+--
+-- Solo entran las jornadas LFP mapeadas a una jornada FALM de LIGA: el join con
+-- mapeo_jornada las exige. Las de pretemporada (LFP 1 a 4, la liga FALM empieza en la 5)
+-- no las ve el cron y se cargan a mano, por estadistica, sin tocar la clasificacion:
+--   select falm.refrescar_calendario_fd();       -- marcadores (token de Vault)
+--   select falm.ingestar_jornada_ff(2027, 4);    -- el anio es el de FIN de temporada
+-- La jornada 4 se cargo asi el 2026-09-08: 320 casados, 0 sin casar, 340 puntuaciones
+-- (320 jugadores + las 20 porterias que anade sincronizar_porterias).
 --
 -- El token de football-data esta en Supabase Vault como 'football_data_token', no en el
 -- codigo. Se creo asi:
@@ -158,5 +166,5 @@ end $function$;
 
 -- Cron aplicado:
 --   select cron.unschedule('falm-procesar-jornada');
---   select cron.schedule('falm-procesar-jornada', '25 * * * *',
+--   select cron.schedule('falm-procesar-jornada', '25 */2 * * *',
 --                        'select falm.procesar_jornada_auto()');
