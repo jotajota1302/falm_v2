@@ -35,7 +35,12 @@ import { AuthService } from '../../core/auth.service';
   styles: [`
     /* 100svh: en el móvil la barra del navegador se come parte de 100vh y la
        caja quedaba cortada por abajo. */
-    .wrap { min-height: 100vh; min-height: 100svh; display: grid; place-items: center; padding: 20px; }
+    /* Flex y no grid: con grid, la columna se dimensiona al contenido -y la
+       caja mide 360px fijos-, asi que su max-width:100% se medía contra esos
+       mismos 360 y no encogia nunca. En una pantalla de 372px la caja se salia
+       22px por la derecha. */
+    .wrap { min-height: 100vh; min-height: 100svh; display: flex; align-items: center;
+      justify-content: center; padding: 20px; }
     .caja { width: 360px; max-width: 100%; padding: clamp(22px, 6vw, 32px) clamp(18px, 5vw, 28px); display: flex; flex-direction: column; gap: 14px;
       background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); }
     /* Cabecera de portada: antetítulo, cabecera y entradilla. */
