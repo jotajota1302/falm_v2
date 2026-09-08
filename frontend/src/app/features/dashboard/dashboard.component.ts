@@ -55,6 +55,17 @@ interface Once { equipo: string; formacion: string; campo: EnCampo[]; banca: EnB
         </section>
       }
 
+      <!-- Los avisos van juntos y arriba: primero lo que esta pasando, luego lo
+           que vence. Este bloque estaba al final, detras de los dos onces. -->
+      <section class="accion">
+        <span class="dot"></span>
+        <div class="lt">
+          <strong>Cierre de fichajes</strong>
+          <p>{{ cuenta() }}</p>
+        </div>
+        <a class="btn-sec" routerLink="/fichajes">Pedir fichaje</a>
+      </section>
+
       @if (ag()?.proximo; as pr) {
         <section class="next">
           <div class="nh">
@@ -74,14 +85,6 @@ interface Once { equipo: string; formacion: string; campo: EnCampo[]; banca: EnB
       } @else {
         <section class="next vacio"><p class="muted">Sin próximos partidos programados.</p></section>
       }
-
-      <section class="accion">
-        <div class="cd2">
-          <span class="lb">Cierre de fichajes</span>
-          <strong>{{ cuenta() }}</strong>
-        </div>
-        <a class="btn-sec" routerLink="/fichajes">Pedir fichaje</a>
-      </section>
 
       <!-- Los dos onces, uno en cada columna, en tabla: una fila por jugador
            y todas del mismo alto, que las píldoras de ancho variable mareaban. -->
@@ -269,15 +272,14 @@ interface Once { equipo: string; formacion: string; campo: EnCampo[]; banca: EnB
     .actual .av { margin: 8px 0 0; text-align: center; font-size: var(--t-xs);
       color: var(--text2); }
 
-    /* Va con el partido, no al final: detras de los dos onces habia que buscarlo. */
-    .accion { display: flex; align-items: center; gap: 14px; padding: 14px 17px;
-      margin-bottom: 14px;
-      background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--por);
-      border-radius: var(--r-sm); }
-    .accion .cd2 { flex: 1; }
-    .accion .lb { display: block; font-size: var(--t-xs); font-weight: 700; letter-spacing: .16em;
-      text-transform: uppercase; color: var(--text2); }
-    .accion strong { display: block; margin-top: 2px; font-size: var(--t-md); }
+    /* Misma franja que .live: el acento se lo queda la jornada en juego, que es
+       lo que esta pasando; esto solo vence. */
+    .accion { display: flex; align-items: center; gap: 12px; padding: 13px 17px; margin-bottom: 14px;
+      background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-sm); }
+    .accion .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--por); flex: 0 0 auto; }
+    .accion .lt { flex: 1; }
+    .accion strong { display: block; font-size: var(--t-sm); }
+    .accion p { margin: 2px 0 0; font-size: var(--t-sm); color: var(--text2); }
     .muted { color: var(--text2); }
 
     @media (max-width: 760px) {
