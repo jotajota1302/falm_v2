@@ -261,7 +261,7 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
                         <span class="dnd" title="Fuera">✈</span>
                       }
                       @if (p.escudo) { <img [src]="p.escudo" alt="" loading="lazy" /> }
-                      {{ p.rival }}
+                      <span class="cri">{{ p.rival }}</span>
                       <span class="cfe">{{ fechaCorta(p.fecha) }}</span>
                     </span>
                   }
@@ -531,14 +531,20 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
     .cand:hover { background: var(--surface2); }
 
     /* Contra quién juega y dónde, debajo del club. */
+    /* El text-overflow de aqui no hacia nada: en un contenedor flex la elipsis
+       no se aplica a los hijos, y el nombre del rival era un nodo de texto
+       suelto. Se cortaba a hueso y "Real Madrid sab, 12 sept 21:00" perdia el
+       ultimo digito de la hora. Ahora el que cede es el nombre, con puntos
+       suspensivos, y la fecha se lee siempre entera. */
     .cvs { display: flex; align-items: center; gap: 5px; min-width: 0;
       font-size: var(--t-xs); color: var(--text2); white-space: nowrap;
-      overflow: hidden; text-overflow: ellipsis; }
+      overflow: hidden; }
+    .cvs .cri { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
     .cvs img { width: 13px; height: 13px; flex: 0 0 auto; object-fit: contain; }
     .cvs .dnd { font-size: var(--t-sm); line-height: 1; }
     .cvs .casa { width: 12px; height: 12px; flex: 0 0 auto; fill: currentColor;
       vertical-align: -1px; }
-    .cvs .cfe { opacity: .75; }
+    .cvs .cfe { opacity: .75; flex: 0 0 auto; }
 
     .tocados { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px;
       margin: 0 0 14px; padding: 10px 14px; font-size: var(--t-sm);
