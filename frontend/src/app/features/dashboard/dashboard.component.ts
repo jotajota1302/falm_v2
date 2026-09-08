@@ -217,7 +217,9 @@ interface Once { equipo: string; formacion: string; campo: EnCampo[]; banca: EnB
     .barra strong { font-family: var(--fh); font-size: var(--t-lg); font-weight: 600;
       text-transform: uppercase; letter-spacing: -.01em; line-height: 1.1;
       min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .barra .f { font-family: var(--fm); font-size: var(--t-sm); color: var(--text2); }
+    /* La mono es solo para cifras: aqui alterna la formacion con "sin enviar",
+       que es una frase, asi que va en la de interfaz. */
+    .barra .f { font-size: var(--t-sm); color: var(--text2); }
 
     /* Todas las filas iguales: demarcación, cara, nombre, club y puntos. */
     .tabla .fila { padding: 6px 14px; }

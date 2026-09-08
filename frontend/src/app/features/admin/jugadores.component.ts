@@ -101,17 +101,17 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     .info { flex: 1; min-width: 0; display: flex; flex-direction: column; }
     .nm { font-weight: 700; font-size: var(--t-md); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .cl { color: var(--text2); font-size: var(--t-sm); }
-    .bn { border: 1px solid var(--line); background: var(--surface2); color: var(--text2); border-radius: 8px;
+    .bn { border: 1px solid var(--line); background: var(--surface2); color: var(--text2); border-radius: var(--r-xs);
       width: 30px; height: 30px; cursor: pointer; font-weight: 700; }
     .bn.ok { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
     .bn.no { color: var(--bad); }
-    .ed-pos { width: 64px; } .ed-pre { width: 70px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; }
+    .ed-pos { width: 64px; } .ed-pre { width: 70px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-xs); padding: 6px 8px; }
     .editor { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end;
       padding: 12px; border-bottom: 1px solid var(--line); background: var(--surface2); }
     .editor label { display: flex; flex-direction: column; gap: 4px; font-size: var(--t-xs);
       color: var(--text2); font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
     .editor input, .editor select { background: var(--surface); border: 1px solid var(--line);
-      border-radius: 8px; padding: 6px 9px; font-size: var(--t-sm); }
+      border-radius: var(--r-xs); padding: 6px 9px; font-size: var(--t-sm); }
     .editor label.check { flex-direction: row; align-items: center; gap: 7px;
       text-transform: none; letter-spacing: 0; font-weight: 600; }
     .editor .acc { display: flex; gap: 7px; align-items: center; }

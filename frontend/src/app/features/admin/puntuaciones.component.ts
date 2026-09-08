@@ -184,7 +184,7 @@ const CAMPOS: Campo[] = [
     .campo label { font-size: var(--t-xs); color: var(--text2); font-weight: 700;
       text-transform: uppercase; letter-spacing: .05em; }
     .campo input, .campo select { background: var(--surface); border: 1px solid var(--line);
-      border-radius: 8px; padding: 6px 8px; color: var(--text); font-family: var(--fb); }
+      border-radius: var(--r-xs); padding: 6px 8px; color: var(--text); font-family: var(--fb); }
     .campo.chk { flex-direction: row; align-items: center; gap: 7px; font-size: var(--t-sm);
       color: var(--text2); cursor: pointer; align-self: end; padding-bottom: 6px; }
     .acciones { grid-column: 1 / -1; display: flex; gap: 8px; align-items: center;

@@ -176,12 +176,12 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .club img { width: 18px; height: 18px; object-fit: contain; flex: 0 0 auto; }
     .pedir { background: var(--surface); border: 1px solid var(--line); color: var(--text2);
-      border-radius: 8px; padding: 6px 0; cursor: pointer; font-family: var(--fb); font-weight: 700; font-size: var(--t-xs); }
+      border-radius: var(--r-xs); padding: 6px 0; cursor: pointer; font-family: var(--fb); font-weight: 700; font-size: var(--t-xs); }
     .pedir:hover { border-color: var(--accent); color: var(--accent); }
     .pedir.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
     .vacio { padding: 22px 18px; margin: 0; font-size: var(--t-sm); }
 
-    .caja { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 16px; }
+    .caja { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; }
     .ch { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px; }
     .ch .sm { font-size: var(--t-sm); color: var(--text2); }
 

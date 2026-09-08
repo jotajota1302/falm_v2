@@ -2,8 +2,7 @@ import { Component, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { environment } from '../../../environments/environment';
 import { AdminEquipo, AdminService } from './admin.service';
-
-const COLORES = ['#00e676', '#38bdf8', '#fb7185', '#a3e635', '#ffc24b', '#c084fc', '#f97316', '#2dd4bf', '#f472b6', '#60a5fa'];
+import { colorEquipo } from '../../shared/equipo-colores';
 
 /** Admin · Equipos FALM y asignación de usuario. */
 @Component({
@@ -45,7 +44,7 @@ const COLORES = ['#00e676', '#38bdf8', '#fb7185', '#a3e635', '#ffc24b', '#c084fc
   styles: [`
     .aviso { background: color-mix(in oklab, var(--por) 8%, var(--surface)); border: 1px solid color-mix(in oklab, var(--por) 32%, var(--line)); color: var(--por); padding: 10px 14px; border-radius: 10px; margin-bottom: 12px; }
     .err { color: var(--bad); } .muted { color: var(--text2); }
-    .der input { background: var(--surface); border: 1px solid var(--line); border-radius: 8px;
+    .der input { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-xs);
       padding: 6px 9px; font-size: var(--t-sm); }
     .bn.ok { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
     .bn.no { color: var(--bad); }
@@ -60,7 +59,7 @@ const COLORES = ['#00e676', '#38bdf8', '#fb7185', '#a3e635', '#ffc24b', '#c084fc
     .own.sin { color: var(--text2); }
     .der { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
     .ben { font-weight: 700; color: var(--por); } .ben small { font-size: var(--t-xs); }
-    .bn { border: 1px solid var(--line); background: var(--surface2); color: var(--text); border-radius: 8px;
+    .bn { border: 1px solid var(--line); background: var(--surface2); color: var(--text); border-radius: var(--r-xs);
       padding: 6px 12px; cursor: pointer; font-weight: 700; font-size: var(--t-sm); }
   `],
 })
@@ -74,7 +73,7 @@ export class AdminEquiposComponent implements OnInit {
 
   constructor(private admin: AdminService) {}
   ini(n: string) { return (n || '?').charAt(0).toUpperCase(); }
-  color(n: string) { let h = 0; for (const c of n || '') h = (h * 31 + c.charCodeAt(0)) >>> 0; return COLORES[h % COLORES.length]; }
+  color(n: string) { return colorEquipo(n); }
 
   async ngOnInit() {
     try { this.equipos.set(await this.admin.equipos()); }

@@ -191,7 +191,7 @@ import { colorEquipo } from '../../shared/equipo-colores';
     .dcol > .drol:first-child { margin-top: 0; }
     .dj { display: grid; grid-template-columns: 32px 24px 1fr 16px auto; align-items: center; gap: 8px;
       padding: 5px 8px; background: var(--surface); border: 1px solid var(--line);
-      border-radius: 8px; font-size: var(--t-sm); }
+      border-radius: var(--r-xs); font-size: var(--t-sm); }
     .dfo { width: 24px; height: 24px; border-radius: 50%; object-fit: cover;
       object-position: top center; background: var(--surface2); }
     .dfo.es { object-fit: contain; padding: 2px; border: 1px solid var(--line); }

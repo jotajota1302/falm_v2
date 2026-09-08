@@ -57,12 +57,12 @@ export interface EquipoSorteo { id: string; nombre: string }
     .elegidos { list-style: none; padding: 0; margin: 0; display: flex;
                 flex-direction: column; gap: 4px; }
     .elegidos li { display: flex; gap: 10px; align-items: center; padding: 6px 10px;
-                   background: var(--surface); border: 1px solid var(--line); border-radius: 8px; }
+                   background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-xs); }
     .elegidos .p { width: 28px; color: var(--text2); font-weight: 700; font-size: var(--t-sm); }
     .elegidos .n { font-weight: 700; font-size: var(--t-sm); }
     .pend { display: flex; flex-wrap: wrap; gap: 6px; }
     .eq { background: var(--surface); border: 1px solid var(--line); color: var(--text);
-          border-radius: 8px; padding: 8px 12px; cursor: pointer; font-weight: 700;
+          border-radius: var(--r-xs); padding: 8px 12px; cursor: pointer; font-weight: 700;
           font-size: var(--t-sm); }
     .acc { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
     .btn.ghost { background: var(--surface2); color: var(--text); border: 1px solid var(--line); }

@@ -395,7 +395,7 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
       width: calc((100% - (var(--nl, 5) - 1) * 10px) / var(--nl, 5)); }
     /* La misma proporción que la carta (1/1.22): con una altura fija, el campo
        daba un salto al colocar a alguien. */
-    .slot.vacio { aspect-ratio: 1 / 1.22; border-radius: 13px; display: flex;
+    .slot.vacio { aspect-ratio: 1 / 1.22; border-radius: var(--r-sm); display: flex;
       flex-direction: column; align-items: center; justify-content: center; gap: 6px;
       border: 1.5px dashed rgba(255,255,255,.9);
       background: rgba(255,255,255,.28); }
@@ -426,7 +426,7 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
       letter-spacing: .08em; color: var(--text); }
 
     .banco { flex: 1 1 300px; min-width: 280px;
-      background: var(--surface); border: 1px solid var(--line); border-radius: 18px;
+      background: var(--surface); border: 1px solid var(--line); border-radius: var(--r);
       padding: 16px; margin: 0; }
     .bh { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px; }
     .bh .bn { font-size: var(--t-sm); color: var(--text2); }
@@ -521,10 +521,10 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
     .sh { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
     .st { font-family: var(--fh); font-size: var(--t-md); font-weight: 600; text-transform: uppercase; }
     .quitar { background: transparent; border: 1px solid var(--bad); color: var(--bad);
-      border-radius: 8px; padding: 6px 12px; cursor: pointer; font-family: var(--fb);
+      border-radius: var(--r-xs); padding: 6px 12px; cursor: pointer; font-family: var(--fb);
       font-weight: 600; font-size: var(--t-sm); margin-left: auto; margin-right: 8px; }
     .x { background: var(--surface2); border: 1px solid var(--line); color: var(--text2);
-      width: 30px; height: 30px; border-radius: 8px; cursor: pointer; font-size: var(--t-sm); }
+      width: 30px; height: 30px; border-radius: var(--r-xs); cursor: pointer; font-size: var(--t-sm); }
     .cands { overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
     .cand { display: grid; grid-template-columns: 32px 40px 1fr 22px; align-items: center; gap: 10px; padding: 8px 10px;
       background: var(--surface); border: 1px solid var(--line); border-radius: 11px; cursor: pointer; text-align: left; }

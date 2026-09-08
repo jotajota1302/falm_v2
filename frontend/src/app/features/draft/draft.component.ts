@@ -555,7 +555,7 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
       background: var(--surface2); border: 1px solid var(--line); }
     .cara.esc { object-fit: contain; padding: 8px; background: var(--surface); }
     .cara.sin { display: flex; align-items: center; justify-content: center;
-      font-family: var(--fh); font-size: 22px; color: var(--text2); }
+      font-family: var(--fh); font-size: var(--t-lg); color: var(--text2); }
     .datos { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
     .datos strong { font-family: var(--fh); font-weight: 600; font-size: var(--t-lg);
       line-height: 1.1; text-transform: uppercase; }

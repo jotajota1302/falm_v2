@@ -189,7 +189,7 @@ interface NavItem { path: string; label: string; corto: string; }
            toque. Con pan-x se sigue pudiendo arrastrar la barra desde encima de
            una pestaña, pero un toque quieto ya no se pierde. */
         touch-action: pan-x;
-        padding: 10px 9px; text-align: center; border-radius: 8px;
+        padding: 10px 9px; text-align: center; border-radius: var(--r-xs);
         border: none; background: none; cursor: pointer; color: var(--text2);
         font-family: var(--fb); font-size: var(--t-xs); font-weight: 700;
         letter-spacing: .04em; text-transform: uppercase;
