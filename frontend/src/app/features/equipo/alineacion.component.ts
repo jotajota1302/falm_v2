@@ -107,7 +107,10 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
         @for (pos of ['PORTERO','DEFENSA','MEDIO','DELANTERO']; track pos) {
           <div class="fila" [attr.data-linea]="abr(pos)">
             @for (j of enLinea(pos); track j.activo_id) {
-              <button class="slot" (click)="abrirLinea(pos, j.activo_id)">
+              <!-- Puesto en el once, el rival dejaba de verse: solo estaba en el
+                   selector, y para consultarlo habia que abrirlo y cerrarlo. -->
+              <button class="slot" (click)="abrirLinea(pos, j.activo_id)"
+                      [title]="conQuienJuega(j.activo_id)">
                 <falm-fut-card [nombre]="j.nombre" [posicion]="j.posicion" [foto]="j.foto ?? null"
                   [escudo]="j.escudo ?? null" [media]="media(j)" [campo]="true" />
               </button>
@@ -153,7 +156,7 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
               </div>
               @if (colaDe(l); as cola) {
                 @for (b of cola; track b.id; let i = $index) {
-                  <div class="bfila">
+                  <div class="bfila" [title]="conQuienJuega(b.id)">
                     <span class="prio num">{{ i + 1 }}</span>
                     <span class="bav">
                       @if (fotoDe(b.id); as f) { <img [src]="f" alt="" loading="lazy" /> }
@@ -723,6 +726,19 @@ export class AlineacionComponent implements OnInit {
   abr(p: string) { return ABR[p] ?? p; }
   dobles = signal<Set<string>>(new Set());
   esDoble(id: string) { return this.dobles().has(id); }
+
+  /**
+   * Contra quien juega, donde y cuando: el tooltip del campo y del banquillo.
+   * En las jornadas dobles van los dos partidos, uno por linea, y si llega
+   * tocado se dice tambien, que es lo que se mira antes de dejarlo puesto.
+   */
+  conQuienJuega(activoId: string): string {
+    const l = this.partidos(activoId).map(
+      (p) => `${p.casa ? 'En casa' : 'Fuera'} vs ${p.rival} · ${this.fechaCorta(p.fecha)}`);
+    const e = this.parte(activoId);
+    if (e) l.push(e.title && e.title !== e.eti ? `${e.eti} · ${e.title}` : e.eti);
+    return l.join('\n') || 'Sin partido esta jornada';
+  }
 
   fechaCorta(iso: string) {
     const d = new Date(iso);
