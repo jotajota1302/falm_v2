@@ -17,7 +17,7 @@ import { SubnavComponent, SubnavItem } from '../../shared/subnav.component';
     <falm-subnav [items]="secciones" />
 
     @if (competiciones().length > 1) {
-      <div class="comps">
+      <div class="chips comps">
         @for (c of competiciones(); track c.id) {
           <button [class.on]="c.id === competicionId()" (click)="seleccionar(c.id)">{{ etiqueta(c.tipo) }}</button>
         }
@@ -96,11 +96,9 @@ import { SubnavComponent, SubnavItem } from '../../shared/subnav.component';
     .phead { margin-bottom: 18px; }
     .phead .sub { margin: 5px 0 0; color: var(--text2); font-size: var(--t-sm); }
 
-    .comps { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
-    .comps button { background: var(--surface); border: 1px solid var(--line); color: var(--text2);
-      border-radius: var(--pill); padding: 7px 16px; cursor: pointer; font-family: var(--fb);
-      font-weight: 600; font-size: var(--t-sm); }
-    .comps button.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+    /* Elegir competición son las píldoras de styles.css (.chips), no una copia:
+       la copia se quedaba sin el alto de dedo del móvil. */
+    .comps { margin-bottom: 16px; }
 
     /* La caja y las filas salen de styles.css; aquí, las columnas y lo propio. */
     .fila { grid-template-columns: 52px 1.9fr 42px 40px 40px 40px 66px 74px 92px; }

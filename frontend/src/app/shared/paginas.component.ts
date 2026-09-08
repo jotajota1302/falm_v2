@@ -67,6 +67,10 @@ import { Lista } from './lista';
          :host, que es quien hace de celda en el flex de la barra. */
       :host { flex: 1 1 100%; }
       .pg.mini { margin-left: 0; justify-content: center; }
+      /* Cuatro flechas de 28px seguidas son el peor blanco de la aplicación en
+         un teléfono; el resto de píldoras miden 40. */
+      .ctrl { gap: 6px; }
+      .ctrl button { min-width: 40px; min-height: 40px; padding: 6px 10px; }
       .tam { display: none; }
     }
   `],

@@ -30,7 +30,7 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
       <p class="err">{{ error() }}</p>
     } @else {
       <section class="tabla">
-        <div class="barra">
+        <div class="barra chips">
           <span class="lb">Libres</span>
           <button [class.on]="!posFiltro()" (click)="posFiltro.set(''); l.reset()">Todos</button>
           @for (p of pos; track p) {
@@ -85,10 +85,9 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
     /* La caja y las filas salen de styles.css; aquí solo las columnas y lo propio. */
     .barra .lb { font-size: var(--t-xs); font-weight: 700; letter-spacing: .16em;
       text-transform: uppercase; color: var(--text2); margin-right: 2px; }
-    .barra button { background: var(--surface); border: 1px solid var(--line); color: var(--text2);
-      border-radius: var(--pill); padding: 6px 14px; cursor: pointer; font-weight: 600; font-size: var(--t-sm);
-      font-family: var(--fb); }
-    .barra button.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+    /* Los filtros son las píldoras de styles.css (.chips en la barra), no una
+       copia: la copia se quedaba en 32px de alto en el móvil, donde el sistema
+       les da 40. Aquí solo el color propio de cada posición. */
     .barra button.pos-f.on.POR { background: var(--por); border-color: var(--por); }
     .barra button.pos-f.on.DEF { background: var(--def); border-color: var(--def); }
     .barra button.pos-f.on.MED { background: var(--med); border-color: var(--med); }

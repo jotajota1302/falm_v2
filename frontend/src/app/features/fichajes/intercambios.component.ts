@@ -22,7 +22,7 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
 
     <falm-nav-fichajes [pendientes]="pendientes()" />
 
-    <div class="tabs">
+    <div class="chips subtabs">
       <button [class.on]="tab() === 'bandeja'" (click)="tab.set('bandeja')">Bandeja
         @if (pendientes() > 0) { <span class="dot">{{ pendientes() }}</span> }
       </button>
@@ -48,7 +48,7 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
               </div>
               <div class="cambio">
                 <div class="col">
-                  <span class="cl">{{ o.soyOferente ? 'Ofreces' : 'Te ofrecen' }}</span>
+                  <span class="eti">{{ o.soyOferente ? 'Ofreces' : 'Te ofrecen' }}</span>
                   @for (a of o.ofrecidos; track a.nombre) {
                     <span class="mini" [attr.data-pos]="abr(a.posicion)">
                       @if (a.foto) { <img [src]="a.foto" alt="" /> } @else { <i>{{ abr(a.posicion) }}</i> }
@@ -58,7 +58,7 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
                 </div>
                 <span class="swap">⇄</span>
                 <div class="col">
-                  <span class="cl">{{ o.soyOferente ? 'Pides' : 'Te piden' }}</span>
+                  <span class="eti">{{ o.soyOferente ? 'Pides' : 'Te piden' }}</span>
                   @for (a of o.solicitados; track a.nombre) {
                     <span class="mini" [attr.data-pos]="abr(a.posicion)">
                       @if (a.foto) { <img [src]="a.foto" alt="" /> } @else { <i>{{ abr(a.posicion) }}</i> }
@@ -86,7 +86,7 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
 
     @if (tab() === 'nueva') {
       <div class="nueva">
-        <label class="campo">
+        <label class="campo card">
           <span>Equipo rival</span>
           <select [ngModel]="rivalId()" (ngModelChange)="seleccionarRival($event)">
             <option value="">— elige un equipo —</option>
@@ -134,11 +134,10 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     }
   `,
   styles: [`
-    .tabs { display: flex; gap: 8px; margin-bottom: 14px; }
-    .tabs button { background: var(--surface); border: 1px solid var(--line); color: var(--text2);
-      border-radius: var(--pill); padding: 8px 18px; cursor: pointer;
-      font-family: var(--fb); font-weight: 600; font-size: var(--t-sm); }
-    .tabs button.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+    /* Bandeja y Nueva oferta son el mismo control que los filtros del resto de
+       la app, asi que usan .chips y no una copia: la copia se quedaba fuera del
+       trato tactil que styles.css le da a las pildoras en movil. */
+    .subtabs { margin-bottom: 14px; }
     .dot { background: var(--bad); color: #fff; border-radius: var(--pill); padding: 0 7px;
       font-family: var(--fm); font-size: var(--t-xs); margin-left: 6px; }
 
@@ -159,7 +158,9 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
 
     .cambio { display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; align-items: start; }
     .col { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-    .cl { font-size: var(--t-xs); text-transform: uppercase; letter-spacing: .16em; color: var(--text2); font-weight: 700; }
+    /* .eti, no .cl: mas abajo .cl es el escudo del club y una de las dos
+       reglas se comia parte de la otra. */
+    .eti { font-size: var(--t-xs); text-transform: uppercase; letter-spacing: .16em; color: var(--text2); font-weight: 700; }
     .swap { align-self: center; font-size: var(--t-lg); color: var(--text2); }
     .mini { display: flex; align-items: center; gap: 8px; background: var(--surface2); border: 1px solid var(--line);
       border-radius: var(--r-xs); padding: 6px 9px; font-size: var(--t-sm); font-weight: 600; min-width: 0; }
@@ -178,7 +179,9 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     .bn.no, .bn.cancel { color: var(--bad); }
 
     .nueva { display: flex; flex-direction: column; gap: 14px; }
-    .campo { display: flex; flex-direction: column; gap: 6px; }
+    /* Suelto sobre el fondo, el desplegable era lo unico de la pantalla sin
+       tarjeta debajo. */
+    .campo { display: flex; flex-direction: column; gap: 6px; padding: 14px; }
     .campo span { font-size: var(--t-xs); text-transform: uppercase; letter-spacing: .16em; color: var(--text2); font-weight: 700; }
     .dos { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     .lado { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r);

@@ -121,7 +121,7 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
 
       <div class="cols">
         <section class="tabla cat">
-          <div class="barra">
+          <div class="barra chips">
             <span class="lb">Fichables</span>
             <button [class.on]="!posFiltro()" (click)="posFiltro.set(''); limite.set(30)">Todos</button>
             @for (p of pos; track p) {
@@ -444,10 +444,9 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     .barra { display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
       padding: 13px 18px; border-bottom: 1px solid var(--line); }
     .barra .lb { margin-right: 2px; }
-    .barra button { background: var(--surface); border: 1px solid var(--line); color: var(--text2);
-      border-radius: var(--pill); padding: 6px 14px; cursor: pointer; font-weight: 600;
-      font-size: var(--t-sm); font-family: var(--fb); }
-    .barra button.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+    /* Los filtros del catálogo son las píldoras de styles.css (.chips en la
+       barra), no una copia: la copia era idéntica en el escritorio pero se
+       quedaba fuera del alto de dedo que el sistema les da en el móvil. */
     .barra button:disabled { opacity: .45; cursor: not-allowed; }
     .barra button.pos-f.on.POR { background: var(--por); border-color: var(--por); }
     .barra button.pos-f.on.DEF { background: var(--def); border-color: var(--def); }
@@ -618,8 +617,10 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
       .fila.pk > :nth-child(2) { display: none; }
       .candidatos li { grid-template-columns: 46px 1fr 24px 62px; }
       .barra { padding: 11px 12px; gap: 7px; }
-      /* El rótulo se va: son 70px que le faltaban a los filtros para caber. */
-      .barra .lb { display: none; }
+      /* El rótulo se va: son 70px que le faltaban a los filtros para caber.
+         Solo en el catálogo: las otras barras no llevan filtros y se quedaban
+         sin título, incluidas las dos del reparto ya terminado. */
+      .cat .barra .lb { display: none; }
       /* El club y la búsqueda se reparten la última línea en vez de una cada uno. */
       .barra .club-f, .barra .buscar { flex: 1 1 calc(50% - 4px); min-width: 0;
         margin-left: 0; height: 34px; padding: 0 12px; font-size: var(--t-sm);
