@@ -40,7 +40,7 @@ interface Op {
               <span class="faint">{{ fecha(c.ultima) }}</span>
               <span class="chip" [class.chip-ok]="c.estado === 'succeeded'"
                     [class.chip-warn]="c.estado && c.estado !== 'succeeded'">
-                {{ c.activo ? (c.estado ?? 'sin ejecutar') : 'parada' }}
+                {{ c.activo ? estadoCron(c.estado) : 'parada' }}
               </span>
             </div>
           }
@@ -206,7 +206,12 @@ interface Op {
     h3 { margin: 0 0 10px; }
     .hint { color: var(--text2); font-size: var(--t-sm); margin: 0 0 12px; }
     .form { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
-    .form label { font-size: var(--t-sm); color: var(--text2); display: flex; gap: 6px; align-items: center; }
+    .form label { font-size: var(--t-sm); color: var(--text2); display: flex; gap: 6px; align-items: center;
+      min-width: 0; }
+    /* Un desplegable no baja de lo que mide su opción más larga si no se le
+       dice; con "J13 (fuera de la liga) · 380 puntuaciones" dentro, el
+       formulario se salía 18px de la pantalla del móvil. */
+    .form select { min-width: 0; max-width: 100%; }
     .lista { display: flex; flex-direction: column; gap: 6px; }
     .row { display: grid; grid-template-columns: 1fr 90px 150px 110px; gap: 10px; align-items: center;
       padding: 8px 11px; background: var(--surface2); border: 1px solid var(--line);
@@ -232,6 +237,10 @@ interface Op {
       font-size: var(--t-sm); min-width: 180px; }
     .recuperar { margin: 12px 0 0; }
     .recuperar code { font-family: var(--fm); font-size: var(--t-xs); }
+    @media (max-width: 620px) {
+      /* El rótulo encima y el desplegable a lo ancho: en una línea no caben. */
+      .form label { flex: 1 1 100%; flex-direction: column; align-items: stretch; gap: 4px; }
+    }
     @media (max-width: 760px) {
       .row { grid-template-columns: 1fr 1fr; }
       .row.bk { grid-template-columns: 1fr 84px; }
@@ -402,6 +411,13 @@ export class AdminOperacionesComponent implements OnInit {
   fecha(f: string | null) {
     if (!f) return 'nunca';
     return new Date(f).toLocaleString('es-ES', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+  }
+
+  /** pg_cron habla en inglés y aquí salía su 'succeeded' tal cual. */
+  estadoCron(e: string | null) {
+    return ({ succeeded: 'correcta', failed: 'ha fallado', running: 'en marcha',
+              starting: 'arrancando', sending: 'en marcha', connecting: 'conectando',
+            } as Record<string, string>)[e ?? ''] ?? e ?? 'sin ejecutar';
   }
 
   async lanzar(op: Op) {
