@@ -22,11 +22,23 @@
 --   4. Un suplente que no jugo no entra, y el hueco pasa al siguiente.
 --   5. "Jugo" es tener fila en falm.puntuacion de esa jornada, no minutos > 0.
 --      La ingesta solo registra a quien jugo, asi que en la practica coincide.
+--
+-- 'pendiente' (anadido el 2026-09-08) dice que el club de ese activo todavia
+-- tiene sin acabar algun partido de la jornada. Sin el, "no tiene puntuacion"
+-- mezclaba dos cosas muy distintas -no jugo, y aun no le toca- y la pantalla
+-- pintaba el once entero como caido mientras la jornada no empezaba. No entra
+-- en el calculo: los relevos se resuelven igual, y al acabar la jornada es
+-- false para todos.
 
-create or replace function falm.once_resuelto(p_ali uuid)
+-- Si cambia la lista de columnas hay que soltarla antes: Postgres no deja
+-- cambiar el tipo de retorno con un replace.
+drop function if exists falm.once_resuelto(uuid);
+
+create function falm.once_resuelto(p_ali uuid)
 returns table (
   activo_id uuid, rol text, pos text, orden int, lineas text[],
-  jugo boolean, puntos numeric, cuenta boolean, entra_por uuid, hueco text)
+  jugo boolean, puntos numeric, cuenta boolean, entra_por uuid, hueco text,
+  pendiente boolean)
 language plpgsql
 stable
 set search_path to 'public', 'falm'
@@ -44,7 +56,14 @@ begin
   for r in
     select aa.activo_id, aa.rol::text rol, aa.lineas, aa.orden,
       case when a.tipo='DEFENSA' then 'PORTERO' else jl.posicion::text end as pos,
-      coalesce(ap.puntos,0) as puntos, (ap.activo_id is not null) as jugo
+      coalesce(ap.puntos,0) as puntos, (ap.activo_id is not null) as jugo,
+      exists (
+        select 1 from falm.mapeo_jornada mj
+        join falm.partido_lfp pa on pa.jornada_lfp_id = mj.jornada_lfp_id
+        where mj.jornada_falm_id = v_jor
+          and coalesce(jl.equipo_lfp_id, a.equipo_lfp_id) in (pa.local_id, pa.visitante_id)
+          and pa.goles_local is null
+      ) as pendiente
     from falm.alineacion_activo aa
     join falm.activo a on a.id=aa.activo_id
     left join falm.jugador_lfp jl on jl.id=a.jugador_lfp_id
@@ -79,6 +98,7 @@ begin
     activo_id := r.activo_id; rol := r.rol; pos := r.pos; orden := r.orden;
     lineas := r.lineas; jugo := r.jugo; puntos := r.puntos;
     cuenta := v_cuenta; entra_por := v_entra; hueco := v_hueco;
+    pendiente := r.pendiente;
     return next;
   end loop;
 end $function$;
@@ -100,3 +120,42 @@ $function$;
 -- Solo lectura y la RLS de alineacion_activo sigue filtrando lo que cada uno ve.
 grant execute on function falm.once_resuelto(uuid) to authenticated;
 revoke execute on function falm.once_resuelto(uuid) from public, anon;
+
+-- ---------------------------------------------------------------------------
+-- El marcador de Inicio, calculado con lo que haya puntuado ya.
+--
+-- Salia de falm.enfrentamiento.puntos_local, que solo se escribe cuando
+-- recalcular_clasificacion corre, y eso pasa cuando el cron procesa la jornada
+-- entera (tres horas despues del ultimo partido). Con partidos de viernes a
+-- lunes, el marcador se pasaba el fin de semana en blanco aunque hubiera medio
+-- once puntuado. Cuando la jornada se cierra, los dos numeros coinciden.
+--
+-- 'resueltos' de 'plazas' es cuantas de las once ya tienen desenlace: el
+-- titular jugo, o ya se sabe que no juega porque su club acabo el partido.
+-- ---------------------------------------------------------------------------
+create or replace function falm.marcador_jornada(p_jornada uuid, p_equipo uuid)
+returns jsonb
+language plpgsql
+stable
+set search_path to 'public', 'falm'
+as $function$
+declare v_ali uuid; v_pts numeric; v_res int; v_tot int;
+begin
+  select id into v_ali from falm.alineacion
+   where jornada_falm_id = p_jornada and equipo_falm_id = p_equipo;
+  if v_ali is null then
+    return jsonb_build_object('alineada', false);
+  end if;
+
+  select coalesce(sum(puntos) filter (where cuenta), 0),
+         count(*) filter (where rol = 'TITULAR' and (jugo or not pendiente)),
+         count(*) filter (where rol = 'TITULAR')
+    into v_pts, v_res, v_tot
+    from falm.once_resuelto(v_ali);
+
+  return jsonb_build_object('alineada', true, 'puntos', v_pts,
+                            'resueltos', v_res, 'plazas', v_tot);
+end $function$;
+
+grant execute on function falm.marcador_jornada(uuid, uuid) to authenticated;
+revoke execute on function falm.marcador_jornada(uuid, uuid) from public, anon;

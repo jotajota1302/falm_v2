@@ -83,8 +83,21 @@ begin
     v_fallos := v_fallos || format('5: puntos_once %s <> suma de los que cuentan %s', v_total, v_suma);
   end if;
 
+  -- 6. Pendiente: sin marcadores en la jornada lo estan todos -es lo que evita
+  --    pintar el once entero como caido antes de empezar- y en cuanto el
+  --    partido tiene resultado deja de estarlo.
+  select count(*) filter (where not pendiente) into v_n from falm.once_resuelto(v_ali);
+  if v_n <> 0 then
+    v_fallos := v_fallos || format('6: %s no pendientes sin marcadores', v_n);
+  end if;
+  update falm.partido_lfp set goles_local = 0, goles_visitante = 0 where jornada_lfp_id = v_lfp;
+  select count(*) filter (where pendiente) into v_n from falm.once_resuelto(v_ali);
+  if v_n <> 0 then
+    v_fallos := v_fallos || format('6: %s siguen pendientes con la jornada acabada', v_n);
+  end if;
+
   if array_length(v_fallos, 1) > 0 then
     raise exception 'FALLO: %', array_to_string(v_fallos, ' | ');
   end if;
-  raise exception 'TEST OK: 5 casos (sin bajas, titular caido, porteria sin relevo, suplente sin hueco, total)';
+  raise exception 'TEST OK: 6 casos (sin bajas, titular caido, porteria sin relevo, suplente sin hueco, total, pendiente)';
 end $$;
