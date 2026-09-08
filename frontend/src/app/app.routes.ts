@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { authGuard } from './core/auth.guard';
+import { authGuard, invitadoGuard } from './core/auth.guard';
 import { adminGuard } from './core/admin.guard';
 
 /**
@@ -9,6 +9,7 @@ import { adminGuard } from './core/admin.guard';
 export const routes: Routes = [
   {
     path: 'login',
+    canActivate: [invitadoGuard],
     loadComponent: () => import('./features/auth/login.component').then((m) => m.LoginComponent),
   },
   {
