@@ -147,7 +147,12 @@ h3 { font-family: var(--fh); font-weight: 500; font-size: var(--t-sm); text-tran
   border: 1px solid var(--line); border-radius: var(--r-sm); padding: 11px 15px;
 }
 .kpi .lb { display: block; }
-.kpi .v { display: block; margin-top: 2px; font-family: var(--fh); font-size: var(--t-lg); font-weight: 600; }
+/* Sin font-family a proposito: la cifra la manda .num, que es lo que dice la
+   plantilla. Con var(--fh) aqui, esta regla ganaba a .num por especificidad y
+   los numeros grandes de las tarjetas salian en la condensada de los titulares
+   mientras los de la tabla de debajo salian en mono: dos letras para las
+   cifras en la misma pantalla. */
+.kpi .v { display: block; margin-top: 2px; font-size: var(--t-lg); font-weight: 600; }
 .kpi .v small { font-size: var(--t-sm); color: var(--text2); }
 
 /* Tira que se arrastra a lo ancho.
