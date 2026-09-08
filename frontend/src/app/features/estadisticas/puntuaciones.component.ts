@@ -20,13 +20,13 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
       <p class="sub">{{ subtitulo() }}</p>
     </header>
 
-    <div class="modos">
+    <div class="chips modos">
       <button [class.on]="modo() === 'acumulada'" (click)="setModo('acumulada')">Acumulada</button>
       <button [class.on]="modo() === 'jornada'" (click)="setModo('jornada')">Por jornada</button>
     </div>
 
     @if (modo() === 'jornada' && jornadas().length) {
-      <div class="jchips">
+      <div class="jchips tira-x">
         @for (j of jornadas(); track j.numero) {
           <button [class.on]="j.numero === sel()" (click)="elegir(j.numero)">J{{ j.numero }}</button>
         }
@@ -96,12 +96,12 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
     .phead { margin-bottom: 16px; }
     .phead .sub { margin: 5px 0 0; color: var(--text2); font-size: var(--t-sm); }
 
-    .modos { display: flex; gap: 8px; margin-bottom: 12px; }
-    .modos button { flex: 1; background: var(--surface); border: 1px solid var(--line); color: var(--text2);
-      border-radius: var(--r-sm); padding: 10px; cursor: pointer; font-family: var(--fb); font-weight: 700; font-size: var(--t-sm); }
-    .modos button.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+    /* Elegir vista es el mismo control que en Clasificacion y en Partidos, y
+       eran dos rectangulos a todo el ancho contra dos pildoras. */
+    .modos { margin-bottom: 12px; }
 
-    .jchips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 12px; }
+    /* Las sombras de los lados salen de .tira-x, igual que en Partidos. */
+    .jchips { display: flex; gap: 6px; padding-bottom: 6px; margin-bottom: 12px; }
     .jchips button { flex: 0 0 auto; min-width: 44px; padding: 8px 10px; border: 1px solid var(--line);
       background: var(--surface); color: var(--text2); border-radius: var(--r-xs); cursor: pointer;
       font-family: var(--fm); font-weight: 600; font-size: var(--t-sm); }

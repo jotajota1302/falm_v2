@@ -144,6 +144,22 @@ h3 { font-family: var(--fh); font-weight: 500; font-size: var(--t-sm); text-tran
 .kpi .v { display: block; margin-top: 2px; font-family: var(--fh); font-size: var(--t-lg); font-weight: 600; }
 .kpi .v small { font-size: var(--t-sm); color: var(--text2); }
 
+/* Tira que se arrastra a lo ancho.
+   Las sombras de los lados son lo único que dice que hay más fuera de la vista:
+   sin ellas, a 380px se ven 258px de 508 y nada lo indica. El degradado del
+   papel va "local" -se mueve con el contenido y descubre la sombra al llegar al
+   tope- y la sombra va "scroll", pegada al borde. Fondo el del papel, así que
+   solo sirve para tiras que van sobre el papel, no dentro de una tarjeta. */
+.tira-x {
+  overflow-x: auto; scrollbar-width: none;
+  background:
+    linear-gradient(to right, var(--bg) 40%, transparent) left center / 22px 100% no-repeat local,
+    linear-gradient(to left, var(--bg) 40%, transparent) right center / 22px 100% no-repeat local,
+    radial-gradient(farthest-side at 0 50%, rgba(22,19,15,.16), transparent) left center / 11px 100% no-repeat scroll,
+    radial-gradient(farthest-side at 100% 50%, rgba(22,19,15,.16), transparent) right center / 11px 100% no-repeat scroll;
+}
+.tira-x::-webkit-scrollbar { display: none; }
+
 /* filtros en píldora */
 .chips { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .chips button, .chip-btn {

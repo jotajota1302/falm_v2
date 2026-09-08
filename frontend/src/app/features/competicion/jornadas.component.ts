@@ -27,7 +27,7 @@ import { colorEquipo } from '../../shared/equipo-colores';
       <div class="jnav">
         <button class="jb" (click)="mover(-1)" [disabled]="bloque() === 0"
                 aria-label="Jornadas anteriores">‹</button>
-        <div class="jchips">
+        <div class="jchips tira-x">
           @for (j of jornadasPag(); track j.id) {
             <button [class.on]="j.id === jornadaId()" [class.doble]="esDoble(j.id)"
                     [title]="esDoble(j.id) ? 'Jornada doble: cada equipo juega dos partidos' : ''"
@@ -133,18 +133,10 @@ import { colorEquipo } from '../../shared/equipo-colores';
     .jb:disabled { opacity: .35; cursor: default; }
     .jb:not(:disabled):hover { border-color: var(--accent); color: var(--accent); }
     /* La tira esconde la mitad: a 380px se ven 258px de 508. Las flechas de los
-       lados ya dejan pasar jornada, pero nada decia que la tira estuviera
-       cortada por el medio. Se le ponen las mismas sombras de scroll que a la
-       barra de pestanas, con el papel de fondo en vez del de la tarjeta. */
+       lados ya dejan pasar jornada, pero nada decia que estuviera cortada por
+       el medio; de eso se encarga .tira-x, en styles.css. */
     .jchips { flex: 0 1 auto; min-width: 0; display: flex; justify-content: center;
-      gap: 6px; overflow-x: auto; padding-bottom: 2px;
-      scrollbar-width: none;
-      background:
-        linear-gradient(to right, var(--bg) 40%, transparent) left center / 22px 100% no-repeat local,
-        linear-gradient(to left, var(--bg) 40%, transparent) right center / 22px 100% no-repeat local,
-        radial-gradient(farthest-side at 0 50%, rgba(22,19,15,.16), transparent) left center / 11px 100% no-repeat scroll,
-        radial-gradient(farthest-side at 100% 50%, rgba(22,19,15,.16), transparent) right center / 11px 100% no-repeat scroll; }
-    .jchips::-webkit-scrollbar { display: none; }
+      gap: 6px; padding-bottom: 2px; }
     .jchips button { flex: 0 0 auto; min-width: 44px; padding: 8px 10px; border: 1px solid var(--line);
       background: var(--surface); color: var(--text2); border-radius: var(--r-xs); cursor: pointer;
       font-family: var(--fm); font-weight: 600; font-size: var(--t-sm); }
