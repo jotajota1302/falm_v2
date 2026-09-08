@@ -67,6 +67,7 @@ dentro del repo.
 | `pretemporada_protecciones.sql` | Protecciones de jornadas y calendario, y edición puntual |
 | `calendario_liga_lectura.sql` | `calendario_liga`, lectura para el editor del panel |
 | `bloqueo_y_congelacion.sql` | `guardar_alineacion`, bloqueos y congelación por jornada |
+| `once_resuelto.sql` | Quién suma y quién se queda fuera: relevos y `puntos_once` |
 
 ### Operación y datos
 
@@ -99,6 +100,7 @@ dentro del repo.
 | `draft_orden_manual_test.sql` | 4 casos del orden manual del sorteo |
 | `respaldos_test.sql` | 8 casos de respaldo y restauración (borra tablas de verdad) |
 | `editar_desglose_puntos_test.sql` | 6 casos de edición por conceptos y de la explicación |
+| `once_resuelto_test.sql` | 5 casos de relevos: sin bajas, titular caído, portería y suplente sin hueco |
 
 ## Dónde está la verdad
 
