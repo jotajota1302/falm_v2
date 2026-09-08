@@ -66,6 +66,7 @@ interface NavItem { path: string; label: string; corto: string; }
       @if (mas()) {
         <div class="masback" (click)="mas.set(false)"></div>
         <div class="maspanel">
+          <span class="masyo"><span class="ava">{{ iniciales }}</span>{{ team }}</span>
           @if (esAdmin()) {
             <a routerLink="/admin" (click)="mas.set(false)">Administración</a>
           }
@@ -223,7 +224,13 @@ interface NavItem { path: string; label: string; corto: string; }
         border-bottom: 1px solid var(--line); touch-action: manipulation; }
       .maspanel a.on { color: var(--accent); }
       .maspanel button { color: var(--text2); }
-      .massep { height: 7px; background: var(--surface2); border-bottom: 1px solid var(--line); }
+      /* En el móvil el nombre del equipo no cabe en la cabecera y se esconde,
+         así que abrir la cuenta era la única pantalla donde podía decir de
+         quién es esta sesión, y no lo decía. */
+      .masyo { display: flex; align-items: center; gap: 10px; padding: 13px 18px;
+        background: var(--surface2); border-bottom: 1px solid var(--line);
+        font-family: var(--fh); font-size: var(--t-md); font-weight: 600;
+        text-transform: uppercase; }
     }
   `],
 })
