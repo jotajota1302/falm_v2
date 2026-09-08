@@ -157,6 +157,21 @@ export interface ActivoResuelto {
   entra_por: string | null;
   /** La linea del hueco que tapa. */
   hueco: string | null;
+  /** Su club aun tiene sin acabar algun partido de la jornada: no ha jugado
+      TODAVIA, que no es lo mismo que no haber jugado. */
+  pendiente: boolean;
+}
+
+/**
+ * Marcador de un equipo en una jornada, calculado con lo que haya puntuado ya.
+ * 'resueltos' de 'plazas' es cuantas de las once tienen desenlace; el resto
+ * todavia tienen el partido por delante.
+ */
+export interface MarcadorJornada {
+  alineada: boolean;
+  puntos?: number;
+  resueltos?: number;
+  plazas?: number;
 }
 
 export interface AlineacionGuardada {
@@ -598,6 +613,19 @@ export class FalmService {
     if (error) throw error;
     const d = typeof data === 'string' ? JSON.parse(data) : data;
     return (Array.isArray(d) ? d : []) as ActivoResuelto[];
+  }
+
+  /**
+   * El marcador en vivo: falm.enfrentamiento solo se escribe cuando el cron
+   * procesa la jornada entera, asi que durante el fin de semana estaba en
+   * blanco aunque hubiera medio once puntuado.
+   */
+  async marcadorJornada(jornadaFalmId: string, equipoId: string): Promise<MarcadorJornada> {
+    const { data, error } = await this.sb.client.rpc('marcador_jornada',
+      { p_jornada: jornadaFalmId, p_equipo: equipoId });
+    if (error) throw error;
+    const d = typeof data === 'string' ? JSON.parse(data) : data;
+    return (d ?? { alineada: false }) as MarcadorJornada;
   }
 
   /**

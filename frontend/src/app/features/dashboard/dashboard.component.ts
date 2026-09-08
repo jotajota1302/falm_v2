@@ -1,6 +1,6 @@
 import { Component, OnDestroy, OnInit, computed, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { ActivoResuelto, Agenda, AgendaItem, Alineado, FalmService, ItemPlantilla, PorteroClub, RolAlineacion } from '../../core/falm.service';
+import { ActivoResuelto, Agenda, AgendaItem, Alineado, FalmService, ItemPlantilla, MarcadorJornada, PorteroClub, RolAlineacion } from '../../core/falm.service';
 
 const ORDEN = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'] as const;
 /** Las líneas que puede cubrir un suplente: una portería no deja hueco. */
@@ -14,7 +14,7 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
 interface EnCampo {
   pos: string; nombre: string; foto: string | null; escudo: string | null;
   club_id: string | null; pts: number | null;
-  jugo: boolean; cuenta: boolean;
+  jugo: boolean; cuenta: boolean; pendiente: boolean;
   /** Titular: quien entro en su lugar. Suplente: a quien sustituye. */
   releva: string | null;
 }
@@ -92,9 +92,11 @@ interface Once { equipo: string; formacion: string; campo: EnCampo[]; banca: EnB
                     <span></span><span></span><span>Once</span><span></span><span class="der">Pts</span>
                   </div>
                   @for (j of once(o); track $index) {
-                    <!-- El que no jugo se apaga: antes salia un 0 igual que el
-                         de quien jugo y no sumo, y no habia forma de verlo. -->
-                    <div class="fila j11" [class.fuera]="!j.cuenta" [title]="porQue(j, true)">
+                    <!-- Se apaga solo el que YA se sabe que no jugo. Mientras su
+                         club tenga el partido pendiente sigue encendido: con la
+                         jornada sin empezar salia el once entero como caido. -->
+                    <div class="fila j11" [class.fuera]="!j.cuenta && !j.pendiente"
+                         [title]="porQue(j, true)">
                       <span class="p" [class]="abr(j.pos)">{{ abr(j.pos) }}</span>
                       <img class="fo" [class.es]="!j.foto" [src]="j.foto || j.escudo" alt=""
                            loading="lazy" (error)="j.foto = null" />
@@ -154,9 +156,12 @@ interface Once { equipo: string; formacion: string; campo: EnCampo[]; banca: EnB
           </div>
           <div class="amatch">
             <span class="t" [class.win]="gane(ac)">{{ nombre() }}</span>
-            <span class="sc num">{{ fmt(ac.mis_puntos) }}<i>–</i>{{ fmt(ac.rival_puntos) }}</span>
+            <span class="sc num">{{ tanteo(ac, true) }}<i>–</i>{{ tanteo(ac, false) }}</span>
             <span class="t" [class.win]="perdi(ac)">{{ ac.rival }}</span>
           </div>
+          <!-- Cuantas de las once plazas tienen ya desenlace: sin esto no se
+               sabe si un 24-31 esta cerrado o va por la mitad. -->
+          @if (avance(); as av) { <p class="av">{{ av }}</p> }
         </a>
       }
 
@@ -260,6 +265,8 @@ interface Once { equipo: string; formacion: string; campo: EnCampo[]; banca: EnB
     .actual .t.win { color: var(--text); font-weight: 700; }
     .actual .sc { flex: 0 0 auto; font-size: var(--t-lg); font-weight: 700; color: var(--accent); }
     .actual .sc i { color: var(--text2); font-style: normal; margin: 0 5px; }
+    .actual .av { margin: 8px 0 0; text-align: center; font-size: var(--t-xs);
+      color: var(--text2); }
 
     .accion { display: flex; align-items: center; gap: 14px; padding: 14px 17px;
       background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--por);
@@ -294,6 +301,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
   /** Los dos onces de la jornada que viene (o de la que se está jugando). */
   mio = signal<Once | null>(null);
   rival = signal<Once | null>(null);
+  /** Marcador en vivo del partido de arriba, con lo puntuado hasta ahora. */
+  marcaMio = signal<MarcadorJornada | null>(null);
+  marcaRival = signal<MarcadorJornada | null>(null);
   /** Si en esta jornada cada equipo juega dos partidos. */
   doble = signal(false);
 
@@ -311,6 +321,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
    */
   porQue(j: EnCampo, titular: boolean): string {
     if (!j.jugo) {
+      // Mientras su club tenga el partido por jugar no ha fallado nadie: eso es
+      // esperar, no caerse, y se pintaba igual que una baja.
+      if (j.pendiente) return titular ? 'Aún no ha jugado' : 'Aún no ha jugado · en el banquillo';
       return titular && j.releva ? `No jugó · entra ${j.releva} en su lugar` : 'No jugó';
     }
     if (j.cuenta) {
@@ -330,6 +343,26 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   etiqueta(t: string) { return t === 'CHAMPIONS' ? 'Champions' : t === 'CLAUSURA' ? 'Clausura' : 'Liga'; }
   fmt(n: number | null) { return n == null ? '–' : (Math.round(n * 10) / 10).toString(); }
+
+  /**
+   * Lo que va marcando cada uno. Mientras la jornada no la cierre el cron,
+   * falm.enfrentamiento sigue vacio, asi que manda el calculo en vivo; cuando
+   * se cierra los dos numeros son el mismo.
+   */
+  tanteo(ac: AgendaItem, mio: boolean): string {
+    const m = mio ? this.marcaMio() : this.marcaRival();
+    if (m?.alineada && m.puntos != null) return this.fmt(m.puntos);
+    return this.fmt(mio ? ac.mis_puntos : ac.rival_puntos);
+  }
+
+  /** "7 de 11 jugados", y solo mientras quede alguno por resolver. */
+  avance = computed<string | null>(() => {
+    const a = this.marcaMio(), b = this.marcaRival();
+    if (!a?.alineada || !a.plazas) return null;
+    const hechos = Math.min(a.resueltos ?? 0, b?.resueltos ?? a.resueltos ?? 0);
+    if (hechos >= (a.plazas ?? 11)) return null;
+    return `${a.resueltos ?? 0} de ${a.plazas} jugados · ${b?.resueltos ?? 0} de ${b?.plazas ?? a.plazas} el rival`;
+  });
   gane(ac: AgendaItem) { return ac.mis_puntos != null && ac.rival_puntos != null && ac.mis_puntos > ac.rival_puntos; }
   perdi(ac: AgendaItem) { return ac.mis_puntos != null && ac.rival_puntos != null && ac.rival_puntos > ac.mis_puntos; }
   abr(pos: string) { return ABR[pos] ?? pos; }
@@ -402,6 +435,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         // se pinta como siempre y no se inventa un relevo.
         jugo: r ? r.jugo : true,
         cuenta: r ? r.cuenta : true,
+        pendiente: r ? r.pendiente : true,
         releva: r ? apellido(r.entra_por ?? releva.get(p.activo_id)) : null,
       };
     };
@@ -454,6 +488,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
           ]);
           this.mio.set(yo);
           this.rival.set(otro);
+        }
+        const ac = this.actual();
+        if (ac?.jornada_id) {
+          const [a, b] = await Promise.all([
+            this.falm.marcadorJornada(ac.jornada_id, eq.id).catch(() => null),
+            this.falm.marcadorJornada(ac.jornada_id, ac.rival_id).catch(() => null),
+          ]);
+          this.marcaMio.set(a); this.marcaRival.set(b);
         }
         const comps = await this.falm.competiciones();
         const liga = comps.find((c) => c.tipo === 'LIGA') ?? comps[0];
