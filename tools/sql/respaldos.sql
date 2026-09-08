@@ -219,9 +219,15 @@ begin
 end $function$;
 
 -- ---------------------------------------------------------------------------
--- Dejar solo los N respaldos mas recientes. Lo llama el cron diario.
+-- Dejar solo los N diarios mas recientes. Lo llama el cron diario.
+--
+-- Purgaba por antiguedad sin mirar la etiqueta: ordenaba todos los bk_falm_* y
+-- tiraba del septimo en adelante. Con una copia al dia, en una semana se
+-- llevaba por delante los respaldos manuales, incluido el anterior al draft
+-- consolidado, que no tiene marcha atras. Desde el 2026-09-08 solo rota los
+-- diarios, que se rehacen solos; los manuales se borran a mano desde el panel.
 -- ---------------------------------------------------------------------------
-create or replace function falm.respaldo_purgar(p_conservar int default 7)
+create or replace function falm.respaldo_purgar(p_conservar int default 3)
 returns jsonb
 language plpgsql
 security definer
@@ -230,6 +236,8 @@ as $function$
 declare
   v_s text;
   v_borrados text[] := '{}';
+  -- El sufijo numerico solo aparece si dos respaldos caen en el mismo segundo.
+  v_diario text := '^bk_falm_[0-9]{8}_[0-9]{6}_diario(_[0-9]+)?$';
 begin
   if not falm.puede_gestionar() then
     raise exception 'Solo un administrador puede purgar respaldos';
@@ -240,7 +248,7 @@ begin
 
   for v_s in
     select nspname from pg_namespace
-     where nspname like 'bk\_falm\_%'
+     where nspname ~ v_diario
      order by nspname desc
      offset p_conservar
   loop
@@ -248,9 +256,10 @@ begin
     v_borrados := v_borrados || v_s;
   end loop;
 
-  return jsonb_build_object('borrados', v_borrados,
-                            'quedan', (select count(*) from pg_namespace
-                                        where nspname like 'bk\_falm\_%'));
+  return jsonb_build_object(
+    'borrados', v_borrados,
+    'diarios', (select count(*) from pg_namespace where nspname ~ v_diario),
+    'quedan', (select count(*) from pg_namespace where nspname like 'bk\_falm\_%'));
 end $function$;
 
 -- ---------------------------------------------------------------------------
@@ -372,11 +381,12 @@ revoke execute on function falm.tablas_orden_fk() from public, anon, authenticat
 revoke execute on function falm.tablas_dependientes(text) from public, anon, authenticated;
 
 -- ---------------------------------------------------------------------------
--- Respaldo diario a las 04:15 (hora del servidor, UTC), conservando 7 dias.
--- Siete copias son unos 28 MB: el plan free da 500 MB y ahora se usan 36.
+-- Respaldo diario a las 04:15 (hora del servidor, UTC), conservando 3 dias.
+-- Tres copias son unos 4 MB: el plan free da 500 MB. La purga solo toca los
+-- diarios, asi que los manuales se acumulan hasta que se borren desde el panel.
 -- ---------------------------------------------------------------------------
 select cron.unschedule('falm-respaldo-diario')
  where exists (select 1 from cron.job where jobname = 'falm-respaldo-diario');
 
 select cron.schedule('falm-respaldo-diario', '15 4 * * *',
-  $cron$select falm.respaldo_crear('diario'); select falm.respaldo_purgar(7);$cron$);
+  $cron$select falm.respaldo_crear('diario'); select falm.respaldo_purgar(3);$cron$);

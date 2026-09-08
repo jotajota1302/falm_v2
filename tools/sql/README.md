@@ -31,7 +31,10 @@ El proyecto está en el **plan free de Supabase, que no hace copias automáticas
   que cuelgan de ella, porque el `truncate cascade` las vacía igual). Antes de
   tocar nada deja un respaldo automático `antes_de_restaurar`.
 - El cron `falm-respaldo-diario` hace una copia cada día a las 04:15 y conserva
-  las 7 últimas.
+  **los 3 últimos diarios**. La purga solo rota los diarios: los respaldos con
+  etiqueta propia (`antes-del-draft`, etc.) no caducan y se borran a mano desde
+  el panel. Antes purgaba por antigüedad sin mirar la etiqueta, y en una semana
+  se habría llevado el respaldo anterior al draft.
 
 **Esto vive dentro de la misma base**: protege de un borrado por error, no de
 perder el proyecto. Un volcado a fichero fuera (`pg_dump --schema=falm`) sigue
