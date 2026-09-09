@@ -31,9 +31,16 @@ import { colorEquipo } from '../../shared/equipo-colores';
                        placeholder="Nombre" style="width:150px" />
                 <button class="bn ok" (click)="guardar(e)">✓</button>
                 <button class="bn no" (click)="editId.set('')">✕</button>
+              } @else if (claveId() === e.id) {
+                <input type="text" [ngModel]="clave()" (ngModelChange)="clave.set($event)"
+                       placeholder="Contraseña temporal" style="width:190px" />
+                <button class="bn ok" [disabled]="clave().length < 8" (click)="ponerClave(e)">✓</button>
+                <button class="bn no" (click)="claveId.set('')">✕</button>
               } @else {
                 <span class="ben num">{{ e.beneficio }}<small>€</small></span>
                 <button class="bn" (click)="editar(e)">✎</button>
+                <button class="bn" title="Ponerle una contraseña temporal"
+                        (click)="pedirClave(e)">🔑</button>
               }
             </div>
           </div>
@@ -67,6 +74,9 @@ export class AdminEquiposComponent implements OnInit {
   equipos = signal<AdminEquipo[]>([]);
   editId = signal('');
   edNombre = signal('');
+  /** Equipo al que se le está poniendo una contraseña temporal, y cuál. */
+  claveId = signal('');
+  clave = signal('');
   cargando = signal(true);
   aviso = signal('');
   error = signal('');
@@ -81,7 +91,29 @@ export class AdminEquiposComponent implements OnInit {
     finally { this.cargando.set(false); }
   }
 
+  /**
+   * Contraseña temporal para quien ha perdido la suya. Se sugiere una al azar
+   * para no acabar poniéndoles a todos la misma; se puede cambiar antes de dar
+   * al visto. No se guarda en claro en ningún sitio: hay que copiarla ahora.
+   */
+  pedirClave(e: AdminEquipo) {
+    this.aviso.set(''); this.error.set(''); this.editId.set('');
+    this.claveId.set(e.id);
+    this.clave.set('falm-' + Math.random().toString(36).slice(2, 8));
+  }
+
+  async ponerClave(e: AdminEquipo) {
+    const nueva = this.clave();
+    this.error.set('');
+    try {
+      await this.admin.contrasenaTemporal(e.id, nueva);
+      this.claveId.set(''); this.clave.set('');
+      this.aviso.set(`${e.nombre} entra ya con «${nueva}». Dásela ahora: no queda guardada.`);
+    } catch (err: any) { this.error.set(err?.message ?? 'No se ha podido cambiar'); }
+  }
+
   editar(e: AdminEquipo) {
+    this.claveId.set('');
     this.editId.set(e.id);
     this.edNombre.set(e.nombre);
     this.aviso.set('');

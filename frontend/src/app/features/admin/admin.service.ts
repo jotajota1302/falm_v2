@@ -80,6 +80,18 @@ export class AdminService {
     }));
   }
 
+  /**
+   * Le pone a un equipo una contraseña temporal. Es la recuperación mientras no
+   * haya correos: quien la pierde te la pide y se la cambias. No se guarda en
+   * ningún sitio en claro, así que hay que dársela en el momento.
+   */
+  async contrasenaTemporal(equipoId: string, nueva: string): Promise<string> {
+    const { data, error } = await this.sb.client.rpc('contrasena_temporal',
+      { p_equipo: equipoId, p_nueva: nueva });
+    if (error) throw error;
+    return (data as string) ?? '';
+  }
+
   /** Abre o cierra el mercado de una jornada. La regla la aplica la base. */
   async abrirMercado(jornadaId: string, abierto: boolean): Promise<void> {
     const { error } = await this.sb.client.rpc('mercado_jornada',
