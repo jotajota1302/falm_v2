@@ -99,7 +99,22 @@ export class AdminEquiposComponent implements OnInit {
   pedirClave(e: AdminEquipo) {
     this.aviso.set(''); this.error.set(''); this.editId.set('');
     this.claveId.set(e.id);
-    this.clave.set('falm-' + Math.random().toString(36).slice(2, 8));
+    this.clave.set(this.claveAlAzar());
+  }
+
+  /**
+   * Una contraseña temporal decente. Con Math.random() salían unos 31 bits y de
+   * una fuente que no es criptográfica: poco para lo que abre esto.
+   *
+   * Alfabeto de 32 sin los caracteres que se confunden al dictar (l/1/I, o/0):
+   * esta clave se manda por WhatsApp y se teclea a mano. 32 divide a 256, así
+   * que el resto no favorece a ninguna letra, y 12 posiciones dan 60 bits.
+   */
+  private claveAlAzar(): string {
+    const abc = 'abcdefghijkmnpqrstuvwxyz23456789';
+    const buf = new Uint8Array(12);
+    crypto.getRandomValues(buf);
+    return 'falm-' + Array.from(buf, (b) => abc[b % abc.length]).join('');
   }
 
   async ponerClave(e: AdminEquipo) {
