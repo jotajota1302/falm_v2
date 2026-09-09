@@ -32,6 +32,8 @@ export interface Equipo {
   nombre: string;
   presupuesto: number;
   beneficio?: number;
+  /** Correo de contacto que ha dejado el propio equipo; todavía no es el de auth. */
+  emailContacto?: string | null;
 }
 
 export interface AgendaItem { jornada_id: string; numero: number; fecha: string; comp: 'LIGA' | 'CHAMPIONS' | 'CLAUSURA'; rival_id: string; rival: string; es_local: boolean; mis_puntos: number | null; rival_puntos: number | null; }
@@ -339,7 +341,7 @@ export class FalmService {
     const tid = await this.season.ensure();
     let q = this.sb.client
       .from('equipo_falm')
-      .select('id, nombre, presupuesto, beneficio')
+      .select('id, nombre, presupuesto, beneficio, email_contacto')
       .eq('temporada_id', tid);
 
     const sel = environment.devEquipoNombre || (typeof localStorage !== 'undefined' ? localStorage.getItem('falm_equipo') : null);
@@ -354,8 +356,20 @@ export class FalmService {
     const { data, error } = await q.maybeSingle();
     if (error) throw error;
     return data
-      ? { id: data.id, nombre: data.nombre, presupuesto: data.presupuesto, beneficio: data.beneficio }
+      ? { id: data.id, nombre: data.nombre, presupuesto: data.presupuesto,
+          beneficio: data.beneficio, emailContacto: data.email_contacto ?? null }
       : null;
+  }
+
+  /**
+   * Deja (o borra, con cadena vacía) el correo de contacto del equipo de quien
+   * llama. No recibe el equipo a propósito: lo saca la base de la sesión, así
+   * que nadie puede escribir el de otro.
+   */
+  async guardarEmailContacto(email: string): Promise<string> {
+    const { data, error } = await this.sb.client.rpc('guardar_email_contacto', { p_email: email });
+    if (error) throw error;
+    return (data as string) ?? '';
   }
 
   /** Plantilla actual (sin baja) de un equipo, con datos del activo embebidos. */

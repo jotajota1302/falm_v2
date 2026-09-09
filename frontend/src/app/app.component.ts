@@ -48,6 +48,7 @@ interface NavItem { path: string; label: string; corto: string; }
             <span class="team">{{ team }}</span>
           </span>
           <span class="acc">
+            <a class="tlink" routerLink="/cuenta" title="Mi cuenta">Cuenta</a>
             @if (esAdmin()) {
               <a class="tlink" routerLink="/admin" title="Administración">Admin</a>
             }
@@ -67,6 +68,7 @@ interface NavItem { path: string; label: string; corto: string; }
         <div class="masback" (click)="mas.set(false)"></div>
         <div class="maspanel">
           <span class="masyo"><span class="ava">{{ iniciales }}</span>{{ team }}</span>
+          <a routerLink="/cuenta" (click)="mas.set(false)">Mi cuenta</a>
           @if (esAdmin()) {
             <a routerLink="/admin" (click)="mas.set(false)">Administración</a>
           }

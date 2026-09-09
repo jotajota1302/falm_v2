@@ -95,6 +95,18 @@ export class AuthService {
     if (error) throw error;
   }
 
+  /**
+   * Cambia la contraseña de quien tiene la sesión abierta. No hace falta la
+   * antigua: Supabase la cambia sobre la sesión, y ya la abrió quien la sabía.
+   *
+   * No existe el reverso -leer la contraseña-: Supabase guarda un hash bcrypt,
+   * así que no la tiene ni ella. Por eso la pantalla ofrece cambiarla y no verla.
+   */
+  async cambiarPassword(nueva: string) {
+    const { error } = await this.sb.client.auth.updateUser({ password: nueva });
+    if (error) throw error;
+  }
+
   async signOut() {
     localStorage.removeItem('falm_equipo');
     await this.sb.client.auth.signOut();
