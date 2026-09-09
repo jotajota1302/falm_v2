@@ -165,7 +165,7 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
                 <span class="pos" [class]="abr(a.posicion)">{{ abr(a.posicion) }}</span>
                 <span class="nom">
                   @if (a.foto) {
-                    <img class="ret" [src]="a.foto" alt="" loading="lazy" />
+                    <img class="ret" [src]="a.foto" alt="" loading="lazy" (error)="a.foto = null" />
                   } @else if (a.escudo) {
                     <img class="ret esc" [src]="a.escudo" alt="" loading="lazy" />
                   } @else {
@@ -316,7 +316,7 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
             <span class="lb" id="tit-fichar">Confirmar fichaje</span>
             <div class="ficha">
               @if (c.foto) {
-                <img class="cara" [src]="c.foto" alt="" />
+                <img class="cara" [src]="c.foto" alt="" (error)="c.foto = null" />
               } @else if (c.escudo) {
                 <img class="cara esc" [src]="c.escudo" alt="" />
               } @else {

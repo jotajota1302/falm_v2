@@ -51,7 +51,8 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
                   <span class="eti">{{ o.soyOferente ? 'Ofreces' : 'Te ofrecen' }}</span>
                   @for (a of o.ofrecidos; track a.nombre) {
                     <span class="mini" [attr.data-pos]="abr(a.posicion)">
-                      @if (a.foto) { <img [src]="a.foto" alt="" /> } @else { <i>{{ abr(a.posicion) }}</i> }
+                      @if (a.foto) { <img [src]="a.foto" alt="" (error)="a.foto = null" /> }
+                      @else { <i>{{ abr(a.posicion) }}</i> }
                       {{ a.nombre }}
                     </span>
                   }
@@ -61,7 +62,8 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
                   <span class="eti">{{ o.soyOferente ? 'Pides' : 'Te piden' }}</span>
                   @for (a of o.solicitados; track a.nombre) {
                     <span class="mini" [attr.data-pos]="abr(a.posicion)">
-                      @if (a.foto) { <img [src]="a.foto" alt="" /> } @else { <i>{{ abr(a.posicion) }}</i> }
+                      @if (a.foto) { <img [src]="a.foto" alt="" (error)="a.foto = null" /> }
+                      @else { <i>{{ abr(a.posicion) }}</i> }
                       {{ a.nombre }}
                     </span>
                   }
@@ -101,7 +103,8 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
               @for (j of miPlantilla(); track j.activo_id) {
                 <button class="fila" [class.sel]="ofrecidos().includes(j.activo_id)" (click)="toggle(ofrecidosSet, j.activo_id)">
                   <span class="pos" [class]="abr(j.posicion)">{{ abr(j.posicion) }}</span>
-                  <img class="fo" [class.es]="!foto(j)" [src]="foto(j) || j.escudo" alt="" loading="lazy" />
+                  <img class="fo" [class.es]="!foto(j)" [src]="foto(j) || j.escudo" alt=""
+                       loading="lazy" (error)="j.foto = null" />
                   <span class="nm">{{ j.nombre }}</span>
                   @if (foto(j) && j.escudo) { <img class="cl" [src]="j.escudo" alt="" loading="lazy" /> }
                   @else { <span></span> }
@@ -115,7 +118,8 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
               @for (j of plantillaRival(); track j.activo_id) {
                 <button class="fila" [class.sel]="solicitados().includes(j.activo_id)" (click)="toggle(solicitadosSet, j.activo_id)">
                   <span class="pos" [class]="abr(j.posicion)">{{ abr(j.posicion) }}</span>
-                  <img class="fo" [class.es]="!foto(j)" [src]="foto(j) || j.escudo" alt="" loading="lazy" />
+                  <img class="fo" [class.es]="!foto(j)" [src]="foto(j) || j.escudo" alt=""
+                       loading="lazy" (error)="j.foto = null" />
                   <span class="nm">{{ j.nombre }}</span>
                   @if (foto(j) && j.escudo) { <img class="cl" [src]="j.escudo" alt="" loading="lazy" /> }
                   @else { <span></span> }

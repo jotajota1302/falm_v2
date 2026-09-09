@@ -106,7 +106,8 @@ const ORDEN = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
                       @for (j of grupo.js; track j.nombre) {
                         <div class="dj" [class.supl]="j.rol !== 'TITULAR'" [class.nojugo]="!j.jugo">
                           <span class="pos" [class]="abrPos(j.pos)">{{ abrPos(j.pos) }}</span>
-                          <img class="dfo" [class.es]="!j.foto" [src]="j.foto || j.escudo" alt="" loading="lazy" />
+                          <img class="dfo" [class.es]="!j.foto" [src]="j.foto || j.escudo" alt=""
+                               loading="lazy" (error)="j.foto = null" />
                           <span class="dn">{{ j.nombre }}</span>
                           @if (j.foto && j.escudo) { <img class="dcl" [src]="j.escudo" alt="" loading="lazy" /> }
                           @else { <span></span> }
