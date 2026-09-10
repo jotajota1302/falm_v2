@@ -243,9 +243,12 @@ begin
     v_refresco := jsonb_build_object('error', left(SQLERRM, 120));
   end;
 
+  -- Por jornada_lfp_id y no por numero_jornada: el numero se repite en cada
+  -- temporada, asi que con una temporada de pruebas montada esto contaba los
+  -- partidos de las dos y la jornada no se habria cerrado nunca.
   select count(*), count(*) filter (where goles_local is not null)
     into v_total, v_con_marcador
-  from falm.partido_lfp where numero_jornada = v_jornada;
+  from falm.partido_lfp where jornada_lfp_id = v_jl;
 
   if v_con_marcador < v_total and v_fin + interval '3 days' > now() then
     return jsonb_build_object('procesada', null, 'motivo', 'faltan resultados',
