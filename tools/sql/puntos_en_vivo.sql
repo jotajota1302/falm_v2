@@ -5,20 +5,26 @@
 -- viernes 21:00 al lunes 21:00, asi que la app se pasaba el fin de semana
 -- entero a cero aunque el sabado ya hubiera medio once puntuado.
 --
--- Como queda: una tarea nueva cada 10 minutos que, mientras la jornada esta en
--- juego, mete los puntos de los partidos que YA han acabado. La clasificacion y
+-- Como queda: una tarea nueva cada cuarto de hora que, mientras la jornada esta
+-- en juego, mete los puntos de los partidos que YA han acabado. La clasificacion y
 -- los premios NO se tocan hasta el cierre: durante el fin de semana se ve el
 -- marcador de cada enfrentamiento, no la tabla movida a medias.
 --
--- Dos cosas que hacen que esto no sea caro ni pesado:
+-- Dos frenos, porque la tarea se despierta muchas veces y casi ninguna tiene
+-- trabajo. Una pasada en vacio son 0,13 s y cero red; lo que hay que cuidar son
+-- las dos llamadas de fuera:
 --
---   1. Solo se pide el calendario a football-data si hay algun partido
---      empezado y sin cerrar (menos de 6 h). El resto del tiempo, cero llamadas.
---   2. Solo se lee futbolfantasy si hay algun partido acabado del que todavia
---      no hay ni una puntuacion. Como futbolfantasy publica la prensa un rato
---      despues del pitido final, la tarea lo reintenta sola cada 10 minutos
---      hasta que aparece, y en cuanto esta deja de leer. Salen unas diez
---      lecturas por jornada, una por partido.
+--   1. A football-data se le pregunta SOLO por un partido que ya deberia haber
+--      acabado -empezo hace mas de 2 h- y del que todavia no tenemos resultado.
+--      Preguntar mientras se juega no servia de nada: el marcador provisional no
+--      se usa, porque a un jugador no se le puntua hasta que la prensa publica
+--      su nota. Medido sobre el calendario real de la jornada 5, eso baja de
+--      130 llamadas por jornada a 10, una por partido.
+--   2. A futbolfantasy se le lee SOLO si hay un partido acabado hace mas de
+--      media hora del que no hay ni una puntuacion. La prensa tarda un rato en
+--      publicarse, asi que preguntar nada mas acabar el partido era descargarse
+--      5 MB para nada; la tarea lo reintenta sola hasta que aparece y en cuanto
+--      esta deja de leer.
 --
 -- La marca de "esta jornada ya esta cerrada" pasa a ser una columna. Antes era
 -- "no tiene ninguna puntuacion", y eso deja de servir en cuanto se puntua en
@@ -127,15 +133,19 @@ begin
   end if;
 
   -- 1. Marcadores, UNA vez por pasada: la llamada trae la temporada entera, asi
-  --    que no tiene sentido repetirla por jornada. Solo si hay algo empezado y
-  --    sin cerrar; un partido dura dos horas y media, asi que pasadas seis ya no
-  --    se refresca por el (si football-data tardo en darlo por acabado, lo
-  --    arregla el cierre, que tambien refresca).
+  --    que no tiene sentido repetirla por jornada.
+  --
+  --    La condicion es "ya deberia haber acabado y no tengo su resultado", no
+  --    "se esta jugando": asi se pregunta una vez por partido y se deja de
+  --    preguntar en cuanto llega el marcador, sin poder saltarselo. Las 12 h son
+  --    el freno para un aplazado, que si no tendria a la tarea preguntando por
+  --    el toda la semana; de ese se encarga el cierre.
   select count(*) into v_en_juego
     from falm.partido_lfp pl
     join _vivo v on v.id = pl.jornada_lfp_id
-   where pl.fecha <= now() and pl.fecha > now() - interval '6 hours'
-     and pl.estado not in ('FINISHED', 'AWARDED');
+   where pl.goles_local is null
+     and pl.fecha <= now() - interval '2 hours'
+     and pl.fecha > now() - interval '12 hours';
 
   if v_en_juego > 0 then
     begin
@@ -146,13 +156,15 @@ begin
   end if;
 
   -- 2. Por cada jornada abierta, los partidos acabados de los que no hay ni una
-  --    puntuacion. Mientras futbolfantasy no publique la prensa de ese partido,
-  --    el contador sigue en pie y se reintenta a los diez minutos.
+  --    puntuacion. La media hora de margen es porque la prensa no se publica
+  --    con el pitido final: sin ella, la primera lectura de cada partido se
+  --    bajaba 5 MB para encontrar la tabla vacia.
   for r in select id, numero from _vivo order by numero loop
     select count(*) into v_por_leer
       from falm.partido_lfp pl
      where pl.jornada_lfp_id = r.id
        and pl.goles_local is not null
+       and pl.fecha <= now() - interval '2 hours 30 minutes'
        and not exists (
          select 1 from falm.puntuacion pu
          join falm.activo a on a.id = pu.activo_id and a.tipo = 'JUGADOR'
@@ -179,7 +191,7 @@ begin
 
   return jsonb_build_object(
     'abiertas', (select jsonb_agg(numero order by numero) from _vivo),
-    'en_juego', v_en_juego, 'leidas', v_hechas, 'refresco', v_ref);
+    'por_marcador', v_en_juego, 'leidas', v_hechas, 'refresco', v_ref);
 end $function$;
 
 grant execute on function falm.puntuar_en_vivo() to authenticated;
@@ -290,13 +302,13 @@ grant execute on function falm.marcadores_jornada(uuid) to authenticated;
 revoke execute on function falm.marcadores_jornada(uuid) from public, anon;
 
 -- Cron aplicado:
---   select cron.schedule('falm-puntos-en-vivo', '*/10 * * * *',
+--   select cron.schedule('falm-puntos-en-vivo', '*/15 * * * *',
 --                        'select falm.puntuar_en_vivo()');
 --
 -- Crons vivos despues del cambio:
 --   falm-estados-jugadores  40 */3 * * *   refrescar_estados_jugadores()
 --   falm-expirar-ofertas    0 * * * *      expirar_ofertas()
 --   falm-procesar-jornada   25 */2 * * *   procesar_jornada_auto()      <- cierre
---   falm-puntos-en-vivo     */10 * * * *   puntuar_en_vivo()            <- nuevo
+--   falm-puntos-en-vivo     */15 * * * *   puntuar_en_vivo()            <- nuevo
 --   falm-respaldo-diario    15 4 * * *     respaldo_crear/purgar
 --   falm-tareas-jornada     10 * * * *     tareas_previas_jornada()
