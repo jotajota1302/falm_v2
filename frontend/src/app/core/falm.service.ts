@@ -82,6 +82,12 @@ export interface EnfrentamientoFila {
   puntos_clasif_local: number;
   puntos_clasif_visitante: number;
   jornada_jugada: boolean;
+  /** La jornada se está jugando: el marcador es de lo que va puntuado. */
+  en_juego: boolean;
+  /** Cuántos de los once ya tienen desenlace, para saber cuánto queda. */
+  resueltos_local: number;
+  resueltos_visitante: number;
+  plazas: number;
 }
 
 export interface LlaveLeg { local: string; visitante: string; pl: number; pv: number; }
@@ -486,6 +492,21 @@ export class FalmService {
     const n = new Map((eqs ?? []).map((e: any) => [e.id, e.nombre]));
     const alineados = await this.quienHaAlineado(jornadaFalmId, ids);
 
+    // falm.enfrentamiento solo se escribe al cerrar la jornada. Mientras se
+    // juega, el marcador sale de lo que lleva puntuado cada once; al cerrarse,
+    // los dos números coinciden y manda el guardado.
+    const { data: viva, error: e3 } = await this.sb.client
+      .rpc('marcadores_jornada', { p_jornada: jornadaFalmId });
+    if (e3) throw e3;
+    const enVivo = new Map<string, { pts: number; res: number; plazas: number }>();
+    let cerrada = true;
+    for (const m of (viva ?? []) as any[]) {
+      cerrada = m.cerrada;
+      enVivo.set(m.equipo_falm_id, {
+        pts: Number(m.puntos ?? 0), res: Number(m.resueltos ?? 0), plazas: Number(m.plazas ?? 0),
+      });
+    }
+
     const reparto = (a: number, b: number): [number, number] => {
       const d = a - b;
       if (d >= 3) return [3, 0];
@@ -496,7 +517,10 @@ export class FalmService {
     };
 
     return filas.map((f) => {
-      const pl = Number(f.puntos_local ?? 0), pv = Number(f.puntos_visitante ?? 0);
+      const vl = enVivo.get(f.equipo_local_id), vv = enVivo.get(f.equipo_visitante_id);
+      const enJuego = !cerrada && (vl != null || vv != null);
+      const pl = enJuego ? (vl?.pts ?? 0) : Number(f.puntos_local ?? 0);
+      const pv = enJuego ? (vv?.pts ?? 0) : Number(f.puntos_visitante ?? 0);
       const [cl, cv] = reparto(pl, pv);
       return {
         enfrentamiento_id: f.id,
@@ -509,6 +533,10 @@ export class FalmService {
         puntos_clasif_local: cl,
         puntos_clasif_visitante: cv,
         jornada_jugada: f.puntos_local != null,
+        en_juego: enJuego,
+        resueltos_local: vl?.res ?? 0,
+        resueltos_visitante: vv?.res ?? 0,
+        plazas: vl?.plazas ?? vv?.plazas ?? 11,
       };
     });
   }

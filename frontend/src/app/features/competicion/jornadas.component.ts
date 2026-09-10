@@ -67,8 +67,12 @@ const ORDEN = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
             <span class="centro">
               <span class="marcador num">{{ e.puntos_local }}<i>–</i>{{ e.puntos_visitante }}</span>
             </span>
-            <span class="est">
-              {{ e.jornada_jugada ? e.puntos_clasif_local + ' – ' + e.puntos_clasif_visitante + ' en la tabla' : 'Sin jugar' }}
+            <span class="est" [class.vivo]="e.en_juego">
+              @if (e.en_juego) {
+                En juego · {{ resueltos(e) }} de {{ e.plazas * 2 }} resueltos
+              } @else {
+                {{ e.jornada_jugada ? e.puntos_clasif_local + ' – ' + e.puntos_clasif_visitante + ' en la tabla' : 'Sin jugar' }}
+              }
             </span>
             <span class="lado der" [class.gana]="e.puntos_clasif_visitante > e.puntos_clasif_local">
               <span class="marca" [style.background]="color(e.equipo_visitante)"></span>
@@ -188,6 +192,8 @@ const ORDEN = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
     .marcador i { color: var(--text2); margin: 0 6px; font-style: normal; }
     .est { font-size: var(--t-xs); font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
       color: var(--text2); white-space: nowrap; }
+    /* Mientras se juega el marcador todavia puede moverse: se dice en color. */
+    .est.vivo { color: var(--good); }
 
     .back { position: fixed; inset: 0; z-index: 60; background: rgba(22,19,15,.42);
       display: flex; align-items: flex-end; justify-content: center; }
@@ -258,6 +264,8 @@ export class JornadasComponent implements OnInit {
   constructor(private falm: FalmService) {}
   abrPos(p: string) { return ({ PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'MED', DELANTERO: 'DEL' } as Record<string, string>)[p] ?? p; }
   color(n: string) { return colorEquipo(n); }
+  /** Cuántas de las 22 plazas del partido ya tienen desenlace. */
+  resueltos(e: EnfrentamientoFila) { return e.resueltos_local + e.resueltos_visitante; }
   etiqueta(t: string) { return t === 'CHAMPIONS' ? 'Champions' : t === 'CLAUSURA' ? 'Clausura' : 'Liga'; }
 
   subtitulo() {
