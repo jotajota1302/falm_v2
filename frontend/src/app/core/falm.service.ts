@@ -131,6 +131,12 @@ export interface OfertaIntercambio {
   estado: 'PENDIENTE' | 'ACEPTADA' | 'RECHAZADA' | 'CANCELADA' | 'EXPIRADA';
   comentario: string | null;
   fecha: string;
+  /**
+   * Cuándo deja de poder aceptarse. Va aparte del estado a propósito: el cron
+   * que repinta PENDIENTE como EXPIRADA pasa una vez al día, así que durante
+   * unas horas el estado guardado miente y la fecha no.
+   */
+  expira: string;
   soyOferente: boolean;
   oferente: string;
   receptor: string;
@@ -992,7 +998,7 @@ export class FalmService {
     const { data, error } = await this.sb.client
       .from('oferta_intercambio')
       .select(
-        'id, estado, comentario, fecha_creacion, equipo_oferente_id, equipo_receptor_id, ' +
+        'id, estado, comentario, fecha_creacion, fecha_expiracion, equipo_oferente_id, equipo_receptor_id, ' +
         'oferente:equipo_oferente_id (nombre), receptor:equipo_receptor_id (nombre), ' +
         'oferta_activo (tipo, activo:activo_id (id, tipo, ' +
           'jugador_lfp:jugador_lfp_id (nombre, apellido, posicion, foto, equipo_lfp:equipo_lfp_id (escudo)), ' +
@@ -1016,6 +1022,7 @@ export class FalmService {
       estado: o.estado,
       comentario: o.comentario,
       fecha: o.fecha_creacion,
+      expira: o.fecha_expiracion,
       soyOferente: o.equipo_oferente_id === equipoId,
       oferente: o.oferente?.nombre ?? '?',
       receptor: o.receptor?.nombre ?? '?',

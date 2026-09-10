@@ -44,7 +44,7 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
               <div class="ohead">
                 <span class="dir">{{ o.soyOferente ? 'Enviada a' : 'Recibida de' }}
                   <b>{{ o.soyOferente ? o.receptor : o.oferente }}</b></span>
-                <span class="est" [attr.data-e]="o.estado">{{ estado(o.estado) }}</span>
+                <span class="est" [attr.data-e]="caducada(o) ? 'EXPIRADA' : o.estado">{{ caducada(o) ? 'Expirada' : estado(o.estado) }}</span>
               </div>
               <div class="cambio">
                 <div class="col">
@@ -75,7 +75,13 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
                   @if (o.soyOferente) {
                     <button class="bn cancel" (click)="responder(o, 'CANCELADA')">Cancelar</button>
                   } @else {
-                    <button class="bn ok" (click)="responder(o, 'ACEPTADA')">Aceptar</button>
+                    <!-- Aceptar desaparece en cuanto caduca. La base lo rechaza
+                         igual, pero un botón que solo sirve para dar un error
+                         no debería estar ahí. Rechazar se queda: hay que poder
+                         quitarse de encima una oferta muerta. -->
+                    @if (!caducada(o)) {
+                      <button class="bn ok" (click)="responder(o, 'ACEPTADA')">Aceptar</button>
+                    }
                     <button class="bn no" (click)="responder(o, 'RECHAZADA')">Rechazar</button>
                   }
                 </div>
@@ -246,6 +252,15 @@ export class IntercambiosComponent implements OnInit {
   estado(e: string) {
     return ({ PENDIENTE: 'Pendiente', ACEPTADA: 'Aceptada', RECHAZADA: 'Rechazada',
               CANCELADA: 'Cancelada', EXPIRADA: 'Expirada' } as Record<string, string>)[e] ?? e;
+  }
+
+  /**
+   * Ya no se puede aceptar, aunque siga guardada como pendiente. El cron que
+   * repinta el estado pasa una vez al día, así que entre medias el estado
+   * guardado miente y la fecha no.
+   */
+  caducada(o: OfertaIntercambio) {
+    return o.estado === 'PENDIENTE' && !!o.expira && new Date(o.expira) < new Date();
   }
 
   constructor(private falm: FalmService) {}
