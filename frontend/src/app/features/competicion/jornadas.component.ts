@@ -1,6 +1,7 @@
 import { Component, OnInit, computed, signal } from '@angular/core';
 import { Competicion, EnfrentamientoFila, FalmService, JornadaFalm } from '../../core/falm.service';
 import { colorEquipo } from '../../shared/equipo-colores';
+import { FichaService } from '../../shared/ficha.service';
 
 /** Las cuatro lineas, en el orden en que se lee un once. */
 const ORDEN = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
@@ -108,7 +109,10 @@ const ORDEN = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
                     @if (grupo.js.length) {
                       <span class="drol">{{ grupo.rol === 'TITULAR' ? 'Once' : 'Banquillo' }}</span>
                       @for (j of grupo.js; track j.nombre) {
-                        <div class="dj" [class.supl]="j.rol !== 'TITULAR'" [class.nojugo]="!j.jugo">
+                        <!-- La cifra sola no dice de dónde sale: al tocar se abre la ficha
+                             de siempre, con los puntos por jornada y su desglose. -->
+                        <button class="dj" [class.supl]="j.rol !== 'TITULAR'" [class.nojugo]="!j.jugo"
+                                (click)="abrirFicha(j)" [title]="'Ver la puntuación de ' + j.nombre">
                           <span class="pos" [class]="abrPos(j.pos)">{{ abrPos(j.pos) }}</span>
                           <img class="dfo" [class.es]="!j.foto" [src]="j.foto || j.escudo" alt=""
                                loading="lazy" (error)="j.foto = null" />
@@ -116,7 +120,7 @@ const ORDEN = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
                           @if (j.foto && j.escudo) { <img class="dcl" [src]="j.escudo" alt="" loading="lazy" /> }
                           @else { <span></span> }
                           <span class="dp num" [class.neg]="j.puntos < 0">{{ j.puntos }}</span>
-                        </div>
+                        </button>
                       }
                     }
                   }
@@ -218,7 +222,9 @@ const ORDEN = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
     .dcol > .drol:first-child { margin-top: 0; }
     .dj { display: grid; grid-template-columns: 32px 24px 1fr 16px auto; align-items: center; gap: 8px;
       padding: 5px 8px; background: var(--surface); border: 1px solid var(--line);
-      border-radius: var(--r-xs); font-size: var(--t-sm); }
+      border-radius: var(--r-xs); font-size: var(--t-sm);
+      width: 100%; text-align: left; font-family: inherit; color: inherit; cursor: pointer; }
+    .dj:hover { border-color: var(--accent); }
     .dfo { width: 24px; height: 24px; border-radius: 50%; object-fit: cover;
       object-position: top center; background: var(--surface2); }
     .dfo.es { object-fit: contain; padding: 2px; border: 1px solid var(--line); }
@@ -261,7 +267,19 @@ export class JornadasComponent implements OnInit {
   cargando = signal(true);
   error = signal('');
 
-  constructor(private falm: FalmService) {}
+  constructor(private falm: FalmService, public ficha: FichaService) {}
+
+  /**
+   * La ficha del jugador tocado, con el detalle de su jornada. Las porterías de club no
+   * son un jugador y no tienen ext_id: van por activo_id, que es lo que entiende el
+   * historial.
+   */
+  abrirFicha(j: any) {
+    this.ficha.open({
+      id: j.ext_id ?? 0, activoId: j.activo_id, nombre: j.nombre,
+      equipo: j.club ?? '', escudo: j.escudo ?? '', foto: j.foto ?? '', posicion: j.pos,
+    });
+  }
   abrPos(p: string) { return ({ PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'MED', DELANTERO: 'DEL' } as Record<string, string>)[p] ?? p; }
   color(n: string) { return colorEquipo(n); }
   /** Cuántas de las 22 plazas del partido ya tienen desenlace. */
