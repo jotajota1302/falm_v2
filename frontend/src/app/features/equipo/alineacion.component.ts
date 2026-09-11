@@ -130,8 +130,10 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
                    selector, y para consultarlo habia que abrirlo y cerrarlo. -->
               <button class="slot" (click)="abrirLinea(pos, j.activo_id)"
                       [title]="conQuienJuega(j.activo_id)">
+                <!-- Sin cifra: aquí era el total de la temporada, y al lado del partido
+                     de la jornada se leía como los puntos de esta. Está en Plantilla. -->
                 <falm-fut-card [nombre]="j.nombre" [posicion]="j.posicion" [foto]="j.foto ?? null"
-                  [escudo]="j.escudo ?? null" [media]="media(j)" [campo]="true" />
+                  [escudo]="j.escudo ?? null" [campo]="true" />
               </button>
             }
             @for (h of huecos(pos); track h) {
@@ -247,7 +249,6 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
           <div class="cands">
             @for (j of candidatos(); track j.activo_id) {
               <button class="cand" [class.sel]="seleccionado(j)" (click)="elegir(j)">
-                <span class="cm num">{{ media(j) }}</span>
                 <span class="cav" [class]="abr(j.posicion)">
                   @if (j.foto) { <img [src]="j.foto" alt="" loading="lazy" (error)="j.foto=null" /> }
                   @else if (j.escudo) { <img class="esc" [src]="j.escudo" alt="" /> }
@@ -563,7 +564,7 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
     .x { background: var(--surface2); border: 1px solid var(--line); color: var(--text2);
       width: 30px; height: 30px; border-radius: var(--r-xs); cursor: pointer; font-size: var(--t-sm); }
     .cands { overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
-    .cand { display: grid; grid-template-columns: 32px 40px 1fr 22px; align-items: center; gap: 10px; padding: 8px 10px;
+    .cand { display: grid; grid-template-columns: 40px 1fr 22px; align-items: center; gap: 10px; padding: 8px 10px;
       background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-xs); cursor: pointer; text-align: left; }
     .cand:hover { background: var(--surface2); }
 
@@ -595,7 +596,6 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
     .tocados .tj i { color: var(--text2); font-style: normal; }
 
     .cand.sel { border-color: var(--accent); background: var(--accent-soft); }
-    .cm { font-family: var(--fm); font-weight: 700; color: var(--accent); text-align: center; }
     .cav { width: 40px; height: 40px; border-radius: var(--r-xs); display: flex; align-items: center; justify-content: center;
       font-family: var(--fb); font-weight: 700; font-size: var(--t-md); color: var(--accent-ink); overflow: hidden; }
     .cav img { width: 100%; height: 100%; object-fit: cover; } .cav img.esc { object-fit: contain; padding: 5px; }
@@ -694,13 +694,6 @@ export class AlineacionComponent implements OnInit, OnDestroy {
 
   compTipo = computed(() => this.competiciones().find((c) => c.id === this.competicionId())?.tipo ?? 'LIGA');
   esLiga = computed(() => this.compTipo() === 'LIGA');
-  /** Suma de medias del once: el dato que se mira antes de enviar. */
-  mediaPrevista = computed(() => {
-    const p = this.puntos();
-    const t = this.titulares().reduce((a, id) => a + (p[id] ?? 0), 0);
-    return Math.round(t * 10) / 10;
-  });
-
   /**
    * El plazo. La hora de cierre es la del primer partido de la jornada, y a partir de ella
    * Postgres rechaza cualquier cambio (falm.guardar_alineacion y el trigger
@@ -815,6 +808,12 @@ export class AlineacionComponent implements OnInit, OnDestroy {
     return d.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' }) +
       ' ' + d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
   }
+  /**
+   * Lo que lleva sumado en la temporada. Ya NO se pinta en esta pantalla: es el total de
+   * todo lo jugado -- incluidas las jornadas 1-4 de LaLiga, que no cuentan para la liga --
+   * y puesto al lado del partido de la jornada se leia como los puntos de esa jornada. Se
+   * queda solo para ordenar: los que mas rinden, arriba en el selector.
+   */
   media(j: ItemPlantilla) { return this.puntos()[j.activo_id] ?? 0; }
   nombreDe(id: string) { return this.plantilla().find((p) => p.activo_id === id)?.nombre ?? '?'; }
   esTitular(id: string) { return this.titulares().includes(id); }
