@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
   Alineado, AlineacionGuardada, Competicion, ContextoActivo, Equipo, FalmService, FORMACIONES,
@@ -63,6 +63,24 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
         </div>
       }
 
+      <!-- Lo primero que se mira al entrar: cuánto queda de plazo. Va contando solo, y
+           cuando llega a cero la pantalla se bloquea sin tener que recargar. -->
+      @if (jornada(); as j) {
+        @if (j.fecha) {
+          @if (cerrada()) {
+            <p class="plazo fin">
+              <b>Jornada cerrada.</b> El plazo terminó el {{ fechaCorta(j.fecha) }}.
+              El once que tuvieras puesto es el que puntúa.
+            </p>
+          } @else {
+            <p class="plazo" [class.ya]="apura()">
+              <b>@if (apura()) { Última hora: } @else { Quedan }</b>
+              {{ cuentaAtras() }} para mandar o cambiar el once · cierra el {{ fechaCorta(j.fecha) }}
+            </p>
+          }
+        }
+      }
+
       <!-- Lo que se ve puede ser el once ya mandado o una copia del anterior.
            Sin decirlo, parecía que ya estaba enviado y no lo estaba. -->
       @if (jornada()) {
@@ -93,8 +111,9 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
         </p>
       }
 
-      <!-- CAMPO: huecos por formación -->
-      <div class="zona">
+      <!-- CAMPO: huecos por formación. Cerrada la jornada se queda para mirarlo, pero
+           inerte: ni se abre el selector ni se mueve nadie. -->
+      <div class="zona" [class.bloqueada]="cerrada()" [attr.inert]="cerrada() ? '' : null">
         <div class="lado-campo">
           <div class="pitch" [style.--nl]="maxPorLinea()">
             <span class="lineas" aria-hidden="true"></span>
@@ -203,12 +222,16 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
 
       <!-- Barra de envío: lo último de la pantalla y siempre a la vista. -->
       <div class="envio">
-        <span class="est" [class.ok]="titulares().length === 11">
-          {{ titulares().length }} de 11 titulares@if (banca().length) { · {{ banca().length }} en el banquillo }
-        </span>
-        <button class="btn-sec" (click)="repetirUltima()">Repetir última</button>
-        <button class="btn" (click)="guardar()" [disabled]="guardando()"
-                [title]="problema() ?? 'Enviar la alineación'">{{ guardando() ? 'Enviando…' : 'Enviar alineación' }}</button>
+        @if (cerrada()) {
+          <span class="est cerr">Jornada cerrada · el once ya no se puede cambiar</span>
+        } @else {
+          <span class="est" [class.ok]="titulares().length === 11">
+            {{ titulares().length }} de 11 titulares@if (banca().length) { · {{ banca().length }} en el banquillo }
+          </span>
+          <button class="btn-sec" (click)="repetirUltima()">Repetir última</button>
+          <button class="btn" (click)="guardar()" [disabled]="guardando()"
+                  [title]="problema() ?? 'Enviar la alineación'">{{ guardando() ? 'Enviando…' : 'Enviar alineación' }}</button>
+        }
       </div>
     }
 
@@ -319,6 +342,7 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
       background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); }
     .envio .est { font-size: var(--t-sm); color: var(--bad); font-weight: 700; }
     .envio .est.ok { color: var(--good); }
+    .envio .est.cerr { color: var(--text2); }
     /* Las dos acciones, juntas y de la misma altura: la de verdad en granate. */
     .envio .btn-sec, .envio .btn { padding: 11px 20px; font-size: var(--t-sm); }
     .envio .btn-sec { order: 2; }
@@ -347,6 +371,19 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
     .atajo:hover { border-color: var(--accent); }
     .aviso { background: var(--surface); border: 1px solid var(--accent); color: var(--accent);
       padding: 10px 15px; border-radius: var(--r-xs); margin-bottom: 12px; font-size: var(--t-sm); font-weight: 600; }
+
+    /* El plazo. En la última hora se pone en rojo, que es cuando se mira de verdad. */
+    .plazo { margin: 0 0 12px; padding: 9px 15px; border-radius: var(--r-xs);
+      font-size: var(--t-sm); line-height: 1.5; color: var(--text);
+      background: var(--surface2); border: 1px solid var(--accent-line); }
+    .plazo b { color: var(--accent); }
+    .plazo.ya { border-color: var(--bad); }
+    .plazo.ya b { color: var(--bad); }
+    .plazo.fin { border-color: var(--line); color: var(--text2); }
+    .plazo.fin b { color: var(--text); }
+
+    /* Cerrada la jornada, el campo se queda a la vista pero apagado. */
+    .zona.bloqueada { opacity: .82; }
 
     /* Si el once está mandado o es solo un borrador copiado. */
     .estado { padding: 9px 15px; border-radius: var(--r-xs); margin: 0 0 12px;
@@ -577,7 +614,7 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
     .muted { color: var(--text2); }
   `],
 })
-export class AlineacionComponent implements OnInit {
+export class AlineacionComponent implements OnInit, OnDestroy {
   formaciones = FORMACIONES;
   lineas = LINEAS;
   formacion = signal('4-4-2');
@@ -662,6 +699,33 @@ export class AlineacionComponent implements OnInit {
     const p = this.puntos();
     const t = this.titulares().reduce((a, id) => a + (p[id] ?? 0), 0);
     return Math.round(t * 10) / 10;
+  });
+
+  /**
+   * El plazo. La hora de cierre es la del primer partido de la jornada, y a partir de ella
+   * Postgres rechaza cualquier cambio (falm.guardar_alineacion y el trigger
+   * solo_por_la_puerta). Aquí solo se avisa antes y se bloquea la pantalla al llegar, para
+   * no dejar que alguien monte un once que después no se va a poder enviar.
+   */
+  ahora = signal(Date.now());
+  private reloj?: ReturnType<typeof setInterval>;
+  private msAlCierre = computed(() => {
+    const f = this.jornada()?.fecha;
+    return f ? new Date(f).getTime() - this.ahora() : null;
+  });
+  cerrada = computed(() => (this.msAlCierre() ?? 1) <= 0);
+  /** Última hora de plazo: es cuando el aviso se pone en rojo y cuenta los segundos. */
+  apura = computed(() => { const ms = this.msAlCierre(); return ms !== null && ms > 0 && ms <= 3600_000; });
+  cuentaAtras = computed(() => {
+    const ms = this.msAlCierre();
+    if (ms === null || ms <= 0) return '';
+    const s = Math.floor(ms / 1000);
+    const d = Math.floor(s / 86400), h = Math.floor((s % 86400) / 3600);
+    const m = Math.floor((s % 3600) / 60), sg = s % 60;
+    if (d > 0) return `${d} d ${h} h`;
+    if (h > 0) return `${h} h ${m} min`;
+    if (m > 0) return `${m} min ${sg} s`;
+    return `${sg} s`;
   });
 
   /** Posición de la jornada abierta dentro de la competición. */
@@ -899,7 +963,10 @@ export class AlineacionComponent implements OnInit {
     this.banca.update((arr) => arr.map((x) => x.id === b.id ? { ...x, lineas: [...x.lineas, l] } : x));
   }
 
+  ngOnDestroy() { clearInterval(this.reloj); }
+
   async ngOnInit() {
+    this.reloj = setInterval(() => this.ahora.set(Date.now()), 1000);
     try {
       const eq = await this.falm.miEquipo();
       this.equipo.set(eq);
@@ -1072,6 +1139,10 @@ export class AlineacionComponent implements OnInit {
 
   async guardar() {
     this.aviso.set('');
+    if (this.cerrada()) {
+      this.aviso.set('La jornada ya está cerrada: el once no se puede cambiar.');
+      return;
+    }
     const falla = this.problema();
     if (falla) { this.aviso.set(falla); return; }
     const eq = this.equipo(); const jor = this.jornada(); if (!eq || !jor) return;
