@@ -40,7 +40,7 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
                              qué se compone en ESTE partido, sin irse a la ficha entera. -->
                         <button class="dj" [class.supl]="j.rol !== 'TITULAR'"
                                 [class.nojugo]="j.estado === 'NO_JUGO' || j.estado === 'SIN_PARTIDO'"
-                                [class.hecho]="j.estado === 'PUNTUADO' || j.estado === 'ESPERANDO'"
+                                [class.hecho]="j.estado === 'PUNTUADO' || j.estado === 'ESPERANDO' || j.estado === 'EN_JUEGO'"
                                 [class.fuera]="j.rol !== 'TITULAR' && !j.cuenta"
                                 [class.abierto]="verJug() === j.activo_id"
                                 (click)="tocar(j)" [title]="porQue(j)">
@@ -53,10 +53,16 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
                           </span>
                           @if (j.foto && j.escudo) { <img class="dcl" [src]="j.escudo" alt="" loading="lazy" /> }
                           @else { <span></span> }
-                          <!-- Que ya haya jugado se ve aunque todavía no tenga nota: el
-                               reloj dice "esto va a llegar", el guion "aquí no hay nada". -->
+                          <!-- Tres marcas distintas para tres cosas distintas: el aro
+                               girando es "esto esta pasando ahora", los puntos suspensivos
+                               "acabo y falta la nota", y el guion "aqui no hay nada". El
+                               reloj de arena valia para las dos primeras y ademas se
+                               confundia con una copa. -->
                           @switch (j.estado) {
-                            @case ('ESPERANDO') { <span class="dp esp">⏳</span> }
+                            @case ('EN_JUEGO') {
+                              <span class="dp viva" aria-label="Su partido se está jugando"></span>
+                            }
+                            @case ('ESPERANDO') { <span class="dp esp">···</span> }
                             @case ('PUNTUADO') { <span class="dp num" [class.neg]="j.puntos < 0">{{ j.puntos }}</span> }
                             @default { <span class="dp vacio">–</span> }
                           }
@@ -80,10 +86,14 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
               }
             </div>
             <p class="dleg">
-              En verde, el que ya ha jugado su partido; en gris, quien no llegó a jugar.
-              Los suplentes van con borde discontinuo.
+              En verde, el que ya está jugando o ha jugado su partido; en gris, quien no
+              llegó a jugar. Los suplentes van con borde discontinuo.
+              @if (hayEnJuego()) {
+                <br /><b class="lviva"></b> su partido se está jugando ahora: los puntos
+                llegan cuando acabe.
+              }
               @if (hayEsperando()) {
-                <br /><b>⏳</b> ya ha jugado y falta su nota: la prensa la publica un rato
+                <br /><b>···</b> ya ha jugado y falta su nota: la prensa la publica un rato
                 después del partido y entonces entra sola.
               }
             </p>
@@ -130,7 +140,16 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
        sin tener que leer fila por fila. Va después de .supl para ganarle el fondo. */
     .dj.hecho { background: color-mix(in oklab, var(--good) 9%, var(--surface));
       border-color: color-mix(in oklab, var(--good) 30%, var(--line)); }
-    .dp.esp { font-size: var(--t-xs); line-height: 1; }
+    .dp.esp { font-size: var(--t-md); line-height: 1; color: var(--text2); letter-spacing: .1em; }
+    /* Su partido esta rodando ahora mismo: un aro girando, que es lo que se
+       entiende sin leyenda. Solo gira lo que de verdad esta en juego, asi que
+       el movimiento senala justo donde hay que mirar. */
+    .dp.viva { display: inline-block; width: 13px; height: 13px; border-radius: 50%;
+      border: 2px solid color-mix(in oklab, var(--accent) 26%, transparent);
+      border-top-color: var(--accent); animation: gira .9s linear infinite; }
+    @keyframes gira { to { transform: rotate(360deg); } }
+    /* A quien le moleste el movimiento, el aro se queda quieto y sigue leyendose. */
+    @media (prefers-reduced-motion: reduce) { .dp.viva { animation: none; } }
     .dp.vacio { color: var(--text2); font-weight: 600; }
     /* El banquillo, apagado: nadie cuenta hasta que se cae un titular. El que entra
        recupera el color y lleva flecha. */
@@ -149,6 +168,12 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     .dn { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
     .dp { font-weight: 700; color: var(--accent); } .dp.neg { color: var(--bad); }
     .dleg { margin: 14px 0 0; font-size: var(--t-xs); color: var(--text2); }
+    /* El mismo aro de la fila, en la leyenda, para que se reconozca. */
+    .dleg .lviva { display: inline-block; width: 10px; height: 10px; border-radius: 50%;
+      vertical-align: -1px; margin-right: 2px;
+      border: 2px solid color-mix(in oklab, var(--accent) 26%, transparent);
+      border-top-color: var(--accent); animation: gira .9s linear infinite; }
+    @media (prefers-reduced-motion: reduce) { .dleg .lviva { animation: none; } }
     .muted { color: var(--text2); }
 
     @media (max-width: 620px) {
@@ -192,6 +217,7 @@ export class DetallePartidoComponent {
    * encajados y el penalti parado solo del portero.
    */
   deQueSale(j: any): string {
+    if (j.estado === 'EN_JUEGO') return 'Su partido se está jugando ahora mismo: los puntos llegan cuando acabe.';
     if (j.estado === 'ESPERANDO') return 'Ya ha jugado. Falta su nota de prensa, que entra sola en cuanto se publica.';
     if (j.estado === 'NO_JUGO') return 'No jugó este partido.';
     if (j.estado === 'PENDIENTE') return 'Su partido todavía no se ha jugado.';
@@ -219,16 +245,19 @@ export class DetallePartidoComponent {
     return `${j.puntos} ${Math.abs(Number(j.puntos)) === 1 ? 'punto' : 'puntos'}: ${p.join(' · ')}`;
   }
 
-  /** Si alguien está a la espera de nota, hay que explicar el reloj. */
-  hayEsperando() {
+  private todos() {
     const d = this.detalle();
-    return [...(d?.local?.jugadores ?? []), ...(d?.visitante?.jugadores ?? [])]
-      .some((j: any) => j.estado === 'ESPERANDO');
+    return [...(d?.local?.jugadores ?? []), ...(d?.visitante?.jugadores ?? [])];
   }
+  /** Si hay algún partido rodando, hay que explicar el aro que gira. */
+  hayEnJuego() { return this.todos().some((j: any) => j.estado === 'EN_JUEGO'); }
+  /** Y si alguien espera nota de prensa, los puntos suspensivos. */
+  hayEsperando() { return this.todos().some((j: any) => j.estado === 'ESPERANDO'); }
 
   /** En qué anda cada uno, que un 0 y un "aún no se sabe" no son lo mismo. */
   porQue(j: any): string {
     switch (j.estado) {
+      case 'EN_JUEGO': return `${j.nombre}: su partido se está jugando ahora`;
       case 'ESPERANDO': return `${j.nombre} ya ha jugado · falta la nota de la prensa`;
       case 'NO_JUGO': return `${j.nombre} no jugó`;
       case 'PENDIENTE': return `${j.nombre} juega más adelante en esta jornada`;

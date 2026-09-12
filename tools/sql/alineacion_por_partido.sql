@@ -455,6 +455,9 @@ grant execute on function falm.marcadores_jornada(uuid) to authenticated;
 
 -- Cada lado ensena el once de ESE partido. Antes se pedia por jornada y en una
 -- doble los dos cruces habrian ensenado el mismo once.
+-- OJO: esta version la sustituye detalle_partido_en_juego.sql, que parte el
+-- estado ESPERANDO en EN_JUEGO / ESPERANDO. Lo de aqui se deja como esta porque
+-- el cambio del partido es lo que documenta este fichero.
 drop function if exists falm._lado_enf(uuid, uuid);
 
 create or replace function falm._lado_enf(p_enf uuid, p_eq uuid)
