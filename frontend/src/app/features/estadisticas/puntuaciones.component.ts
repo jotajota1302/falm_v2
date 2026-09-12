@@ -27,23 +27,24 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
 
     @if (modo() === 'jornada' && jornadas().length) {
       <div class="jchips tira-x">
-        <!-- Con el número de la liga, que es como se la llama en el resto de pantallas.
-             Las de LaLiga anteriores a que empezara llevan su propia etiqueta. -->
+        <!-- Con el numero de LaLiga: estas puntuaciones son de sus partidos y es por
+             donde se comprueban en la prensa. Las apagadas se jugaron antes de que
+             empezara la liga; que jornada nuestra es cada una lo dice el title. -->
         @for (j of jornadas(); track j.numero) {
           <button [class.on]="j.numero === sel()" (click)="elegir(j.numero)"
-                  [class.fuera]="!j.falm" [title]="j.descripcion">{{ j.falm ? 'J' + j.falm : 'LL' + j.numero }}</button>
+                  [class.fuera]="!j.falm" [title]="j.descripcion">LL{{ j.numero }}</button>
         }
       </div>
     }
 
     @if (cargando()) {
-      <p class="muted">Cargando{{ modo() === 'jornada' ? ' la jornada ' + sel() : ' la acumulada' }}…</p>
+      <p class="muted">Cargando{{ modo() === 'jornada' ? ' la jornada LaLiga ' + sel() : ' la acumulada' }}…</p>
     } @else if (error()) {
       <p class="err">{{ error() }}</p>
     } @else {
       <section class="tabla">
         <div class="barra">
-          <span class="lb">{{ modo() === 'acumulada' ? 'Más puntuados' : 'Jornada ' + sel() }}</span>
+          <span class="lb">{{ modo() === 'acumulada' ? 'Más puntuados' : 'LaLiga ' + sel() }}</span>
           <input class="buscar" type="search" placeholder="Buscar jugador o equipo…"
                  [ngModel]="texto()" (ngModelChange)="texto.set($event); l.reset()" />
           <!-- Las flechas también arriba: pasar de página sin bajar al fondo. -->

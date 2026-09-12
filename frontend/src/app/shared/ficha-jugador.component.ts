@@ -83,9 +83,10 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
                         <span class="fill neg" [style.height.%]="d.h"><i class="num">{{ d.p }}</i></span>
                       }
                     </span>
-                    <!-- La jornada, con el número de la liga. Las de LaLiga anteriores a
-                         que empezara van con su propia etiqueta para no confundirlas. -->
-                    <span class="jl" [class.fuera]="!d.falm">{{ d.falm ? 'J' + d.falm : 'LL' + d.j }}</span>
+                    <!-- Estos puntos son de un partido de LaLiga, asi que la jornada va
+                         con el numero de LaLiga: es por donde se comprueba en la prensa.
+                         Mezclar aqui el numero de la liga no aportaba y confundia. -->
+                    <span class="jl" [class.fuera]="!d.falm">LL{{ d.j }}</span>
                     <!-- Los minutos debajo: de un vistazo se ve si esos puntos
                          son de un partido entero o de un cuarto de hora. -->
                     <span class="ml">{{ minutosDe(d) }}</span>
@@ -96,8 +97,8 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
               <!-- De qué se compone la jornada que se toca. -->
               @if (hayDeFuera()) {
                 <p class="leyj">
-                  <b>J</b> es jornada de la liga; <b>LL</b>, jornada de LaLiga anterior a que
-                  empezara — no puntúa en la clasificación.
+                  <b>LL</b> es la jornada de LaLiga. Las apagadas se jugaron antes de que
+                  empezara la liga y no puntúan en la clasificación.
                 </p>
               }
 
@@ -168,7 +169,9 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
     /* Los puntos van dentro de su barra y la jornada debajo. Sin hueco entre
        columnas, la línea del cero sale continua de lado a lado. */
     .chart { display: flex; align-items: stretch; height: 160px; overflow-x: auto; padding-bottom: 4px; }
-    .bar { flex: 0 0 34px; display: flex; flex-direction: column; align-items: stretch; padding: 0 3px; }
+    /* 38px porque la etiqueta ahora es la de LaLiga y llega a LL38: en 34 cabia
+       justa, sin un pixel de margen. La tira se desplaza, asi que sobra sitio. */
+    .bar { flex: 0 0 38px; display: flex; flex-direction: column; align-items: stretch; padding: 0 3px; }
     .up { display: flex; align-items: flex-end; }
     .chart.conneg .up { border-bottom: 1px solid var(--line); }
     .dn { flex: 1 1 auto; display: flex; align-items: flex-start; }
@@ -284,12 +287,11 @@ export class FichaJugadorComponent {
   hayDeFuera = computed(() => this.barras().some((d) => !d.falm));
 
   /**
-   * Cómo se llama una jornada. Dentro de la liga manda nuestro número y el de LaLiga va
-   * entre paréntesis, que es por donde se busca en la prensa; fuera, solo el de LaLiga.
+   * Cómo se llama una jornada aquí. Manda el número de LaLiga, que es de donde salen
+   * estos puntos y por donde se comprueban; de la nuestra solo interesa si cuenta o no.
    */
   comoSeLlama(d: { j: number; falm: number | null }): string {
-    return d.falm ? `Jornada ${d.falm} de la liga (LaLiga ${d.j})`
-                  : `LaLiga ${d.j}, antes de empezar la liga`;
+    return d.falm ? `LaLiga ${d.j}` : `LaLiga ${d.j}, antes de empezar la liga`;
   }
 
   /** De qué se compone esa jornada, en palabras y por orden de importancia. */
