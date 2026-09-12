@@ -5,7 +5,9 @@
 -- de LaLiga alimenten dos cada una -- lo que obligaria a mantener dos alineaciones para la
 -- misma jornada de LaLiga y dejaria a falm.jornada_objetivo_actual() con un empate --,
 -- se crea UNA jornada FALM por jornada de LaLiga y cuatro de ellas son DOBLES: cada equipo
--- juega dos rivales con una sola alineacion, y salen dos resultados.
+-- juega dos rivales y manda un once para cada uno, y salen dos resultados.
+-- (Desde alineacion_por_partido.sql el once cuelga del enfrentamiento, no de la
+-- jornada: antes era uno solo y puntuaba en los dos.)
 --
 --   28 jornadas simples x 5 enfrentamientos  +  4 dobles x 10  =  180 = 36 rondas x 5
 --

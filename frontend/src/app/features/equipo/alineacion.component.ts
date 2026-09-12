@@ -2,7 +2,7 @@ import { Component, OnDestroy, OnInit, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
   Alineado, AlineacionGuardada, Competicion, ContextoActivo, Equipo, FalmService, FORMACIONES,
-  ItemPlantilla, JornadaFalm,
+  ItemPlantilla, JornadaFalm, PartidoDeJornada,
 } from '../../core/falm.service';
 import { FutCardComponent } from '../../shared/fut-card.component';
 
@@ -45,7 +45,7 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
             <h2 class="jt">Jornada {{ j.numero }}</h2>
             @if (j.fecha) { <span class="jf">{{ fechaCorta(j.fecha) }}</span> }
             @if (esDoble(j.id)) {
-              <span class="jdoble" title="Cada equipo juega dos partidos y los dos se puntúan con esta alineación">Jornada doble ×2</span>
+              <span class="jdoble" title="Cada equipo juega dos partidos y cada uno lleva su propio once">Jornada doble ×2</span>
             }
             @if (!esJornadaPorDefecto()) {
               <button class="jhoy" (click)="irAJornadaActual()">Ir a la actual</button>
@@ -54,6 +54,29 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
           <button class="jb" (click)="irJornada(1)" [disabled]="!jSiguiente()">
             @if (jSiguiente(); as b) { Jornada {{ b.numero }} › } @else { › }
           </button>
+        </div>
+      }
+
+      <!-- En una jornada doble se juega dos veces con dos onces distintos: aqui
+           se elige cual se esta montando. En una normal no aparece. -->
+      @if (partidosJornada().length > 1) {
+        <div class="pdoble">
+          <p class="pd-t">Esta jornada juegas dos partidos y puedes mandar <b>un once distinto para cada uno</b>.</p>
+          <div class="pd-tabs">
+            @for (p of partidosJornada(); track p.id) {
+              <button class="pd" [class.on]="p.id === partidoSel()" (click)="elegirPartido(p.id)">
+                <span class="pd-r">{{ p.es_local ? 'vs' : '@' }} {{ p.rival }}</span>
+                <span class="pd-e">{{ estadoPartido(p) }}</span>
+              </button>
+            }
+          </div>
+          <!-- Solo cuando el otro ya tiene once propio: mientras no lo tenga,
+               el envio normal lo manda a los dos y esto sobraria. -->
+          @if (otroConOnce(); as otro) {
+            <button class="pd-copia" (click)="copiarAlOtro()" [disabled]="guardando() || cerrada()">
+              Enviar este mismo once también contra {{ otro.rival }}
+            </button>
+          }
         </div>
       }
 
@@ -85,7 +108,10 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
            Sin decirlo, parecía que ya estaba enviado y no lo estaba. -->
       @if (jornada()) {
         @if (enviada()) {
-          <p class="estado ok">Once enviado para esta jornada.</p>
+          <p class="estado ok">
+            @if (rivalSel(); as r) { Once enviado para el partido contra {{ r }}. }
+            @else { Once enviado para esta jornada. }
+          </p>
         } @else if (copiadaDe() !== null) {
           <p class="estado borrador">
             <b>Sin enviar.</b>
@@ -232,7 +258,7 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
           </span>
           <button class="btn-sec" (click)="repetirUltima()">Repetir última</button>
           <button class="btn" (click)="guardar()" [disabled]="guardando()"
-                  [title]="problema() ?? 'Enviar la alineación'">{{ guardando() ? 'Enviando…' : 'Enviar alineación' }}</button>
+                  [title]="problema() ?? 'Enviar la alineación'">{{ guardando() ? 'Enviando…' : textoEnviar() }}</button>
         }
       </div>
     }
@@ -323,7 +349,7 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
     .jt { margin: 0; font-family: var(--fh); font-size: var(--t-xl); font-weight: 600;
       letter-spacing: -.01em; }
     .jf { font-size: var(--t-sm); color: var(--text2); text-transform: capitalize; }
-    /* En una jornada doble esta misma alineación puntúa en dos partidos. */
+    /* En una jornada doble se juegan dos partidos, cada uno con su once. */
     .jdoble { font-size: var(--t-xs); font-weight: 700; letter-spacing: .06em;
       color: var(--por); border: 1px solid color-mix(in oklab, var(--por) 34%, var(--line));
       border-radius: var(--pill); padding: 3px 9px; }
@@ -331,6 +357,28 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
       font-family: var(--fb); font-size: var(--t-sm); color: var(--text2);
       text-decoration: underline; text-underline-offset: 3px; }
     .jhoy:hover { color: var(--accent); }
+
+    /* El partido que se esta alineando, en jornada doble. Van los dos a la
+       vista y cada uno dice como esta, que es lo unico que evita mandar uno y
+       creerse que has mandado los dos. */
+    .pdoble { margin-bottom: 14px; }
+    .pd-t { margin: 0 0 8px; text-align: center; font-size: var(--t-sm); color: var(--text2); }
+    .pd-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .pd { display: flex; flex-direction: column; align-items: center; gap: 2px;
+      padding: 9px 10px; cursor: pointer; min-width: 0;
+      background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-sm);
+      font-family: var(--fb); color: var(--text2); }
+    .pd:hover { border-color: var(--accent-line); }
+    .pd.on { background: var(--accent-soft); border-color: var(--accent); color: var(--text); }
+    .pd-r { font-weight: 700; font-size: var(--t-sm); min-width: 0;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+    .pd-e { font-size: var(--t-xs); color: var(--text2); }
+    .pd.on .pd-e { color: var(--accent); }
+    .pd-copia { display: block; width: 100%; margin-top: 8px; padding: 8px;
+      background: none; border: 1px dashed var(--line); border-radius: var(--r-sm);
+      cursor: pointer; font-family: var(--fb); font-size: var(--t-sm); color: var(--text2); }
+    .pd-copia:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+    .pd-copia:disabled { opacity: .4; cursor: not-allowed; }
 
     .phead { margin-bottom: 14px; }
     .comps { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 12px; }
@@ -673,7 +721,78 @@ export class AlineacionComponent implements OnInit, OnDestroy {
   /** Rival, casa o fuera, y estado físico de cada activo en esta jornada. */
   ctx = signal<Record<string, ContextoActivo>>({});
   /** ¿Hay alineación guardada para la jornada abierta? */
-  enviada = signal(false);
+  /** Los partidos que juego esta jornada: uno de normal, dos si es doble. */
+  partidosJornada = signal<PartidoDeJornada[]>([]);
+  /** El partido cuyo once se esta montando. */
+  partidoSel = signal<string | null>(null);
+  /** Lo que hay guardado en cada partido, para saber si van iguales o no. */
+  private guardadas = signal<Record<string, AlineacionGuardada | null>>({});
+  /**
+   * Lo que se lleva a medias en cada partido. Sin esto, cambiar de pestaña para
+   * mirar el otro once se comia lo que llevaras tocado en este.
+   */
+  private borradores = new Map<string, { f: string; t: string[]; b: { id: string; lineas: string[] }[] }>();
+
+  /** El otro partido de la jornada, si es doble. */
+  otroPartido = computed<PartidoDeJornada | null>(() =>
+    this.partidosJornada().find((p) => p.id !== this.partidoSel()) ?? null);
+  /** Contra quien se esta alineando, solo cuando hay mas de un partido. */
+  rivalSel = computed<string | null>(() => {
+    const ps = this.partidosJornada();
+    if (ps.length < 2) return null;
+    return ps.find((p) => p.id === this.partidoSel())?.rival ?? null;
+  });
+  /** El otro partido, pero solo si ya tiene su propio once. */
+  otroConOnce = computed<PartidoDeJornada | null>(() => {
+    const otro = this.otroPartido();
+    return otro && this.guardadas()[otro.id] ? otro : null;
+  });
+  /**
+   * Lo que va a hacer el boton, dicho tal cual: mientras el otro partido no
+   * tenga once, este envio vale para los dos.
+   */
+  textoEnviar = computed(() => {
+    const r = this.rivalSel();
+    if (!r) return 'Enviar alineación';
+    return this.otroConOnce() ? `Enviar contra ${r}` : 'Enviar para los dos partidos';
+  });
+
+  /**
+   * El once que hay puesto, resumido en una cadena: sirve para decir si lo que
+   * se ve es exactamente lo guardado y si los dos partidos llevan lo mismo.
+   */
+  private firma(f: string, tit: string[], ban: { id: string; lineas: string[] }[]): string {
+    return `${f}|${[...tit].sort().join(',')}|` +
+      ban.map((b) => `${b.id}:${[...b.lineas].sort().join('/')}`).join(',');
+  }
+  private firmaDe(a: AlineacionGuardada | null | undefined): string {
+    if (!a) return '';
+    return this.firma(
+      a.formacion || '4-4-2',
+      a.jugadores.filter((j) => j.rol === 'TITULAR').map((j) => j.activo_id),
+      a.jugadores.filter((j) => j.rol === 'SUPLENTE').sort((x, y) => x.orden - y.orden)
+        .map((j) => ({ id: j.activo_id, lineas: j.lineas?.length ? j.lineas : ['MEDIO'] })));
+  }
+  private firmaActual(): string {
+    return this.firma(this.formacion(), this.titulares(), this.banca());
+  }
+
+  /** Como esta cada pestaña: sin enviar, igual que la otra, o su formacion. */
+  estadoPartido(p: PartidoDeJornada): string {
+    const g = this.guardadas()[p.id];
+    if (!g) return 'sin enviar';
+    const otras = this.partidosJornada().filter((x) => x.id !== p.id).map((x) => this.guardadas()[x.id]);
+    const yo = this.firmaDe(g);
+    if (otras.length && otras.every((x) => x && this.firmaDe(x) === yo)) return 'el mismo once';
+    return g.formacion;
+  }
+
+  /** Lo que se ve es exactamente lo que hay guardado para este partido. */
+  enviada = computed(() => {
+    const id = this.partidoSel();
+    const g = id ? this.guardadas()[id] : null;
+    return !!g && this.firmaDe(g) === this.firmaActual();
+  });
   /** Si no la hay, de qué jornada se ha copiado el borrador que se está viendo. */
   copiadaDe = signal<number | null>(null);
   plantilla = signal<ItemPlantilla[]>([]);
@@ -1005,13 +1124,51 @@ export class AlineacionComponent implements OnInit, OnDestroy {
     // apaño de ayuda: si falla, la pantalla sigue funcionando igual.
     this.ctx.set({});
     this.falm.contextoJornada(j.id).then((c) => this.ctx.set(c)).catch(() => {});
-    this.enviada.set(false); this.copiadaDe.set(null);
+    this.copiadaDe.set(null);
+    this.borradores.clear();
     const eq = this.equipo(); if (!eq) return;
-    const ali = await this.falm.getAlineacion(eq.id, j.id);
-    if (ali) { this.aplicar(ali); this.enviada.set(true); return; }
-    // Cada jornada empieza en blanco. Antes se precargaba el once de la anterior
-    // y parecia enviado sin estarlo; si se quiere repetir, esta el boton.
-    this.limpiar();
+
+    // Los partidos de la jornada y el once que ya haya en cada uno. En una
+    // doble son dos, y son independientes.
+    const ps = await this.falm.misPartidos(eq.id, j.id).catch(() => [] as PartidoDeJornada[]);
+    this.partidosJornada.set(ps);
+    const guard: Record<string, AlineacionGuardada | null> = {};
+    await Promise.all(ps.map(async (p) => {
+      guard[p.id] = await this.falm.getAlineacion(eq.id, j.id, p.id).catch(() => null);
+    }));
+    this.guardadas.set(guard);
+    this.partidoSel.set(ps[0]?.id ?? null);
+    this.cargarPartido(ps[0]?.id ?? null);
+  }
+
+  /** Cambiar de partido sin perder lo que llevases puesto en el otro. */
+  elegirPartido(enfId: string) {
+    if (enfId === this.partidoSel()) return;
+    this.apuntarBorrador();
+    this.partidoSel.set(enfId);
+    this.cargarPartido(enfId);
+  }
+  private apuntarBorrador() {
+    const id = this.partidoSel(); if (!id) return;
+    this.borradores.set(id, {
+      f: this.formacion(), t: [...this.titulares()],
+      b: this.banca().map((x) => ({ id: x.id, lineas: [...x.lineas] })),
+    });
+  }
+  /** Lo que se enseña de un partido: lo que llevabas a medias, o lo guardado. */
+  private cargarPartido(enfId: string | null) {
+    this.aviso.set(''); this.copiadaDe.set(null);
+    const bor = enfId ? this.borradores.get(enfId) : null;
+    if (bor) {
+      this.formacion.set(bor.f); this.titulares.set(bor.t);
+      this.banca.set(bor.b.map((x) => ({ id: x.id, lineas: [...x.lineas] })));
+      return;
+    }
+    const ali = enfId ? this.guardadas()[enfId] : null;
+    // Cada partido empieza en blanco si no hay nada suyo. Antes se precargaba el
+    // once de la jornada anterior y parecia enviado sin estarlo; si se quiere
+    // repetir, esta el boton.
+    if (ali) this.aplicar(ali); else this.limpiar();
   }
   private limpiar() { this.titulares.set([]); this.banca.set([]); this.formacion.set('4-4-2'); }
   private aplicar(ali: AlineacionGuardada) {
@@ -1025,7 +1182,7 @@ export class AlineacionComponent implements OnInit, OnDestroy {
   async repetirUltima() {
     const eq = this.equipo(); const j = this.jornada(); if (!eq || !j) return;
     const prev = await this.falm.ultimaAlineacion(eq.id, this.competicionId(), j.numero);
-    if (prev) { this.aplicar(prev); this.enviada.set(false);
+    if (prev) { this.aplicar(prev);
                 this.copiadaDe.set(prev.desdeJornada ?? null);
                 this.aviso.set('↩︎ Cargada tu última. Revisa y guarda.'); }
     else this.aviso.set('No hay alineación anterior en esta competición.');
@@ -1033,7 +1190,7 @@ export class AlineacionComponent implements OnInit, OnDestroy {
   async copiarDeLiga() {
     const eq = this.equipo(); const j = this.jornada(); if (!eq || !j) return;
     const liga = await this.falm.copiarDesdeLiga(eq.id, j.fecha);
-    if (liga) { this.aplicar(liga); this.enviada.set(false); this.copiadaDe.set(null);
+    if (liga) { this.aplicar(liga); this.copiadaDe.set(null);
                 this.aviso.set('Copiada de Liga. Revisa y guarda.'); }
     else this.aviso.set('No hay alineación de Liga de ese fin de semana.');
   }
@@ -1136,7 +1293,16 @@ export class AlineacionComponent implements OnInit, OnDestroy {
     return this.formacionImposible();
   }
 
-  async guardar() {
+  /**
+   * Manda el once al partido que toca. Si el otro partido de una doble todavia
+   * no tiene ninguno, va tambien ahi: quien manda uno y no vuelve no puede
+   * quedarse sin once en el segundo, y para diferenciarlos ya esta la pestaña.
+   */
+  async guardar() { await this.enviar(false); }
+  /** El mismo once en los dos partidos, a proposito. */
+  async copiarAlOtro() { await this.enviar(true); }
+
+  private async enviar(aLosDos: boolean) {
     this.aviso.set('');
     if (this.cerrada()) {
       this.aviso.set('La jornada ya está cerrada: el once no se puede cambiar.');
@@ -1149,13 +1315,36 @@ export class AlineacionComponent implements OnInit, OnDestroy {
       ...this.titulares().map((id) => ({ activo_id: id, rol: 'TITULAR' as const, lineas: [], orden: 0 })),
       ...this.banca().map((b, i) => ({ activo_id: b.id, rol: 'SUPLENTE' as const, lineas: b.lineas, orden: i + 1 })),
     ];
+
+    // Sin partido, Postgres lo escribe en todos los de la jornada.
+    const sel = this.partidoSel();
+    const otro = this.otroPartido();
+    const faltaElOtro = !!otro && !this.guardadas()[otro.id];
+    const enTodos = aLosDos || faltaElOtro || !sel;
+    const destino = enTodos ? null : sel;
+
     this.guardando.set(true);
     try {
-      await this.falm.guardarAlineacion(eq.id, jor.id, this.formacion(), jugadores);
-      this.enviada.set(true); this.copiadaDe.set(null);
-      try { await this.falm.recalcular(); this.aviso.set('Alineación guardada y clasificación recalculada.'); }
-      catch { this.aviso.set('Alineación guardada.'); }
+      await this.falm.guardarAlineacion(eq.id, jor.id, this.formacion(), jugadores, destino);
+      this.copiadaDe.set(null);
+      this.borradores.clear();
+      await this.refrescarGuardadas(eq.id, jor.id);
+      const contra = this.rivalSel();
+      this.aviso.set(
+        !otro ? 'Alineación guardada.'
+        : enTodos ? `Alineación guardada para los dos partidos.`
+        : `Alineación guardada para el partido contra ${contra}. El otro se queda como estaba.`);
+      try { await this.falm.recalcular(); } catch { /* la tabla se rehará sola */ }
     } catch (e: any) { this.aviso.set(e?.message ?? 'Error al guardar'); }
     finally { this.guardando.set(false); }
+  }
+
+  /** Vuelve a leer lo que hay guardado en cada partido, que es lo que dicen las pestañas. */
+  private async refrescarGuardadas(equipoId: string, jornadaId: string) {
+    const guard: Record<string, AlineacionGuardada | null> = {};
+    await Promise.all(this.partidosJornada().map(async (p) => {
+      guard[p.id] = await this.falm.getAlineacion(equipoId, jornadaId, p.id).catch(() => null);
+    }));
+    this.guardadas.set(guard);
   }
 }

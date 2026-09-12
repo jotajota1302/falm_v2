@@ -211,8 +211,19 @@ export interface AlineacionGuardada {
   id?: string;
   formacion: string;
   jugadores: Alineado[];
+  /** El partido al que pertenece este once. */
+  enfrentamiento_id?: string;
   /** Solo en ultimaAlineacion: de qué jornada se copió, para poder decirlo. */
   desdeJornada?: number;
+}
+
+/** Un partido de un equipo en una jornada: en una doble hay dos, y cada uno
+ *  lleva su propia alineación. */
+export interface PartidoDeJornada {
+  id: string;
+  rival_id: string;
+  rival: string;
+  es_local: boolean;
 }
 
 export const FORMACIONES = ['5-4-1', '5-3-2', '4-5-1', '4-4-2', '4-3-3', '3-4-3', '3-5-2'];
@@ -469,7 +480,7 @@ export class FalmService {
   /** Enfrentamientos de una jornada (puntos reales importados) + reparto 3/2/1.5. */
   /**
    * Cuáles de esas jornadas son dobles. Doble = algún equipo juega dos veces en
-   * ella, así que una sola alineación cuenta para los dos partidos.
+   * ella, y cada uno de esos partidos lleva su propia alineación.
    */
   async jornadasDobles(jornadaIds: string[]): Promise<Set<string>> {
     const ids = [...new Set(jornadaIds.filter(Boolean))];
@@ -516,11 +527,14 @@ export class FalmService {
     const { data: viva, error: e3 } = await this.sb.client
       .rpc('marcadores_jornada', { p_jornada: jornadaFalmId });
     if (e3) throw e3;
+    // Por partido, no por equipo: en una jornada doble el mismo equipo sale en
+    // dos cruces y puede llevar un once distinto (y por tanto otros puntos) en
+    // cada uno.
     const enVivo = new Map<string, { pts: number; res: number; plazas: number }>();
     let cerrada = true, pJugados = 0, pTotal = 0;
     for (const m of (viva ?? []) as any[]) {
       cerrada = m.cerrada;
-      enVivo.set(m.equipo_falm_id, {
+      enVivo.set(`${m.enfrentamiento_id}|${m.equipo_falm_id}`, {
         pts: Number(m.puntos ?? 0), res: Number(m.resueltos ?? 0), plazas: Number(m.plazas ?? 0),
       });
       pJugados = Number(m.partidos_jugados ?? 0); pTotal = Number(m.partidos_total ?? 0);
@@ -536,7 +550,7 @@ export class FalmService {
     };
 
     return filas.map((f) => {
-      const vl = enVivo.get(f.equipo_local_id), vv = enVivo.get(f.equipo_visitante_id);
+      const vl = enVivo.get(`${f.id}|${f.equipo_local_id}`), vv = enVivo.get(`${f.id}|${f.equipo_visitante_id}`);
       const enJuego = !cerrada && (vl != null || vv != null);
       const pl = enJuego ? (vl?.pts ?? 0) : Number(f.puntos_local ?? 0);
       const pv = enJuego ? (vv?.pts ?? 0) : Number(f.puntos_visitante ?? 0);
@@ -545,8 +559,8 @@ export class FalmService {
         enfrentamiento_id: f.id,
         equipo_local: n.get(f.equipo_local_id) ?? '?',
         equipo_visitante: n.get(f.equipo_visitante_id) ?? '?',
-        alineado_local: alineados.has(f.equipo_local_id),
-        alineado_visitante: alineados.has(f.equipo_visitante_id),
+        alineado_local: alineados.has(`${f.id}|${f.equipo_local_id}`),
+        alineado_visitante: alineados.has(`${f.id}|${f.equipo_visitante_id}`),
         puntos_local: pl,
         puntos_visitante: pv,
         puntos_clasif_local: cl,
@@ -662,18 +676,53 @@ export class FalmService {
     return js[0] ?? null;
   }
 
-  /** Alineación guardada de un equipo en una jornada (con roles por activo). */
-  async getAlineacion(equipoId: string, jornadaFalmId: string): Promise<AlineacionGuardada | null> {
-    const { data, error } = await this.sb.client
+  /**
+   * Alineación guardada de un equipo para un partido (con roles por activo).
+   * El once cuelga del enfrentamiento: en una jornada doble hay dos, y sin
+   * decir cuál se coge el del primer cruce, que es lo que hacía siempre.
+   */
+  async getAlineacion(equipoId: string, jornadaFalmId: string,
+                      enfrentamientoId?: string | null): Promise<AlineacionGuardada | null> {
+    let q = this.sb.client
       .from('alineacion')
-      .select('id, formacion, alineacion_activo(activo_id, rol, lineas, orden)')
+      .select('id, formacion, enfrentamiento_id, alineacion_activo(activo_id, rol, lineas, orden)')
       .eq('equipo_falm_id', equipoId)
-      .eq('jornada_falm_id', jornadaFalmId)
-      .maybeSingle();
+      .eq('jornada_falm_id', jornadaFalmId);
+    if (enfrentamientoId) q = q.eq('enfrentamiento_id', enfrentamientoId);
+    const { data, error } = await q.order('enfrentamiento_id').limit(1);
     if (error) throw error;
-    if (!data) return null;
-    return { id: (data as any).id, formacion: (data as any).formacion,
-             jugadores: this.aMapa((data as any).alineacion_activo) };
+    const fila: any = (data ?? [])[0];
+    if (!fila) return null;
+    return { id: fila.id, formacion: fila.formacion, enfrentamiento_id: fila.enfrentamiento_id,
+             jugadores: this.aMapa(fila.alineacion_activo) };
+  }
+
+  /**
+   * Los partidos que juega un equipo en una jornada: uno de normal, dos si es
+   * doble. Cada uno lleva su propio once, así que es lo que manda en la
+   * pantalla de Alineación.
+   */
+  async misPartidos(equipoId: string, jornadaFalmId: string): Promise<PartidoDeJornada[]> {
+    const { data, error } = await this.sb.client
+      .from('enfrentamiento')
+      .select('id, equipo_local_id, equipo_visitante_id')
+      .eq('jornada_falm_id', jornadaFalmId)
+      .or(`equipo_local_id.eq.${equipoId},equipo_visitante_id.eq.${equipoId}`);
+    if (error) throw error;
+    const filas: any[] = data ?? [];
+    if (!filas.length) return [];
+    const rivales = filas.map((f) => f.equipo_local_id === equipoId ? f.equipo_visitante_id : f.equipo_local_id);
+    const { data: eqs, error: e2 } = await this.sb.client
+      .from('equipo_falm').select('id, nombre').in('id', rivales);
+    if (e2) throw e2;
+    const n = new Map((eqs ?? []).map((e: any) => [e.id, e.nombre]));
+    return filas
+      .map((f) => {
+        const esLocal = f.equipo_local_id === equipoId;
+        const rivalId = esLocal ? f.equipo_visitante_id : f.equipo_local_id;
+        return { id: f.id, rival_id: rivalId, rival: n.get(rivalId) ?? '?', es_local: esLocal };
+      })
+      .sort((a, b) => a.rival.localeCompare(b.rival));
   }
 
   /**
@@ -702,7 +751,22 @@ export class FalmService {
   }
 
   /**
-   * Qué equipos de una lista ya han mandado alineación en una jornada.
+   * Lo mismo pero de UN partido. En una jornada doble los dos cruces llevan su
+   * propio once, así que preguntar por la jornada devolvería la suma de los dos
+   * y ningún marcador de verdad.
+   */
+  async marcadorEnfrentamiento(enfId: string, equipoId: string): Promise<MarcadorJornada> {
+    const { data, error } = await this.sb.client.rpc('marcador_enfrentamiento',
+      { p_enf: enfId, p_equipo: equipoId });
+    if (error) throw error;
+    const d = typeof data === 'string' ? JSON.parse(data) : data;
+    return (d ?? { alineada: false }) as MarcadorJornada;
+  }
+
+  /**
+   * Qué equipos de una lista ya han mandado alineación en una jornada, y en qué
+   * partido: la clave es `enfrentamiento|equipo` porque en una doble se puede
+   * tener mandado un once contra un rival y el otro todavía no.
    * Se lee de todos, no solo del propio: en Inicio decimos si el rival ya la
    * ha enviado, pero nunca cuál — eso sigue siendo suyo hasta que se cierre.
    */
@@ -711,11 +775,11 @@ export class FalmService {
     if (!ids.length) return new Set();
     const { data, error } = await this.sb.client
       .from('alineacion')
-      .select('equipo_falm_id')
+      .select('equipo_falm_id, enfrentamiento_id')
       .eq('jornada_falm_id', jornadaFalmId)
       .in('equipo_falm_id', ids);
     if (error) throw error;
-    return new Set((data ?? []).map((r: any) => r.equipo_falm_id));
+    return new Set((data ?? []).map((r: any) => `${r.enfrentamiento_id}|${r.equipo_falm_id}`));
   }
 
   /**
@@ -800,7 +864,8 @@ export class FalmService {
     equipoId: string,
     jornadaFalmId: string,
     formacion: string,
-    jugadores: Alineado[]
+    jugadores: Alineado[],
+    enfrentamientoId?: string | null
   ): Promise<void> {
     // Vía RPC SECURITY DEFINER: la escritura directa la bloquea RLS sin dueño/login.
     const payload = jugadores.map((j, i) => ({
@@ -808,8 +873,11 @@ export class FalmService {
       lineas: j.rol === 'SUPLENTE' ? (j.lineas ?? []) : null,
       orden: j.orden ?? i + 1,
     }));
+    // Sin partido, Postgres lo guarda en todos los de esa jornada: en una doble
+    // el mismo once contra los dos rivales, que es lo que valía hasta ahora.
     const { error } = await this.sb.client.rpc('guardar_alineacion', {
       p_equipo: equipoId, p_jornada: jornadaFalmId, p_formacion: formacion, p_jugadores: payload,
+      p_enfrentamiento: enfrentamientoId ?? null,
     });
     if (error) throw error;
   }

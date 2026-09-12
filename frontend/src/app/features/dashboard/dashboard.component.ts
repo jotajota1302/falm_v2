@@ -67,10 +67,11 @@ interface Once { equipo: string; formacion: string; campo: EnCampo[]; banca: EnB
               <span class="sc num">{{ tanteo(r, true) }}<i>–</i>{{ tanteo(r, false) }}</span>
               <span class="t" [class.win]="perdi(r)">{{ r.rival }}</span>
             </button>
+            <!-- Cuantas de las once plazas tienen ya desenlace: sin esto no se
+                 sabe si un 24-31 esta cerrado o va por la mitad. Va por partido
+                 porque en una doble cada uno lleva su propio once. -->
+            @if (avance(r); as av) { <p class="av">{{ av }}</p> }
           }
-          <!-- Cuantas de las once plazas tienen ya desenlace: sin esto no se
-               sabe si un 24-31 esta cerrado o va por la mitad. -->
-          @if (avance(); as av) { <p class="av">{{ av }}</p> }
           @if (ag()?.en_juego) { <p class="av cerrada">La alineación ya está cerrada.</p> }
           <p class="av pista">Toca el marcador para ver los onces y los puntos de cada uno.</p>
         </section>
@@ -93,12 +94,12 @@ interface Once { equipo: string; formacion: string; campo: EnCampo[]; banca: EnB
         <section class="next">
           <div class="nh">
             <span class="jlbl">Jornada {{ pr.numero }} · {{ etiqueta(pr.comp) }}
-              @if (doble()) { <b class="x2" title="Cada equipo juega dos partidos con esta misma alineación">doble ×2</b> }
+              @if (doble()) { <b class="x2" title="Cada equipo juega dos partidos y cada uno lleva su propio once">doble ×2</b> }
             </span>
             <span class="fecha">{{ fechaLarga(pr.fecha) }}</span>
           </div>
-          <!-- En una jornada doble son dos rivales con la misma alineación: si solo se
-               enseña uno, se prepara el once pensando en medio partido. -->
+          <!-- En una jornada doble son dos rivales y un once para cada uno: si solo
+               se enseña uno, se prepara la jornada pensando en medio partido. -->
           @for (r of rivales(pr); track r.enfrentamiento_id) {
             <div class="match">
               <span class="tn">{{ nombre() }}</span>
@@ -122,8 +123,12 @@ interface Once { equipo: string; formacion: string; campo: EnCampo[]; banca: EnB
         <section class="once">
           @if (foco(); as f) {
             <div class="oh">
-              <span class="ol">Jornada {{ f.numero }} · {{ etiqueta(f.comp) }}</span>
-              <span class="oq">{{ enMarcha() ? 'Así está saliendo' : 'Así vas a salir' }}</span>
+              <span class="ol">Jornada {{ f.numero }} · {{ etiqueta(f.comp) }}
+                @if (doble()) { · {{ f.es_local ? 'vs' : '@' }} {{ f.rival }} }
+              </span>
+              <span class="oq">
+                {{ enMarcha() ? 'Así está saliendo' : 'Así vas a salir' }}@if (doble()) { en el primer partido }
+              </span>
             </div>
           }
           <div class="duelo" [class.sinpts]="!enMarcha()">
@@ -222,7 +227,7 @@ interface Once { equipo: string; formacion: string; campo: EnCampo[]; banca: EnB
     .nh { display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
       padding-bottom: 14px; border-bottom: 1px solid var(--line); margin-bottom: 20px; }
     .jlbl { font-size: var(--t-xs); font-weight: 700; text-transform: uppercase; letter-spacing: .16em; color: var(--accent); }
-    /* Una jornada doble se puntúa dos veces con la misma alineación. */
+    /* Una jornada doble son dos partidos, cada uno con su propio once. */
     .x2 { margin-left: 7px; color: var(--por); letter-spacing: .06em; }
     .fecha { font-size: var(--t-sm); color: var(--text2); text-transform: capitalize; }
     .match { display: flex; align-items: center; justify-content: center; gap: 16px; }
@@ -348,14 +353,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
   /** Los dos onces de la jornada que viene (o de la que se está jugando). */
   mio = signal<Once | null>(null);
   rival = signal<Once | null>(null);
-  /** Marcador en vivo del partido de arriba, con lo puntuado hasta ahora. */
-  marcaMio = signal<MarcadorJornada | null>(null);
-  /** Lo que lleva cada rival de la jornada, por equipo: en una doble son dos. */
+  /**
+   * Lo que lleva cada lado, por PARTIDO. En una jornada doble cada cruce tiene
+   * su propio once, asi que tambien su propio marcador: no vale guardar uno
+   * solo por equipo.
+   */
+  marcaMias = signal<Record<string, MarcadorJornada | null>>({});
   marcaRivales = signal<Record<string, MarcadorJornada | null>>({});
-  marcaRival = computed(() => {
-    const ac = this.actual();
-    return ac ? this.marcaRivales()[ac.rival_id] ?? null : null;
-  });
 
   /** Los partidos de la jornada: dos si es doble, y si no, el de siempre. */
   rivales(ac: AgendaItem): AgendaItem[] {
@@ -418,19 +422,20 @@ export class DashboardComponent implements OnInit, OnDestroy {
    * se cierra los dos numeros son el mismo.
    */
   tanteo(ac: AgendaItem, mio: boolean): string {
-    const m = mio ? this.marcaMio() : this.marcaRivales()[ac.rival_id] ?? null;
+    const m = (mio ? this.marcaMias() : this.marcaRivales())[ac.enfrentamiento_id] ?? null;
     if (m?.alineada && m.puntos != null) return this.fmt(m.puntos);
     return this.fmt(mio ? ac.mis_puntos : ac.rival_puntos);
   }
 
-  /** "7 de 11 jugados", y solo mientras quede alguno por resolver. */
-  avance = computed<string | null>(() => {
-    const a = this.marcaMio(), b = this.marcaRival();
+  /** "7 de 11 jugados" de un partido, y solo mientras quede alguno por resolver. */
+  avance(ac: AgendaItem): string | null {
+    const a = this.marcaMias()[ac.enfrentamiento_id] ?? null;
+    const b = this.marcaRivales()[ac.enfrentamiento_id] ?? null;
     if (!a?.alineada || !a.plazas) return null;
     const hechos = Math.min(a.resueltos ?? 0, b?.resueltos ?? a.resueltos ?? 0);
     if (hechos >= (a.plazas ?? 11)) return null;
     return `${a.resueltos ?? 0} de ${a.plazas} jugados · ${b?.resueltos ?? 0} de ${b?.plazas ?? a.plazas} el rival`;
-  });
+  }
   gane(ac: AgendaItem) { return ac.mis_puntos != null && ac.rival_puntos != null && ac.mis_puntos > ac.rival_puntos; }
   perdi(ac: AgendaItem) { return ac.mis_puntos != null && ac.rival_puntos != null && ac.rival_puntos > ac.mis_puntos; }
   abr(pos: string) { return ABR[pos] ?? pos; }
@@ -470,9 +475,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   /** Cruza una alineación guardada con la plantilla y con lo que sumó cada uno en la jornada. */
-  private async onceDe(equipoId: string, equipo: string, jornadaId: string): Promise<Once> {
+  private async onceDe(equipoId: string, equipo: string, jornadaId: string,
+                       enfId?: string | null): Promise<Once> {
     const vacio: Once = { equipo, formacion: '', campo: [], banca: [], enviada: false };
-    const al = await this.falm.getAlineacion(equipoId, jornadaId);
+    const al = await this.falm.getAlineacion(equipoId, jornadaId, enfId);
     if (!al) return vacio;
     const [plantilla, pts, resuelto] = await Promise.all([
       this.falm.miPlantilla(equipoId),
@@ -551,22 +557,26 @@ export class DashboardComponent implements OnInit, OnDestroy {
           this.falm.jornadasDobles([f.jornada_id])
             .then((d) => this.doble.set(d.has(f.jornada_id))).catch(() => {});
           const [yo, otro] = await Promise.all([
-            this.onceDe(eq.id, eq.nombre, f.jornada_id),
-            this.onceDe(f.rival_id, f.rival, f.jornada_id),
+            this.onceDe(eq.id, eq.nombre, f.jornada_id, f.enfrentamiento_id),
+            this.onceDe(f.rival_id, f.rival, f.jornada_id, f.enfrentamiento_id),
           ]);
           this.mio.set(yo);
           this.rival.set(otro);
         }
         const ac = this.actual();
         if (ac?.jornada_id) {
-          // Un marcador por rival: en una jornada doble hay dos, y el mío vale para ambos.
+          // Un marcador por partido y por lado: en una jornada doble los dos
+          // cruces llevan onces distintos, asi que tambien puntos distintos.
           const rivs = this.rivales(ac);
-          const [a, ...otros] = await Promise.all([
-            this.falm.marcadorJornada(ac.jornada_id, eq.id).catch(() => null),
-            ...rivs.map((r) => this.falm.marcadorJornada(ac.jornada_id, r.rival_id).catch(() => null)),
-          ]);
-          this.marcaMio.set(a);
-          this.marcaRivales.set(Object.fromEntries(rivs.map((r, i) => [r.rival_id, otros[i]])));
+          const pares = await Promise.all(rivs.map(async (r) => {
+            const [mio, suyo] = await Promise.all([
+              this.falm.marcadorEnfrentamiento(r.enfrentamiento_id, eq.id).catch(() => null),
+              this.falm.marcadorEnfrentamiento(r.enfrentamiento_id, r.rival_id).catch(() => null),
+            ]);
+            return { enf: r.enfrentamiento_id, mio, suyo };
+          }));
+          this.marcaMias.set(Object.fromEntries(pares.map((p) => [p.enf, p.mio])));
+          this.marcaRivales.set(Object.fromEntries(pares.map((p) => [p.enf, p.suyo])));
         }
         const comps = await this.falm.competiciones();
         const liga = comps.find((c) => c.tipo === 'LIGA') ?? comps[0];

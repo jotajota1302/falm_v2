@@ -49,8 +49,8 @@ import { DetallePartidoComponent } from '../../shared/detalle-partido.component'
       <p class="muted">No hay partidos en esta jornada.</p>
     } @else {
       @if (esDoble(jornadaId())) {
-        <p class="doble-av">Jornada doble: cada equipo juega dos partidos y los dos
-          se puntúan con la misma alineación.</p>
+        <p class="doble-av">Jornada doble: cada equipo juega dos partidos, y en cada
+          uno puede alinear un once distinto.</p>
       }
       <div class="lista">
         @for (e of enfrentamientos(); track e.enfrentamiento_id) {

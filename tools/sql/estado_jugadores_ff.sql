@@ -133,7 +133,7 @@ end $function$;
 -- pantalla maneja, e incluye las porterías: la del Getafe también tiene rival.
 --
 -- Devuelve un array de partidos, no uno: en las jornadas dobles se juegan dos
--- y una sola alineación puntúa en ambos.
+-- y cada uno lleva su propia alineación.
 create or replace function falm.contexto_jornada(p_jornada uuid)
 returns jsonb
 language sql
