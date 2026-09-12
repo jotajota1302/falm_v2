@@ -95,6 +95,9 @@ export interface EnfrentamientoFila {
   resueltos_local: number;
   resueltos_visitante: number;
   plazas: number;
+  /** Partidos de LaLiga de esa jornada: cuántos van jugados de cuántos. */
+  partidos_jugados: number;
+  partidos_total: number;
 }
 
 export interface LlaveLeg { local: string; visitante: string; pl: number; pv: number; }
@@ -514,12 +517,13 @@ export class FalmService {
       .rpc('marcadores_jornada', { p_jornada: jornadaFalmId });
     if (e3) throw e3;
     const enVivo = new Map<string, { pts: number; res: number; plazas: number }>();
-    let cerrada = true;
+    let cerrada = true, pJugados = 0, pTotal = 0;
     for (const m of (viva ?? []) as any[]) {
       cerrada = m.cerrada;
       enVivo.set(m.equipo_falm_id, {
         pts: Number(m.puntos ?? 0), res: Number(m.resueltos ?? 0), plazas: Number(m.plazas ?? 0),
       });
+      pJugados = Number(m.partidos_jugados ?? 0); pTotal = Number(m.partidos_total ?? 0);
     }
 
     const reparto = (a: number, b: number): [number, number] => {
@@ -552,6 +556,8 @@ export class FalmService {
         resueltos_local: vl?.res ?? 0,
         resueltos_visitante: vv?.res ?? 0,
         plazas: vl?.plazas ?? vv?.plazas ?? 11,
+        partidos_jugados: pJugados,
+        partidos_total: pTotal,
       };
     });
   }

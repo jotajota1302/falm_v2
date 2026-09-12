@@ -56,7 +56,14 @@ import { DetallePartidoComponent } from '../../shared/detalle-partido.component'
         @for (e of enfrentamientos(); track e.enfrentamiento_id) {
           <button class="match" (click)="abrirDetalle(e)">
             <span class="lado izq" [class.gana]="e.puntos_clasif_local > e.puntos_clasif_visitante">
-              <span class="nm">{{ e.equipo_local }}</span>
+              <span class="eq">
+                <span class="nm">{{ e.equipo_local }}</span>
+                <!-- Lo que queda por jugar de su once, que es lo que de verdad se
+                     pregunta uno mirando un marcador a medias. -->
+                @if (e.en_juego) {
+                  <span class="pend">{{ pendientes(e, true) }}</span>
+                }
+              </span>
               <span class="ali" [class.si]="e.alineado_local"
                     [title]="e.alineado_local ? 'Alineación enviada' : 'Sin alineación'">
                 {{ e.alineado_local ? '✓' : '·' }}
@@ -68,7 +75,7 @@ import { DetallePartidoComponent } from '../../shared/detalle-partido.component'
             </span>
             <span class="est" [class.vivo]="e.en_juego">
               @if (e.en_juego) {
-                En juego · {{ resueltos(e) }} de {{ e.plazas * 2 }} resueltos
+                En juego · {{ e.partidos_jugados }}/{{ e.partidos_total }} partidos
               } @else {
                 {{ e.jornada_jugada ? e.puntos_clasif_local + ' – ' + e.puntos_clasif_visitante + ' en la tabla' : 'Sin jugar' }}
               }
@@ -79,7 +86,12 @@ import { DetallePartidoComponent } from '../../shared/detalle-partido.component'
                     [title]="e.alineado_visitante ? 'Alineación enviada' : 'Sin alineación'">
                 {{ e.alineado_visitante ? '✓' : '·' }}
               </span>
-              <span class="nm">{{ e.equipo_visitante }}</span>
+              <span class="eq">
+                <span class="nm">{{ e.equipo_visitante }}</span>
+                @if (e.en_juego) {
+                  <span class="pend">{{ pendientes(e, false) }}</span>
+                }
+              </span>
             </span>
           </button>
         }
@@ -137,6 +149,11 @@ import { DetallePartidoComponent } from '../../shared/detalle-partido.component'
     .match .lado.der { grid-column: 3; grid-row: 1 / 3; }
     .match:hover { border-color: var(--accent-line); }
     .lado { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    /* El nombre y lo que le queda, en columna: el pendiente cuelga de su equipo. */
+    .eq { display: flex; flex-direction: column; min-width: 0; }
+    .lado.izq .eq { align-items: flex-end; }
+    .lado.der .eq { align-items: flex-start; }
+    .pend { font-size: var(--t-xs); color: var(--text2); white-space: nowrap; }
     .lado.izq { justify-content: flex-end; } .lado.der { justify-content: flex-start; }
     .marca { width: 3px; height: 24px; border-radius: 2px; flex: 0 0 auto; }
     /* Si ese equipo ya ha mandado su once. */
@@ -187,8 +204,16 @@ export class JornadasComponent implements OnInit {
   constructor(private falm: FalmService) {}
 
   color(n: string) { return colorEquipo(n); }
-  /** Cuántas de las 22 plazas del partido ya tienen desenlace. */
-  resueltos(e: EnfrentamientoFila) { return e.resueltos_local + e.resueltos_visitante; }
+  /**
+   * Lo que a ese equipo le queda por jugar del once. Se dice en pendientes y no en
+   * resueltos porque es la pregunta de verdad mirando un marcador a medias: cuánto le
+   * queda a cada uno por sumar.
+   */
+  pendientes(e: EnfrentamientoFila, local: boolean): string {
+    const n = e.plazas - (local ? e.resueltos_local : e.resueltos_visitante);
+    if (n <= 0) return 'ya está';
+    return `${n} por jugar`;
+  }
   etiqueta(t: string) { return t === 'CHAMPIONS' ? 'Champions' : t === 'CLAUSURA' ? 'Clausura' : 'Liga'; }
 
   subtitulo() {
