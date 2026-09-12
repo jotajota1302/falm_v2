@@ -44,7 +44,6 @@ interface NavItem { path: string; label: string; corto: string; }
             </select>
           }
           <span class="yo">
-            <span class="ava">{{ iniciales }}</span>
             <span class="team">{{ team }}</span>
           </span>
           <span class="acc">
@@ -67,7 +66,7 @@ interface NavItem { path: string; label: string; corto: string; }
       @if (mas()) {
         <div class="masback" (click)="mas.set(false)"></div>
         <div class="maspanel">
-          <span class="masyo"><span class="ava">{{ iniciales }}</span>{{ team }}</span>
+          <span class="masyo">{{ team }}</span>
           <a routerLink="/cuenta" (click)="mas.set(false)">Mi cuenta</a>
           @if (esAdmin()) {
             <a routerLink="/admin" (click)="mas.set(false)">Administración</a>
@@ -115,10 +114,6 @@ interface NavItem { path: string; label: string; corto: string; }
     .temp { background: var(--surface2); border: 1px solid var(--line); color: var(--text);
       border-radius: var(--r-xs); padding: 6px 8px; font-size: var(--t-sm); font-weight: 600; max-width: 150px; }
     .yo { display: flex; align-items: center; gap: 9px; min-width: 0; }
-    .ava { width: 30px; height: 30px; border-radius: 50%; flex: 0 0 auto;
-      background: var(--surface2); border: 1px solid var(--line); color: var(--text2);
-      display: flex; align-items: center; justify-content: center;
-      font-family: var(--fb); font-size: var(--t-xs); font-weight: 700; }
     .team { font-size: var(--t-sm); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .acc { display: flex; align-items: center; gap: 12px; padding-left: 14px; border-left: 1px solid var(--line); }
     .tlink { background: none; border: none; padding: 0; cursor: pointer;
@@ -296,12 +291,6 @@ export class AppComponent implements AfterViewChecked {
     return environment.devEquipoNombre || localStorage.getItem('falm_equipo') ||
       (this.auth.user()?.user_metadata?.['equipo'] as string) || '';
   }
-  /** Dos letras para el avatar: las iniciales del equipo, como en una camiseta. */
-  get iniciales() {
-    const p = (this.team || '?').trim().split(/\s+/);
-    return ((p[0]?.[0] ?? '') + (p[1]?.[0] ?? '')).toUpperCase() || '?';
-  }
-
   /** Línea de contexto bajo la marca: qué temporada se está mirando. Mientras
    *  llega la consulta se usa la de la última visita, y si no hay, nada: un
    *  texto de relleno solo sirve para que luego cambie delante del usuario. */
