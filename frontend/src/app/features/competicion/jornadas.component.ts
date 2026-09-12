@@ -1,15 +1,13 @@
 import { Component, OnInit, computed, signal } from '@angular/core';
 import { Competicion, EnfrentamientoFila, FalmService, JornadaFalm } from '../../core/falm.service';
 import { colorEquipo } from '../../shared/equipo-colores';
-import { FichaService } from '../../shared/ficha.service';
-
-/** Las cuatro lineas, en el orden en que se lee un once. */
-const ORDEN = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
+import { DetallePartidoComponent } from '../../shared/detalle-partido.component';
 
 /** Resultados de los enfrentamientos por jornada, con el detalle del once. */
 @Component({
   selector: 'app-jornadas',
   standalone: true,
+  imports: [DetallePartidoComponent],
   template: `
     <header class="phead">
       <div>
@@ -88,50 +86,8 @@ const ORDEN = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
       </div>
     }
 
-    @if (detalle() || cargandoDetalle()) {
-      <div class="back" (click)="detalle.set(null)">
-        <div class="panel rise" (click)="$event.stopPropagation()">
-          <button class="x" (click)="detalle.set(null)" aria-label="Cerrar">✕</button>
-          @if (cargandoDetalle()) {
-            <p class="muted pad">Cargando detalle…</p>
-          } @else if (!detalle()?.local?.jugadores?.length && !detalle()?.visitante?.jugadores?.length) {
-            <p class="muted pad">Sin alineaciones guardadas en este partido.</p>
-          } @else {
-            <div class="dmarcador">
-              <span class="de">{{ detalle().local.equipo }}</span>
-              <span class="dm num">{{ detalle().local.total }} – {{ detalle().visitante.total }}</span>
-              <span class="de">{{ detalle().visitante.equipo }}</span>
-            </div>
-            <div class="dcols">
-              @for (lado of [detalle().local, detalle().visitante]; track lado.equipo) {
-                <div class="dcol">
-                  @for (grupo of grupos(lado); track grupo.rol) {
-                    @if (grupo.js.length) {
-                      <span class="drol">{{ grupo.rol === 'TITULAR' ? 'Once' : 'Banquillo' }}</span>
-                      @for (j of grupo.js; track j.nombre) {
-                        <!-- La cifra sola no dice de dónde sale: al tocar se abre la ficha
-                             de siempre, con los puntos por jornada y su desglose. -->
-                        <button class="dj" [class.supl]="j.rol !== 'TITULAR'" [class.nojugo]="!j.jugo"
-                                (click)="abrirFicha(j)" [title]="'Ver la puntuación de ' + j.nombre">
-                          <span class="pos" [class]="abrPos(j.pos)">{{ abrPos(j.pos) }}</span>
-                          <img class="dfo" [class.es]="!j.foto" [src]="j.foto || j.escudo" alt=""
-                               loading="lazy" (error)="j.foto = null" />
-                          <span class="dn">{{ j.nombre }}</span>
-                          @if (j.foto && j.escudo) { <img class="dcl" [src]="j.escudo" alt="" loading="lazy" /> }
-                          @else { <span></span> }
-                          <span class="dp num" [class.neg]="j.puntos < 0">{{ j.puntos }}</span>
-                        </button>
-                      }
-                    }
-                  }
-                </div>
-              }
-            </div>
-            <p class="dleg">Los suplentes van con borde discontinuo; en gris, quien no llegó a jugar.</p>
-          }
-        </div>
-      </div>
-    }
+    <!-- El mismo detalle que se abre desde Inicio: vive en shared para no tener dos. -->
+    <falm-detalle-partido [enfrentamiento]="verEnf()" (cerrar)="verEnf.set(null)" />
   `,
   styles: [`
     .comps { margin-bottom: 12px; }
@@ -199,43 +155,6 @@ const ORDEN = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
     /* Mientras se juega el marcador todavia puede moverse: se dice en color. */
     .est.vivo { color: var(--good); }
 
-    .back { position: fixed; inset: 0; z-index: 60; background: rgba(22,19,15,.42);
-      display: flex; align-items: flex-end; justify-content: center; }
-    .panel { position: relative; width: 100%; max-width: 640px; max-height: 88vh; overflow-y: auto;
-      background: var(--surface); border: 1px solid var(--line); border-top: 3px solid var(--accent);
-      border-radius: var(--r-lg) var(--r-lg) 0 0; padding: 22px; }
-    @media (min-width: 621px) { .back { align-items: center; } .panel { border-radius: var(--r-lg); } }
-    .x { position: absolute; top: 14px; right: 14px; background: var(--surface2); border: 1px solid var(--line);
-      color: var(--text2); width: 32px; height: 32px; border-radius: var(--r-xs); cursor: pointer; font-size: var(--t-sm); z-index: 1; }
-    .pad { padding: 18px 0; }
-    .dmarcador { display: grid; grid-template-columns: 1fr auto 1fr; align-items: baseline; gap: 12px;
-      margin-bottom: 18px; padding-right: 40px; }
-    .de { font-family: var(--fh); font-size: var(--t-md); font-weight: 600; text-transform: uppercase; }
-    .dmarcador .de:last-child { text-align: right; }
-    .dm { font-size: var(--t-lg); font-weight: 700; text-align: center; color: var(--accent); white-space: nowrap; }
-    .dcols { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .dcol { display: flex; flex-direction: column; gap: 4px; }
-    /* Titulares y suplentes, cada grupo bajo su rótulo: el borde discontinuo
-       apenas se veía y no decía cuál era cuál. */
-    .drol { display: block; margin: 12px 0 5px; font-size: var(--t-xs); font-weight: 700;
-      letter-spacing: .1em; text-transform: uppercase; color: var(--text2); }
-    .dcol > .drol:first-child { margin-top: 0; }
-    .dj { display: grid; grid-template-columns: 32px 24px 1fr 16px auto; align-items: center; gap: 8px;
-      padding: 5px 8px; background: var(--surface); border: 1px solid var(--line);
-      border-radius: var(--r-xs); font-size: var(--t-sm);
-      width: 100%; text-align: left; font-family: inherit; color: inherit; cursor: pointer; }
-    .dj:hover { border-color: var(--accent); }
-    .dfo { width: 24px; height: 24px; border-radius: 50%; object-fit: cover;
-      object-position: top center; background: var(--surface2); }
-    .dfo.es { object-fit: contain; padding: 2px; border: 1px solid var(--line); }
-    .dcl { width: 16px; height: 16px; object-fit: contain; opacity: .85; }
-    .dj.supl { background: var(--surface2); }
-    .dj.nojugo { color: var(--text2); }
-    .dj.nojugo .dp { color: var(--text2); }
-    .dj .pos { min-width: 30px; padding: 2px 4px; font-size: var(--t-xs); }
-    .dn { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
-    .dp { font-weight: 700; color: var(--accent); } .dp.neg { color: var(--bad); }
-    .dleg { margin: 14px 0 0; font-size: var(--t-xs); color: var(--text2); }
     .muted { color: var(--text2); } .err { color: var(--bad); }
 
     @media (max-width: 620px) {
@@ -251,8 +170,6 @@ const ORDEN = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
       .match .est { grid-column: 1 / -1; grid-row: 2; }
       .lado { gap: 7px; }
       .centro { padding: 0 2px; }
-      .panel { padding: 18px 15px; }
-      .dcols { grid-template-columns: 1fr; }
     }
   `],
 })
@@ -262,25 +179,13 @@ export class JornadasComponent implements OnInit {
   jornadas = signal<JornadaFalm[]>([]);
   jornadaId = signal('');
   enfrentamientos = signal<EnfrentamientoFila[]>([]);
-  detalle = signal<any | null>(null);
-  cargandoDetalle = signal(false);
+  /** El partido cuyo detalle se está mirando. */
+  verEnf = signal<string | null>(null);
   cargando = signal(true);
   error = signal('');
 
-  constructor(private falm: FalmService, public ficha: FichaService) {}
+  constructor(private falm: FalmService) {}
 
-  /**
-   * La ficha del jugador tocado, con el detalle de su jornada. Las porterías de club no
-   * son un jugador y no tienen ext_id: van por activo_id, que es lo que entiende el
-   * historial.
-   */
-  abrirFicha(j: any) {
-    this.ficha.open({
-      id: j.ext_id ?? 0, activoId: j.activo_id, nombre: j.nombre,
-      equipo: j.club ?? '', escudo: j.escudo ?? '', foto: j.foto ?? '', posicion: j.pos,
-    });
-  }
-  abrPos(p: string) { return ({ PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'MED', DELANTERO: 'DEL' } as Record<string, string>)[p] ?? p; }
   color(n: string) { return colorEquipo(n); }
   /** Cuántas de las 22 plazas del partido ya tienen desenlace. */
   resueltos(e: EnfrentamientoFila) { return e.resueltos_local + e.resueltos_visitante; }
@@ -294,11 +199,8 @@ export class JornadasComponent implements OnInit {
              : `${eti} · aún sin jornadas.`;
   }
 
-  async abrirDetalle(e: EnfrentamientoFila) {
-    this.cargandoDetalle.set(true);
-    try { this.detalle.set(await this.falm.detalleEnfrentamiento(e.enfrentamiento_id)); }
-    catch { this.detalle.set(null); }
-    finally { this.cargandoDetalle.set(false); }
+  abrirDetalle(e: EnfrentamientoFila) {
+    this.verEnf.set(e.enfrentamiento_id);
   }
 
   async ngOnInit() {
@@ -337,23 +239,6 @@ export class JornadasComponent implements OnInit {
     const i = this.indiceActual(js);
     this.bloque.set(Math.floor(i / this.porPagina));
     await this.seleccionarJornada(js[i].id);
-  }
-
-  /** El once y el banquillo, cada uno con su rótulo. */
-  /**
-   * Por lineas, como se lee un once en cualquier sitio. La consulta los
-   * devuelve en el orden en que se guardo la alineacion, y asi salia la
-   * porteria al final del once y un defensa detras de los medios.
-   */
-  grupos(lado: any) {
-    const js = (lado?.jugadores ?? []) as any[];
-    // Una posicion que no reconozcamos se va al final, no al principio.
-    const linea = (j: any) => (ORDEN.indexOf(j?.pos) + 1) || ORDEN.length + 1;
-    const porLinea = (a: any, b: any) => linea(a) - linea(b);
-    return [
-      { rol: 'TITULAR', js: js.filter((j) => j.rol === 'TITULAR').sort(porLinea) },
-      { rol: 'SUPLENTE', js: js.filter((j) => j.rol !== 'TITULAR').sort(porLinea) },
-    ];
   }
 
   /** La última jornada cuyo cierre ya pasó; si no ha empezado nada, la primera. */

@@ -36,7 +36,14 @@ export interface Equipo {
   emailContacto?: string | null;
 }
 
-export interface AgendaItem { jornada_id: string; numero: number; fecha: string; comp: 'LIGA' | 'CHAMPIONS' | 'CLAUSURA'; rival_id: string; rival: string; es_local: boolean; mis_puntos: number | null; rival_puntos: number | null; }
+export interface AgendaItem {
+  enfrentamiento_id: string; jornada_id: string; numero: number; fecha: string;
+  comp: 'LIGA' | 'CHAMPIONS' | 'CLAUSURA';
+  rival_id: string; rival: string; es_local: boolean;
+  mis_puntos: number | null; rival_puntos: number | null;
+  /** Todos los partidos de esa jornada: dos si es doble, uno el resto de las veces. */
+  rivales?: AgendaItem[];
+}
 export interface Agenda { proximo: AgendaItem | null; en_juego: AgendaItem | null; ultimo: AgendaItem | null; }
 
 export interface PorteroClub { id: number | null; nombre: string; foto: string | null; }

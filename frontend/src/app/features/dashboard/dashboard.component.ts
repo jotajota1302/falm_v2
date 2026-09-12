@@ -1,5 +1,6 @@
 import { Component, OnDestroy, OnInit, computed, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { DetallePartidoComponent } from '../../shared/detalle-partido.component';
 import { ActivoResuelto, Agenda, AgendaItem, Alineado, FalmService, ItemPlantilla, MarcadorJornada, PorteroClub, RolAlineacion } from '../../core/falm.service';
 
 const ORDEN = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'] as const;
@@ -27,7 +28,7 @@ interface Once { equipo: string; formacion: string; campo: EnCampo[]; banca: EnB
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [RouterLink],
+  imports: [RouterLink, DetallePartidoComponent],
   template: `
     @if (cargando()) {
       <p class="muted">Cargando…</p>
@@ -44,16 +45,38 @@ interface Once { equipo: string; formacion: string; campo: EnCampo[]; banca: EnB
         <a class="btn-sec" routerLink="/clasificacion">Ver clasificación</a>
       </header>
 
-      @if (ag()?.en_juego; as ej) {
-        <section class="live">
-          <span class="dot"></span>
-          <div class="lt">
-            <strong>Jornada {{ ej.numero }} en juego</strong>
-            <p>{{ nombre() }} {{ ej.es_local ? 'contra' : 'en casa de' }} {{ ej.rival }} · alineación cerrada</p>
+      <!-- Con la jornada en juego, lo primero es el marcador: quién va ganando y por
+           cuánto. Antes aquí solo ponía "en juego" y había que irse a Partidos para ver
+           el tanteo, o bajar hasta el fondo de esta misma pantalla. -->
+      @if (actual(); as ac) {
+        <section class="actual" [class.vivo]="!!ag()?.en_juego">
+          <div class="ah">
+            <span class="al">
+              @if (ag()?.en_juego) { <span class="dot"></span> Jornada {{ ac.numero }} en juego }
+              @else { Último partido · Jornada {{ ac.numero }} }
+            </span>
+            <a class="go" routerLink="/jornadas">Ver toda la jornada ›</a>
           </div>
-          <a class="btn-sec" routerLink="/jornadas">Seguir</a>
+          <!-- Un marcador por partido: en una jornada doble son dos, con la misma
+               alineación puntuando en los dos. Cada uno abre sus onces aquí mismo, que es
+               lo que se mira cada rato mientras se juega. -->
+          @for (r of rivales(ac); track r.enfrentamiento_id) {
+            <button class="amatch" (click)="verEnf.set(r.enfrentamiento_id)"
+                    title="Ver los dos onces y lo que lleva cada jugador">
+              <span class="t" [class.win]="gane(r)">{{ nombre() }}</span>
+              <span class="sc num">{{ tanteo(r, true) }}<i>–</i>{{ tanteo(r, false) }}</span>
+              <span class="t" [class.win]="perdi(r)">{{ r.rival }}</span>
+            </button>
+          }
+          <!-- Cuantas de las once plazas tienen ya desenlace: sin esto no se
+               sabe si un 24-31 esta cerrado o va por la mitad. -->
+          @if (avance(); as av) { <p class="av">{{ av }}</p> }
+          @if (ag()?.en_juego) { <p class="av cerrada">La alineación ya está cerrada.</p> }
+          <p class="av pista">Toca el marcador para ver los onces y los puntos de cada uno.</p>
         </section>
       }
+
+      <falm-detalle-partido [enfrentamiento]="verEnf()" (cerrar)="verEnf.set(null)" />
 
       <!-- Los avisos van juntos y arriba: primero lo que esta pasando, luego lo
            que vence. Este bloque estaba al final, detras de los dos onces. -->
@@ -74,11 +97,15 @@ interface Once { equipo: string; formacion: string; campo: EnCampo[]; banca: EnB
             </span>
             <span class="fecha">{{ fechaLarga(pr.fecha) }}</span>
           </div>
-          <div class="match">
-            <span class="tn">{{ nombre() }}</span>
-            <span class="vs">{{ pr.es_local ? 'vs' : '@' }}</span>
-            <span class="tn">{{ pr.rival }}</span>
-          </div>
+          <!-- En una jornada doble son dos rivales con la misma alineación: si solo se
+               enseña uno, se prepara el once pensando en medio partido. -->
+          @for (r of rivales(pr); track r.enfrentamiento_id) {
+            <div class="match">
+              <span class="tn">{{ nombre() }}</span>
+              <span class="vs">{{ r.es_local ? 'vs' : '@' }}</span>
+              <span class="tn">{{ r.rival }}</span>
+            </div>
+          }
           <p class="cd">{{ cuentaPartido() }}</p>
           @if (!mio()?.enviada) { <a class="btn" routerLink="/alineacion">Manda tu alineación</a> }
         </section>
@@ -159,23 +186,6 @@ interface Once { equipo: string; formacion: string; campo: EnCampo[]; banca: EnB
         </section>
       }
 
-      @if (actual(); as ac) {
-        <a class="actual" routerLink="/jornadas">
-          <div class="ah">
-            <span class="al">{{ ag()?.en_juego ? 'Partido actual' : 'Último partido' }} · J{{ ac.numero }}</span>
-            <span class="go">Ver detalle ›</span>
-          </div>
-          <div class="amatch">
-            <span class="t" [class.win]="gane(ac)">{{ nombre() }}</span>
-            <span class="sc num">{{ tanteo(ac, true) }}<i>–</i>{{ tanteo(ac, false) }}</span>
-            <span class="t" [class.win]="perdi(ac)">{{ ac.rival }}</span>
-          </div>
-          <!-- Cuantas de las once plazas tienen ya desenlace: sin esto no se
-               sabe si un 24-31 esta cerrado o va por la mitad. -->
-          @if (avance(); as av) { <p class="av">{{ av }}</p> }
-        </a>
-      }
-
     }
   `,
   styles: [`
@@ -183,11 +193,12 @@ interface Once { equipo: string; formacion: string; campo: EnCampo[]; banca: EnB
       gap: 20px; flex-wrap: wrap; margin-bottom: 18px; }
     .phead .sub { margin: 5px 0 0; color: var(--text2); font-size: var(--t-sm); }
 
-    .live { display: flex; align-items: center; gap: 12px; padding: 13px 17px; margin-bottom: 14px;
-      background: var(--accent-soft); border: 1px solid var(--accent-line); border-radius: var(--r-sm); }
-    .live .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--accent); flex: 0 0 auto; }
-    .live .lt { flex: 1; } .live strong { display: block; color: var(--accent); font-size: var(--t-sm); }
-    .live p { margin: 2px 0 0; font-size: var(--t-sm); color: var(--text2); }
+    /* Con la jornada en juego, el marcador se lleva el acento: es lo que está pasando. */
+    .actual.vivo { background: var(--accent-soft); border-color: var(--accent-line); }
+    .actual.vivo .al { color: var(--accent); }
+    .actual .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+      background: var(--accent); margin-right: 6px; vertical-align: 1px; }
+    .actual .av.cerrada { margin-top: 4px; }
 
     /* El duelo de la semana es la portada: se lee de lejos. */
     .next { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r);
@@ -261,11 +272,17 @@ interface Once { equipo: string; formacion: string; campo: EnCampo[]; banca: EnB
       font-size: var(--t-sm); font-weight: 600; }
 
     .actual { display: block; background: var(--surface); border: 1px solid var(--line);
+      /* .amatch es un boton: que no traiga los estilos de navegador. */
       border-radius: var(--r); padding: 15px 17px; margin-bottom: 14px; }
     .actual .ah { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
     .actual .al { font-size: var(--t-xs); text-transform: uppercase; letter-spacing: .16em; color: var(--text2); font-weight: 700; }
     .actual .go { color: var(--accent); font-size: var(--t-sm); font-weight: 600; }
-    .actual .amatch { display: flex; align-items: center; justify-content: center; gap: 12px; }
+    .actual .amatch { display: flex; align-items: center; justify-content: center; gap: 12px;
+      width: 100%; padding: 6px 4px; background: none; border: 1px dashed transparent;
+      border-radius: var(--r-sm); cursor: pointer; font-family: inherit; }
+    .actual .amatch:hover { border-color: var(--accent-line); background: var(--surface2); }
+    .actual.vivo .amatch:hover { background: color-mix(in oklab, var(--accent) 8%, transparent); }
+    .actual .av.pista { opacity: .8; }
     .actual .t { flex: 1; text-align: center; font-weight: 600; font-size: var(--t-sm); color: var(--text2);
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .actual .t.win { color: var(--text); font-weight: 700; }
@@ -309,11 +326,23 @@ export class DashboardComponent implements OnInit, OnDestroy {
   rival = signal<Once | null>(null);
   /** Marcador en vivo del partido de arriba, con lo puntuado hasta ahora. */
   marcaMio = signal<MarcadorJornada | null>(null);
-  marcaRival = signal<MarcadorJornada | null>(null);
+  /** Lo que lleva cada rival de la jornada, por equipo: en una doble son dos. */
+  marcaRivales = signal<Record<string, MarcadorJornada | null>>({});
+  marcaRival = computed(() => {
+    const ac = this.actual();
+    return ac ? this.marcaRivales()[ac.rival_id] ?? null : null;
+  });
+
+  /** Los partidos de la jornada: dos si es doble, y si no, el de siempre. */
+  rivales(ac: AgendaItem): AgendaItem[] {
+    return ac.rivales?.length ? ac.rivales : [ac];
+  }
   /** Si en esta jornada cada equipo juega dos partidos. */
   doble = signal(false);
 
   actual = computed<AgendaItem | null>(() => this.ag()?.en_juego ?? this.ag()?.ultimo ?? null);
+  /** El partido cuyo detalle se está mirando, sin salir de Inicio. */
+  verEnf = signal<string | null>(null);
   /** La jornada cuyo once enseñamos: la que viene, y si no la que está en juego. */
   private foco = computed<AgendaItem | null>(() => this.ag()?.proximo ?? this.ag()?.en_juego ?? null);
 
@@ -356,7 +385,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
    * se cierra los dos numeros son el mismo.
    */
   tanteo(ac: AgendaItem, mio: boolean): string {
-    const m = mio ? this.marcaMio() : this.marcaRival();
+    const m = mio ? this.marcaMio() : this.marcaRivales()[ac.rival_id] ?? null;
     if (m?.alineada && m.puntos != null) return this.fmt(m.puntos);
     return this.fmt(mio ? ac.mis_puntos : ac.rival_puntos);
   }
@@ -497,11 +526,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
         }
         const ac = this.actual();
         if (ac?.jornada_id) {
-          const [a, b] = await Promise.all([
+          // Un marcador por rival: en una jornada doble hay dos, y el mío vale para ambos.
+          const rivs = this.rivales(ac);
+          const [a, ...otros] = await Promise.all([
             this.falm.marcadorJornada(ac.jornada_id, eq.id).catch(() => null),
-            this.falm.marcadorJornada(ac.jornada_id, ac.rival_id).catch(() => null),
+            ...rivs.map((r) => this.falm.marcadorJornada(ac.jornada_id, r.rival_id).catch(() => null)),
           ]);
-          this.marcaMio.set(a); this.marcaRival.set(b);
+          this.marcaMio.set(a);
+          this.marcaRivales.set(Object.fromEntries(rivs.map((r, i) => [r.rival_id, otros[i]])));
         }
         const comps = await this.falm.competiciones();
         const liga = comps.find((c) => c.tipo === 'LIGA') ?? comps[0];

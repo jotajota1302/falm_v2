@@ -1,0 +1,23 @@
+-- Un suplente no entra hasta que se SABE que el titular no jugo. Aplicado el 2026-09-12.
+--
+-- falm.once_resuelto abria hueco en cuanto un titular no tenia puntuacion, sin mirar si su
+-- partido se habia jugado siquiera. El viernes por la noche, con un solo partido disputado
+-- de los diez, BABUSIANOS ya sumaba los 4 de Agoume entrando por un medio cuyo club jugaba
+-- el domingo: 9 puntos donde tenia 5.
+--
+-- El total final no cambiaba -- al cerrar la jornada todos los partidos estan jugados y el
+-- calculo coincide --, pero el marcador en vivo mentia todo el fin de semana y ensenaba
+-- entradas de banquillo que luego se deshacian solas.
+--
+-- 'pendiente' pasa a significar "de este todavia no se sabe nada": o su partido no ha
+-- terminado, o ha terminado y aun no hay ni una nota de su club. Lo segundo importa porque
+-- entre el pitido final y la prensa pasan horas -- el Sevilla-Valencia acabo a las 22:50 y
+-- las notas entraron a las 09:00 --, y en esa ventana el titular figuraba como que no
+-- habia jugado.
+--
+-- La definicion completa vive en la base; aqui queda el porque. Para consultarla:
+--   select pg_get_functiondef('falm.once_resuelto(uuid)'::regprocedure);
+--
+-- El cambio son dos trozos:
+--   1. pendiente = (su partido sin marcador) OR (no hay ninguna puntuacion de su club)
+--   2. el hueco solo se abre con:  and not r.pendiente
