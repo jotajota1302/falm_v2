@@ -114,10 +114,19 @@ interface Once { equipo: string; formacion: string; campo: EnCampo[]; banca: EnB
       }
 
       <!-- Los dos onces, uno en cada columna, en tabla: una fila por jugador
-           y todas del mismo alto, que las píldoras de ancho variable mareaban. -->
+           y todas del mismo alto, que las píldoras de ancho variable mareaban.
+           Este bloque es el once de la jornada que VIENE, no el que esta
+           puntuando arriba; sin decirlo se leian como el mismo y parecia que la
+           alineacion en juego se habia quedado sin puntos. -->
       @if (mio()?.enviada) {
         <section class="once">
-          <div class="duelo">
+          @if (foco(); as f) {
+            <div class="oh">
+              <span class="ol">Jornada {{ f.numero }} · {{ etiqueta(f.comp) }}</span>
+              <span class="oq">{{ enMarcha() ? 'Así está saliendo' : 'Así vas a salir' }}</span>
+            </div>
+          }
+          <div class="duelo" [class.sinpts]="!enMarcha()">
             @for (o of lados(); track $index) {
               <div class="tabla">
                 <div class="barra">
@@ -127,14 +136,15 @@ interface Once { equipo: string; formacion: string; campo: EnCampo[]; banca: EnB
 
                 @if (o.enviada) {
                   <div class="fila j11 cab">
-                    <span></span><span></span><span>Once</span><span></span><span class="der">Pts</span>
+                    <span></span><span></span><span>Once</span><span></span>
+                    @if (enMarcha()) { <span class="der">Pts</span> }
                   </div>
                   @for (j of once(o); track $index) {
                     <!-- Se apaga solo el que YA se sabe que no jugo. Mientras su
                          club tenga el partido pendiente sigue encendido: con la
                          jornada sin empezar salia el once entero como caido. -->
                     <div class="fila j11" [class.fuera]="!j.cuenta && !j.pendiente"
-                         [title]="porQue(j, true)">
+                         [title]="enMarcha() ? porQue(j, true) : ''">
                       <span class="p" [class]="abr(j.pos)">{{ abr(j.pos) }}</span>
                       <img class="fo" [class.es]="!j.foto" [src]="j.foto || j.escudo" alt=""
                            loading="lazy" (error)="j.foto = null" />
@@ -142,10 +152,12 @@ interface Once { equipo: string; formacion: string; campo: EnCampo[]; banca: EnB
                       @if (j.escudo) {
                         <img class="cl" [src]="j.escudo" alt="" loading="lazy" />
                       } @else { <span></span> }
-                      @if (j.jugo) {
-                        <span class="pts num" [class.cero]="!j.pts">{{ j.pts ?? 0 }}</span>
-                      } @else {
-                        <span class="pts num nj">–</span>
+                      @if (enMarcha()) {
+                        @if (j.jugo) {
+                          <span class="pts num" [class.cero]="!j.pts">{{ j.pts ?? 0 }}</span>
+                        } @else {
+                          <span class="pts num nj">–</span>
+                        }
                       }
                     </div>
                   }
@@ -155,22 +167,25 @@ interface Once { equipo: string; formacion: string; campo: EnCampo[]; banca: EnB
                          titular: los que no entran van apagados y el que entra
                          lleva flecha y dice por quien. -->
                     @for (b of suplentes(o); track $index) {
-                      <div class="fila j11" [class.fuera]="!b.cuenta" [title]="porQue(b, false)">
+                      <div class="fila j11" [class.fuera]="enMarcha() && !b.cuenta"
+                           [title]="enMarcha() ? porQue(b, false) : ''">
                         <span class="p" [class]="abr(b.pos)">
-                          @if (b.cuenta) { <i class="sube">↑</i> }{{ abr(b.pos) }}
+                          @if (enMarcha() && b.cuenta) { <i class="sube">↑</i> }{{ abr(b.pos) }}
                         </span>
                         <img class="fo" [class.es]="!b.foto" [src]="b.foto || b.escudo" alt=""
                              loading="lazy" (error)="b.foto = null" />
                         <span class="nb">
-                          {{ b.nombre }}@if (b.cuenta && b.releva) { <b class="por">por {{ b.releva }}</b> }
+                          {{ b.nombre }}@if (enMarcha() && b.cuenta && b.releva) { <b class="por">por {{ b.releva }}</b> }
                         </span>
                         @if (b.escudo) {
                           <img class="cl" [src]="b.escudo" alt="" loading="lazy" />
                         } @else { <span></span> }
-                        @if (b.jugo) {
-                          <span class="pts num" [class.cero]="!b.pts">{{ b.pts ?? 0 }}</span>
-                        } @else {
-                          <span class="pts num nj">–</span>
+                        @if (enMarcha()) {
+                          @if (b.jugo) {
+                            <span class="pts num" [class.cero]="!b.pts">{{ b.pts ?? 0 }}</span>
+                          } @else {
+                            <span class="pts num nj">–</span>
+                          }
                         }
                       </div>
                     }
@@ -222,6 +237,13 @@ interface Once { equipo: string; formacion: string; campo: EnCampo[]; banca: EnB
     .btn { display: block; text-align: center; }
 
     .once { margin-bottom: 14px; }
+    /* De que jornada son estos dos onces: arriba esta el marcador de la que se
+       juega, asi que sin etiqueta los dos bloques se confunden. */
+    .oh { display: flex; align-items: baseline; justify-content: space-between;
+      gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+    .oh .ol { font-size: var(--t-xs); text-transform: uppercase; letter-spacing: .16em;
+      color: var(--text2); font-weight: 700; }
+    .oh .oq { font-size: var(--t-sm); color: var(--text2); }
     /* Los dos onces, uno a cada lado y en tabla. */
     .duelo { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
     .tabla .barra { justify-content: space-between; padding: 12px 14px; }
@@ -235,6 +257,8 @@ interface Once { equipo: string; formacion: string; campo: EnCampo[]; banca: EnB
     /* Todas las filas iguales: demarcación, cara, nombre, club y puntos. */
     .tabla .fila { padding: 6px 14px; }
     .j11 { grid-template-columns: 32px 26px 1fr 18px 38px; gap: 9px; }
+    /* Sin jugar no hay columna de puntos: el nombre se queda con ese ancho. */
+    .duelo.sinpts .j11 { grid-template-columns: 32px 26px 1fr 18px; }
     .j11.cab { padding-top: 10px; padding-bottom: 8px; }
     .p { font-size: var(--t-xs); font-weight: 700; letter-spacing: .06em; color: var(--text2); }
     .p.POR { color: var(--por); } .p.DEF { color: var(--def); }
@@ -344,7 +368,16 @@ export class DashboardComponent implements OnInit, OnDestroy {
   /** El partido cuyo detalle se está mirando, sin salir de Inicio. */
   verEnf = signal<string | null>(null);
   /** La jornada cuyo once enseñamos: la que viene, y si no la que está en juego. */
-  private foco = computed<AgendaItem | null>(() => this.ag()?.proximo ?? this.ag()?.en_juego ?? null);
+  foco = computed<AgendaItem | null>(() => this.ag()?.proximo ?? this.ag()?.en_juego ?? null);
+  /**
+   * Si esa jornada ya se está jugando. Casi siempre no: mientras haya una
+   * proxima, el once de abajo es el que aun no ha salido, y ahi una columna de
+   * puntos solo puede decir "–" once veces y hacer creer que nadie ha sumado.
+   */
+  enMarcha = computed(() => {
+    const f = this.foco(), a = this.ag();
+    return !!f && (a?.en_juego?.jornada_id === f.jornada_id || a?.ultimo?.jornada_id === f.jornada_id);
+  });
 
   /** Mi once y el del rival, en ese orden. */
   lados = computed<Once[]>(() => [this.mio(), this.rival()].filter((o): o is Once => !!o));
