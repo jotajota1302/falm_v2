@@ -27,8 +27,11 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
 
     @if (modo() === 'jornada' && jornadas().length) {
       <div class="jchips tira-x">
+        <!-- Con el número de la liga, que es como se la llama en el resto de pantallas.
+             Las de LaLiga anteriores a que empezara llevan su propia etiqueta. -->
         @for (j of jornadas(); track j.numero) {
-          <button [class.on]="j.numero === sel()" (click)="elegir(j.numero)">J{{ j.numero }}</button>
+          <button [class.on]="j.numero === sel()" (click)="elegir(j.numero)"
+                  [class.fuera]="!j.falm" [title]="j.descripcion">{{ j.falm ? 'J' + j.falm : 'LL' + j.numero }}</button>
         }
       </div>
     }
@@ -108,6 +111,9 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
          numeros y aqui cantaba al lado del resto de pildoras. */
       font-family: var(--fb); font-weight: 700; font-size: var(--t-sm); }
     .jchips button.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+    /* Las de antes de empezar la liga: se pueden mirar, pero no cuentan. */
+    .jchips button.fuera { color: var(--text2); border-style: dashed; }
+    .jchips button.fuera.on { color: var(--accent-ink); border-style: solid; }
 
     /* La caja, la barra y las filas salen de styles.css. */
     .barra .lb { font-size: var(--t-xs); font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--text2); }
@@ -189,7 +195,10 @@ export class PuntuacionesComponent implements OnInit {
 
   subtitulo = computed(() => {
     const n = this.jugadores().length;
-    if (this.modo() === 'jornada') return `Jornada ${this.sel()} de LaLiga · ${n} jugadores con puntos.`;
+    if (this.modo() === 'jornada') {
+      const j = this.jornadas().find((x) => x.numero === this.sel());
+      return `${j?.descripcion ?? 'LaLiga ' + this.sel()} · ${n} jugadores con puntos.`;
+    }
     const js = this.jornadas().length;
     return js ? `Acumulado de ${js} ${js === 1 ? 'jornada' : 'jornadas'} · ${n} jugadores.` : `Acumulado de la temporada · ${n} jugadores.`;
   });

@@ -207,7 +207,9 @@ export interface AlineacionGuardada {
 
 export const FORMACIONES = ['5-4-1', '5-3-2', '4-5-1', '4-4-2', '4-3-3', '3-4-3', '3-5-2'];
 
-export interface JornadaLfp { numero: number; descripcion: string; }
+/** `numero` es el de LaLiga, que es como se guardan las puntuaciones; `falm`, el de la
+ *  liga, y va a null en las jornadas que se jugaron antes de que empezara. */
+export interface JornadaLfp { numero: number; falm: number | null; descripcion: string; }
 
 export interface PuntosJugador {
   jugador: { id: number; nombre: string; equipo: string; escudo: string; foto: string; posicion: string };

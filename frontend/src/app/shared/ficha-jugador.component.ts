@@ -69,8 +69,8 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
                 @for (d of barras(); track d.j) {
                   <button class="bar" type="button" [class.sel]="verJ() === d.j"
                           (click)="verJ.set(verJ() === d.j ? null : d.j)"
-                          [title]="d.jugo ? 'Jornada ' + d.j + ': ' + d.p + ' puntos en ' + d.min + ' minutos'
-                                          : 'Jornada ' + d.j + ': no jugó'">
+                          [title]="comoSeLlama(d) + (d.jugo ? ': ' + d.p + ' puntos en ' + d.min + ' minutos'
+                                                            : ': no jugó')">
                     <span class="up" [style.flex-basis.%]="zonaPos()">
                       @if (!d.jugo) {
                         <span class="fill nojugo"><i>NJ</i></span>
@@ -83,7 +83,9 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
                         <span class="fill neg" [style.height.%]="d.h"><i class="num">{{ d.p }}</i></span>
                       }
                     </span>
-                    <span class="jl">J{{ d.j }}</span>
+                    <!-- La jornada, con el número de la liga. Las de LaLiga anteriores a
+                         que empezara van con su propia etiqueta para no confundirlas. -->
+                    <span class="jl" [class.fuera]="!d.falm">{{ d.falm ? 'J' + d.falm : 'LL' + d.j }}</span>
                     <!-- Los minutos debajo: de un vistazo se ve si esos puntos
                          son de un partido entero o de un cuarto de hora. -->
                     <span class="ml">{{ minutosDe(d) }}</span>
@@ -92,9 +94,16 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
               </div>
 
               <!-- De qué se compone la jornada que se toca. -->
+              @if (hayDeFuera()) {
+                <p class="leyj">
+                  <b>J</b> es jornada de la liga; <b>LL</b>, jornada de LaLiga anterior a que
+                  empezara — no puntúa en la clasificación.
+                </p>
+              }
+
               @if (detalleJ(); as dj) {
                 <div class="detj">
-                  <span class="dt">Jornada {{ dj.j }}</span>
+                  <span class="dt">{{ comoSeLlama(dj) }}</span>
                   @if (dj.jugo) {
                     <span class="dp num" [class.neg]="dj.p < 0">{{ dj.p }} pts</span>
                     <span class="dh">{{ hechosDe(dj) }}</span>
@@ -179,6 +188,11 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
        minimo de la escala, la distancia la da un paso de tamano entre ellos. */
     .jl { display: block; text-align: center; margin-top: 4px; font-size: var(--t-sm);
       color: var(--text2); font-weight: 600; }
+    /* Las que no son de la liga, más apagadas: están para ver la forma del jugador,
+       pero no cuentan para nada. */
+    .jl.fuera { opacity: .6; font-weight: 500; }
+    .leyj { margin: 10px 0 0; font-size: var(--t-xs); line-height: 1.5; color: var(--text2); }
+    .leyj b { color: var(--text); }
     /* Los minutos, en segunda línea y más apagados: acompañan a la jornada sin
        competir con ella ni con la cifra de puntos. */
     .ml { display: block; text-align: center; font-family: var(--fm);
@@ -248,6 +262,9 @@ export class FichaJugadorComponent {
 
   barras = computed(() => {
     const jn = (x: any) => Number(x.jornada?.numero ?? x.jornada ?? 0);
+    // El número de la liga, que es por el que se conoce la jornada en el resto de la
+    // aplicación. Las jornadas de LaLiga anteriores a la 5 no son ninguna de la liga.
+    const jf = (x: any) => (x.jornada?.falm ?? null) as number | null;
     const h = [...this.jornadas()].sort((a, b) => jn(a) - jn(b));
     const maxP = Math.max(1, ...h.map((x) => Number(x.puntosJornada ?? 0)));
     const maxN = Math.max(1, ...h.map((x) => -Number(x.puntosJornada ?? 0)));
@@ -255,7 +272,7 @@ export class FichaJugadorComponent {
       const p = Number(x.puntosJornada ?? 0);
       // jugo=false es "no jugó esa jornada", que no es lo mismo que hacer 0.
       const jugo = x.jugo !== false;
-      return { j: jn(x), p, jugo, min: Number(x.minutosJugados ?? 0),
+      return { j: jn(x), falm: jf(x), p, jugo, min: Number(x.minutosJugados ?? 0),
         h: (p >= 0 ? p / maxP : -p / maxN) * 100, datos: x };
     });
   });
@@ -263,6 +280,17 @@ export class FichaJugadorComponent {
   /** La jornada cuyo desglose se está mirando. */
   verJ = signal<number | null>(null);
   detalleJ = computed(() => this.barras().find((d) => d.j === this.verJ()) ?? null);
+  /** Si asoma alguna jornada de LaLiga que no es de la liga, hay que explicar la etiqueta. */
+  hayDeFuera = computed(() => this.barras().some((d) => !d.falm));
+
+  /**
+   * Cómo se llama una jornada. Dentro de la liga manda nuestro número y el de LaLiga va
+   * entre paréntesis, que es por donde se busca en la prensa; fuera, solo el de LaLiga.
+   */
+  comoSeLlama(d: { j: number; falm: number | null }): string {
+    return d.falm ? `Jornada ${d.falm} de la liga (LaLiga ${d.j})`
+                  : `LaLiga ${d.j}, antes de empezar la liga`;
+  }
 
   /** De qué se compone esa jornada, en palabras y por orden de importancia. */
   hechosDe(d: any): string {

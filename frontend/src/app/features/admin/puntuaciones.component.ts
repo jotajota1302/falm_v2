@@ -39,7 +39,9 @@ const CAMPOS: Campo[] = [
       <label>Jornada LFP
         <select [ngModel]="lfp()" (ngModelChange)="seleccionar($event)">
           @for (j of jornadas(); track j.numero) {
-            <option [value]="j.numero">J{{ j.numero }} — {{ j.descripcion }}</option>
+            <!-- La descripción ya trae las dos numeraciones: "Jornada 2 de la liga
+                 (LaLiga 6)". Repetir el número delante solo confundía. -->
+            <option [value]="j.numero">{{ j.descripcion }}</option>
           }
         </select>
       </label>
