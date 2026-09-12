@@ -27,24 +27,29 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
 
     @if (modo() === 'jornada' && jornadas().length) {
       <div class="jchips tira-x">
-        <!-- Con el numero de LaLiga: estas puntuaciones son de sus partidos y es por
-             donde se comprueban en la prensa. Las apagadas se jugaron antes de que
-             empezara la liga; que jornada nuestra es cada una lo dice el title. -->
+        <!-- El numero es el de LaLiga: estas puntuaciones son de sus partidos y es por
+             donde se comprueban en la prensa. Que jornada nuestra es cada una lo dice
+             el title, y debajo se aclara de que jornadas se esta hablando. -->
         @for (j of jornadas(); track j.numero) {
           <button [class.on]="j.numero === sel()" (click)="elegir(j.numero)"
-                  [class.fuera]="!j.falm" [title]="j.descripcion">LL{{ j.numero }}</button>
+                  [class.fuera]="!j.falm" [title]="j.descripcion">J{{ j.numero }}</button>
         }
       </div>
+      <p class="leyj">
+        Son las jornadas de <b>LaLiga (LFP)</b>, que es como salen publicadas las
+        puntuaciones.@if (hayDeFuera()) { Las de trazo discontinuo se jugaron antes de
+        que empezara nuestra liga y no cuentan para la clasificación. }
+      </p>
     }
 
     @if (cargando()) {
-      <p class="muted">Cargando{{ modo() === 'jornada' ? ' la jornada LaLiga ' + sel() : ' la acumulada' }}…</p>
+      <p class="muted">Cargando{{ modo() === 'jornada' ? ' la jornada ' + sel() + ' de LaLiga' : ' la acumulada' }}…</p>
     } @else if (error()) {
       <p class="err">{{ error() }}</p>
     } @else {
       <section class="tabla">
         <div class="barra">
-          <span class="lb">{{ modo() === 'acumulada' ? 'Más puntuados' : 'LaLiga ' + sel() }}</span>
+          <span class="lb">{{ modo() === 'acumulada' ? 'Más puntuados' : 'Jornada ' + sel() + ' de LaLiga' }}</span>
           <input class="buscar" type="search" placeholder="Buscar jugador o equipo…"
                  [ngModel]="texto()" (ngModelChange)="texto.set($event); l.reset()" />
           <!-- Las flechas también arriba: pasar de página sin bajar al fondo. -->
@@ -115,6 +120,10 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
     /* Las de antes de empezar la liga: se pueden mirar, pero no cuentan. */
     .jchips button.fuera { color: var(--text2); border-style: dashed; }
     .jchips button.fuera.on { color: var(--accent-ink); border-style: solid; }
+    /* De que jornadas se habla: el numero es el de LaLiga, no el de la liga, y
+       sin decirlo J6 se lee como nuestra jornada 6. */
+    .leyj { margin: -6px 0 14px; font-size: var(--t-xs); line-height: 1.5; color: var(--text2); }
+    .leyj b { color: var(--text); }
 
     /* La caja, la barra y las filas salen de styles.css. */
     .barra .lb { font-size: var(--t-xs); font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--text2); }
@@ -167,6 +176,8 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
 })
 export class PuntuacionesComponent implements OnInit {
   jornadas = signal<JornadaLfp[]>([]);
+  /** Si en la tira asoma alguna jornada de LaLiga anterior a que empezara la liga. */
+  hayDeFuera = computed(() => this.jornadas().some((j) => !j.falm));
   sel = signal<number>(0);
   modo = signal<'jornada' | 'acumulada'>('acumulada');
   jugadores = signal<PuntosJugador[]>([]);
