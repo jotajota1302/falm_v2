@@ -16,8 +16,14 @@
 -- horas, y esa ventana es justo la que antes se contaba mal.
 --
 -- Sustituye a la version de _lado_enf que hay en alineacion_por_partido.sql:
--- lo unico que cambia es la CTE `part` (que ahora lleva `acabado`) y el `case`
--- del estado.
+-- cambia la CTE `part` (que ahora lleva `acabado`) y el `case` del estado.
+--
+-- Y de paso, la cara de las porterias. Una porteria de club no tiene retrato
+-- propio, asi que su hueco de foto se llenaba con el escudo y entonces la
+-- columna del club se quedaba vacia: era la unica fila de todo el once que se
+-- veia distinta. Ahora se le pone la cara del portero del club -el mismo criterio
+-- que ya usaba Inicio: primer equipo y el dorsal mas bajo con foto- y el escudo
+-- vuelve a su columna.
 
 create or replace function falm._lado_enf(p_enf uuid, p_eq uuid)
 returns jsonb
@@ -67,7 +73,17 @@ as $function$
       case when a.tipo='DEFENSA' then 'Portería '||coalesce(el.nombre,'') else trim(jl.nombre||' '||coalesce(jl.apellido,'')) end nombre,
       case when a.tipo='DEFENSA' then 'PORTERO' else jl.posicion::text end pos,
       coalesce(el.nombre, elj.nombre) club,
-      case when a.tipo='DEFENSA' then null else jl.foto end foto,
+      -- Una porteria no tiene retrato propio: se le pone la cara del portero del
+      -- club, que al fin y al cabo es quien para. Sin esto su hueco de foto se
+      -- llenaba con el escudo y la columna del club se quedaba vacia, que era lo
+      -- unico que se veia distinto en toda la fila.
+      case when a.tipo='DEFENSA' then (
+             select p2.foto from falm.jugador_lfp p2
+              where p2.equipo_lfp_id = a.equipo_lfp_id
+                and p2.posicion = 'PORTERO' and p2.primer_equipo
+                and p2.foto is not null
+              order by p2.dorsal nulls last limit 1)
+           else jl.foto end foto,
       case when a.tipo='DEFENSA' then el.escudo else elj.escudo end escudo,
       coalesce(ap.puntos,0) puntos, (ap.activo_id is not null) jugo,
       coalesce(rs.cuenta, false) cuenta, rs.entra_por,
