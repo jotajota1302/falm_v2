@@ -147,10 +147,12 @@ begin
     return jsonb_build_object('motivo', 'no hay ninguna jornada en juego');
   end if;
 
+  -- Lo que manda es `estado`, no el marcador: football-data escribe el 0-0 en
+  -- cuanto empieza el partido, asi que goles_local no dice si ha terminado.
   select count(*) into v_en_juego
     from falm.partido_lfp pl
     join _vivo v on v.id = pl.jornada_lfp_id
-   where pl.goles_local is null
+   where coalesce(pl.estado, '') <> 'FINISHED'
      and pl.fecha <= now() - interval '2 hours'
      and pl.fecha > now() - interval '12 hours';
 
@@ -162,7 +164,7 @@ begin
   select count(*) into v_sin_puntos
     from falm.partido_lfp pl
     join _vivo v on v.id = pl.jornada_lfp_id
-   where pl.goles_local is not null
+   where pl.estado = 'FINISHED'
      and pl.fecha > now() - interval '24 hours'
      and not exists (select 1 from falm.puntuacion pu
                      join falm.activo a on a.id = pu.activo_id and a.tipo = 'JUGADOR'
@@ -194,7 +196,7 @@ begin
     select count(*) into v_por_leer
       from falm.partido_lfp pl
      where pl.jornada_lfp_id = r.id
-       and pl.goles_local is not null
+       and pl.estado = 'FINISHED'
        and pl.fecha <= now() - interval '2 hours 30 minutes'
        and not (
          exists (select 1 from falm.puntuacion pu

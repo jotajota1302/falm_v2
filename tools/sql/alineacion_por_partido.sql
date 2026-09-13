@@ -429,8 +429,10 @@ begin
     join falm.jornada_lfp jl on jl.id = mj.jornada_lfp_id
    where mj.jornada_falm_id = p_jornada;
 
-  -- Los de LaLiga, que son los que hacen que la jornada avance.
-  select count(*) filter (where pl.goles_local is not null)::int, count(*)::int
+  -- Los de LaLiga ya ACABADOS, que son los que hacen avanzar la jornada. Con el
+  -- marcador no valia: football-data escribe el 0-0 nada mas empezar y un
+  -- partido en juego se contaba como jugado.
+  select count(*) filter (where pl.estado = 'FINISHED')::int, count(*)::int
     into v_jug, v_tot
     from falm.mapeo_jornada mj
     join falm.partido_lfp pl on pl.jornada_lfp_id = mj.jornada_lfp_id

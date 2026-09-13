@@ -10,10 +10,12 @@
 --   EN_JUEGO   el partido de su club empezo y aun no tiene marcador final
 --   ESPERANDO  el partido acabo y todavia no hay ni una nota de su club
 --
--- La senal de que acabo es el marcador (partido_lfp.goles_local), que lo trae
--- football-data poco despues del pitido; la de que hay notas sigue siendo por
--- club, como en suplente_no_entra_antes_de_tiempo.sql. Entre una y otra pasan
--- horas, y esa ventana es justo la que antes se contaba mal.
+-- La senal de que acabo es `partido_lfp.estado` ('FINISHED'), NO el marcador:
+-- football-data escribe el 0-0 en cuanto empieza el partido, asi que
+-- goles_local no vale para esto -se probo, y el Celta - Malaga salia como
+-- acabado a los 36 minutos-. La de que hay notas sigue siendo por club, como en
+-- suplente_no_entra_antes_de_tiempo.sql. Entre una y otra pasan horas, y esa
+-- ventana es justo la que antes se contaba mal.
 --
 -- Sustituye a la version de _lado_enf que hay en alineacion_por_partido.sql:
 -- cambia la CTE `part` (que ahora lleva `acabado`) y el `case` del estado.
@@ -51,11 +53,13 @@ as $function$
     join falm.puntuacion p on p.jornada_lfp_id = j.id
     group by p.activo_id
   ),
-  -- Cuando juega su club y si ya ha acabado: sin lo segundo, "el partido esta
-  -- rodando" y "acabo y falta la nota de prensa" eran el mismo estado.
+  -- Cuando juega su club y como va. Ojo: el marcador NO sirve para saber si el
+  -- partido ha acabado -football-data escribe el 0-0 en cuanto empieza-, para
+  -- eso esta `estado`.
   part as (
     select eq.equipo as club_id, min(pl.fecha) as fecha,
-           bool_and(pl.goles_local is not null) as acabado
+           bool_and(pl.estado = 'FINISHED') as acabado,
+           bool_or(pl.estado in ('IN_PLAY', 'PAUSED')) as jugando
     from jlfp j
     join falm.partido_lfp pl on pl.jornada_lfp_id = j.id
     cross join lateral (values (pl.local_id), (pl.visitante_id)) as eq(equipo)
@@ -91,9 +95,10 @@ as $function$
         when ap.activo_id is not null then 'PUNTUADO'
         when pt.fecha is null then 'SIN_PARTIDO'
         when ld.club_id is not null then 'NO_JUGO'
+        when pt.jugando then 'EN_JUEGO'
+        when pt.acabado then 'ESPERANDO'
         when pt.fecha > now() then 'PENDIENTE'
-        when not pt.acabado then 'EN_JUEGO'
-        else 'ESPERANDO'
+        else 'EN_JUEGO'
       end estado,
       case when ap.des is null then null else jsonb_build_object(
         'goles', coalesce((ap.des->>'goles')::int, 0),

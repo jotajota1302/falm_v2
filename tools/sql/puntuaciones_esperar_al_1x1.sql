@@ -65,10 +65,12 @@ begin
     raise exception 'No existe la jornada % en esta temporada', p_jornada;
   end if;
 
+  -- Un partido ACABADO, no uno con marcador: football-data escribe el 0-0 en
+  -- cuanto pita el arbitro, asi que goles_local no dice si ha terminado.
   select count(*) into v_marcadores
-    from falm.partido_lfp where jornada_lfp_id = v_lfp and goles_local is not null;
+    from falm.partido_lfp where jornada_lfp_id = v_lfp and estado = 'FINISHED';
   if v_marcadores = 0 then
-    raise exception 'La jornada % todavia no tiene marcadores. Se cargan solos cuando terminan los partidos.', p_jornada;
+    raise exception 'La jornada % todavia no tiene ningun partido acabado. Se cargan solos cuando terminan.', p_jornada;
   end if;
 
   drop table if exists _ff;
@@ -97,12 +99,14 @@ begin
     having count(*) filter (where coalesce(estrellas, 0) <> 0) = 0);
 
   with
+  -- Solo de partidos acabados: con uno en juego, el 0-0 provisional entraria en
+  -- el baremo como resultado y como goles encajados del portero.
   score as (
     select local_id as eq, goles_local as gf, goles_visitante as ga
-      from falm.partido_lfp where jornada_lfp_id = v_lfp and goles_local is not null
+      from falm.partido_lfp where jornada_lfp_id = v_lfp and estado = 'FINISHED'
     union all
     select visitante_id, goles_visitante, goles_local
-      from falm.partido_lfp where jornada_lfp_id = v_lfp and goles_local is not null
+      from falm.partido_lfp where jornada_lfp_id = v_lfp and estado = 'FINISHED'
   ),
   pf as (select f.*, falm._equipo_lfp_por_nombre(f.equipo) eq from _ff f),
   cand as (
