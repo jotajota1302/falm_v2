@@ -160,6 +160,10 @@ begin
     'no_casados', v_nocasados);
 end $function$;
 
+-- OJO: esta version de puntuar_en_vivo la sustituye segunda_fuente_biwenger.sql,
+-- que anade el refresco del marcador mientras el partido siga sin puntos y el
+-- contraste con biwenger. Lo de aqui se deja porque es lo que documenta este
+-- fichero: los dos clubes, no uno.
 create or replace function falm.puntuar_en_vivo()
 returns jsonb
 language plpgsql
