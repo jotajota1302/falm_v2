@@ -51,7 +51,11 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
                             {{ j.nombre }}
                             @if (j.entra_por) { <b class="entra" title="Entra por un titular que no jugó">▲</b> }
                           </span>
-                          @if (j.foto && j.escudo) { <img class="dcl" [src]="j.escudo" alt="" loading="lazy" /> }
+                          <!-- El escudo va siempre que lo haya. Antes se escondia cuando
+                               el jugador no tenia retrato -porque entonces su hueco de cara
+                               ya lo llena el escudo-, pero eso dejaba la columna del club en
+                               blanco en una fila suelta y cantaba mas que repetirlo. -->
+                          @if (j.escudo) { <img class="dcl" [src]="j.escudo" alt="" loading="lazy" /> }
                           @else { <span></span> }
                           <!-- Tres marcas distintas para tres cosas distintas: el aro
                                girando es "esto esta pasando ahora", los puntos suspensivos
@@ -63,6 +67,7 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
                               <span class="dp viva" aria-label="Su partido se está jugando"></span>
                             }
                             @case ('ESPERANDO') { <span class="dp esp">···</span> }
+                            @case ('NO_JUGO') { <span class="dp nj">NJ</span> }
                             @case ('PUNTUADO') { <span class="dp num" [class.neg]="j.puntos < 0">{{ j.puntos }}</span> }
                             @default { <span class="dp vacio">–</span> }
                           }
@@ -86,8 +91,8 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
               }
             </div>
             <p class="dleg">
-              En verde, el que ya está jugando o ha jugado su partido; en gris, quien no
-              llegó a jugar. Los suplentes van con borde discontinuo.
+              En verde, el que ya está jugando o ha jugado su partido; <b>NJ</b> es quien
+              no llegó a jugar. Los suplentes van con borde discontinuo.
               @if (hayEnJuego()) {
                 <br /><b class="lviva"></b> su partido se está jugando ahora: los puntos
                 llegan cuando acabe.
@@ -151,6 +156,9 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     /* A quien le moleste el movimiento, el aro se queda quieto y sigue leyendose. */
     @media (prefers-reduced-motion: reduce) { .dp.viva { animation: none; } }
     .dp.vacio { color: var(--text2); font-weight: 600; }
+    /* "NJ" dice lo que un guion no decia: que ya se sabe que no jugo, y no que
+       este pendiente. El guion se queda para lo que de verdad no ha pasado aun. */
+    .dp.nj { font-size: var(--t-xs); font-weight: 700; letter-spacing: .04em; color: var(--text2); }
     /* El banquillo, apagado: nadie cuenta hasta que se cae un titular. El que entra
        recupera el color y lleva flecha. */
     .dj.fuera { opacity: .55; }
