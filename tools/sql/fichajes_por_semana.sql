@@ -28,6 +28,10 @@
 begin;
 
 alter table falm.peticion_fichaje add column if not exists ventana date;
+-- Con defecto a proposito: mientras la web publicada sea la vieja, manda la
+-- peticion sin decir la semana y sin esto saltaria un not-null en produccion.
+alter table falm.peticion_fichaje
+  alter column ventana set default (falm.cierre_fichajes(now()) at time zone 'Europe/Madrid')::date;
 alter table falm.peticion_fichaje add column if not exists activo_baja_id uuid references falm.activo(id);
 create index if not exists peticion_fichaje_ventana_idx
   on falm.peticion_fichaje (ventana, equipo_falm_id);
