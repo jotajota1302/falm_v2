@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { NavFichajesComponent } from '../../shared/nav-fichajes.component';
 import { RouterLink } from '@angular/router';
 import { environment } from '../../../environments/environment';
-import { PeticionViva, ActivoLibre, Equipo, FalmService, ItemPlantilla, JornadaFalm, PuntosJugador } from '../../core/falm.service';
+import { PeticionViva, ActivoLibre, Equipo, FalmService, ItemPlantilla, PuntosJugador, VentanaFichajes } from '../../core/falm.service';
 import { carasDePorterias } from '../../shared/caras-libres';
 import { FichaService } from '../../shared/ficha.service';
 import { crearLista } from '../../shared/lista';
@@ -27,11 +27,22 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
 
     <falm-nav-fichajes />
 
+    <!-- El mercado esta abierto toda la semana; lo que hay que decir siempre es
+         hasta cuando se puede pedir y a que jornada va a parar, porque no es la
+         siguiente que se juega si esa cae antes del martes. -->
+    @if (ventana(); as v) {
+      <p class="ventana">
+        Pides para la <b>jornada {{ v.jornada_numero }}</b>. Se reparte el
+        <b>{{ cuandoSeReparte(v.cierre) }}</b>, y hasta entonces puedes cambiar
+        tu petición las veces que quieras.
+      </p>
+    }
+
     <!-- La jornada dice si hay mercado; quien manda es la base, que rebota la
          peticion aunque alguien se salte la pantalla. Aqui solo se avisa. -->
-    @if (!cargando() && jornada() && !hayMercado()) {
+    @if (!cargando() && ventana() && !hayMercado()) {
       <p class="cerrado">
-        <strong>El mercado está cerrado en la jornada {{ jornada()!.numero }}.</strong>
+        <strong>El mercado está cerrado en la jornada {{ ventana()!.jornada_numero }}.</strong>
         Puedes mirar quién hay libre, pero todavía no se puede pedir.
       </p>
     }
@@ -118,6 +129,37 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
                 </div>
               }
             }
+            <!-- Con la plantilla a 23 de 23 no entra nadie si no sale nadie, y
+                 quien se va lo elige el manager: automatico se llevaria por
+                 delante a alguien que querias conservar. -->
+            <div class="baja">
+              <span class="bt">Doy de baja</span>
+              @if (bajaSel(); as b) {
+                <div class="slot lleno">
+                  <span class="prio sale">✗</span>
+                  <div class="sw">
+                    <span class="sn">{{ b.nombre }}</span>
+                    <span class="smeta">{{ abr(b.posicion) }} · {{ b.club }}</span>
+                  </div>
+                  <button class="rm" (click)="baja.set(null)" aria-label="Quitar">✕</button>
+                </div>
+              } @else {
+                <select class="bsel" [ngModel]="baja()" (ngModelChange)="baja.set($event || null)">
+                  <option [ngValue]="null">Elige a quién dejas salir…</option>
+                  @for (j of miPlantilla(); track j.activo_id) {
+                    <option [ngValue]="j.activo_id">{{ j.nombre }} · {{ abr(j.posicion) }}</option>
+                  }
+                </select>
+              }
+              @if (plantillaLlena() && !baja()) {
+                <p class="bav">Tu plantilla está llena ({{ miPlantilla().length }} de 23): sin una baja
+                  el fichaje no puede entrar.</p>
+              } @else {
+                <p class="bav">Solo sale si entra el fichaje. Si no te dan a ninguno de los dos,
+                  no se va nadie.</p>
+              }
+            </div>
+
             <!-- La regla de desempate, junto a lo que has pedido: es donde
                  sirve, y en la cabecera ocupaba tres líneas. -->
             <p class="regla">Si otro equipo pide al mismo jugador, gana quien no fichó la
@@ -165,6 +207,32 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
       </div>
 
       <falm-paginas [l]="l" unidad="libres" />
+
+      <!-- El acta de cada martes: quien ficho a quien y a quien solto. Sale de
+           las propias peticiones resueltas, no hay nada guardado aparte. -->
+      @if (noticias().length) {
+        <section class="news">
+          <h2>Lo que ha movido cada uno</h2>
+          @for (n of noticias(); track $index) {
+            <article class="nw" [class.vacia]="!n.ficho">
+              @if (n.ficha_foto) {
+                <img class="nfo" [src]="n.ficha_foto" alt="" loading="lazy" />
+              } @else { <span class="nfo es"></span> }
+              <p class="ntx">
+                <b>{{ n.equipo }}</b>
+                @if (n.ficho) {
+                  ficha a <b>{{ n.ficha_nombre }}</b> ({{ n.ficha_club }})@if (n.baja_nombre) {
+                    y deja salir a <b>{{ n.baja_nombre }}</b>
+                  }.
+                } @else {
+                  se queda sin fichar: no le entró ninguna de sus opciones.
+                }
+                <span class="nmeta">Jornada {{ n.jornada }} · {{ cuandoFue(n.fecha) }}</span>
+              </p>
+            </article>
+          }
+        </section>
+      }
     }
   `,
   styles: [`
@@ -247,6 +315,36 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
     .lform { display: flex; flex-direction: column; gap: 8px; }
     .lform select, .lform input { width: 100%; }
 
+    /* La semana en la que estas pidiendo: es lo primero que hay que saber y
+       antes no se decia en ningun sitio. */
+    .ventana { margin: 0 0 12px; padding: 10px 14px; border-radius: var(--r-sm);
+      background: var(--surface2); border: 1px solid var(--line);
+      font-size: var(--t-sm); color: var(--text2); }
+    .ventana b { color: var(--text); }
+
+    /* Quien sale para que entre el fichado. */
+    .baja { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
+    .baja .bt { display: block; margin-bottom: 6px; font-size: var(--t-xs); font-weight: 700;
+      letter-spacing: .14em; text-transform: uppercase; color: var(--text2); }
+    .baja .bsel { width: 100%; }
+    .baja .prio.sale { color: var(--bad); font-family: var(--fb); font-weight: 700; }
+    .baja .bav { margin: 6px 0 0; font-size: var(--t-xs); line-height: 1.5; color: var(--text2); }
+
+    /* El acta de los fichajes, a lo ancho: se lee como un teletipo. */
+    .news { margin-top: 22px; }
+    .news h2 { font-family: var(--fh); font-size: var(--t-lg); font-weight: 600;
+      text-transform: uppercase; letter-spacing: -.01em; margin: 0 0 10px; }
+    .nw { display: flex; align-items: center; gap: 11px; padding: 9px 14px;
+      background: var(--surface); border: 1px solid var(--line);
+      border-radius: var(--r-sm); margin-bottom: 7px; }
+    .nw.vacia { opacity: .6; }
+    .nfo { width: 30px; height: 30px; border-radius: 50%; flex: 0 0 auto;
+      object-fit: cover; object-position: top center; background: var(--surface2); }
+    .nfo.es { border: 1px solid var(--line); }
+    .ntx { margin: 0; font-size: var(--t-sm); line-height: 1.5; }
+    .ntx b { font-weight: 700; }
+    .nmeta { display: block; font-size: var(--t-xs); color: var(--text2); }
+
     .muted { color: var(--text2); } .err { color: var(--bad); }
 
     @media (max-width: 900px) {
@@ -265,7 +363,6 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
 export class FichajesComponent implements OnInit {
   pos = POS;
   equipo = signal<Equipo | null>(null);
-  jornada = signal<JornadaFalm | null>(null);
   mercado = signal<ActivoLibre[]>([]);
   private caras = signal<Record<string, string>>({});
   private rotas = signal<Set<string>>(new Set());
@@ -285,10 +382,29 @@ export class FichajesComponent implements OnInit {
   lesionadoId = signal('');
   urlLesion = signal('');
   enviandoLesion = signal(false);
-  /** Lo que ya tengo pedido para esta jornada, si hay algo. */
+  /** Lo que ya tengo pedido esta semana, si hay algo. */
   peticion = signal<PeticionViva | null>(null);
-  /** Si la jornada admite fichajes; sin jornada cargada no se bloquea nada. */
-  hayMercado = computed(() => this.jornada()?.admiteFichajes !== false);
+  /** La semana en curso: hasta cuando se pide y a que jornada va. */
+  ventana = signal<VentanaFichajes | null>(null);
+  /** El acta de los martes: quien ficho y a quien solto. */
+  noticias = signal<any[]>([]);
+  cuandoFue(iso: string): string {
+    const d = new Date(iso);
+    return d.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' });
+  }
+  /** A quien dejo salir si entra el fichaje. */
+  baja = signal<string | null>(null);
+  bajaSel = computed(() => this.miPlantilla().find((j) => j.activo_id === this.baja()) ?? null);
+  plantillaLlena = computed(() => this.miPlantilla().length >= 23);
+  /** Si la jornada de esta semana admite fichajes; sin ventana no se bloquea nada. */
+  hayMercado = computed(() => this.ventana()?.admite_fichajes !== false);
+
+  /** "martes 15 de septiembre a las 23:59", que es lo unico que hay que saber. */
+  cuandoSeReparte(iso: string): string {
+    const d = new Date(iso);
+    return d.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }) +
+      ' a las ' + d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+  }
 
   /**
    * Rellena el formulario con lo que ya esta pedido. Sin esto la pantalla
@@ -296,15 +412,16 @@ export class FichajesComponent implements OnInit {
    * se volvia a dar a Enviar: cuatro peticiones sueltas en la jornada 1.
    */
   private async cargarPeticion() {
-    const eq = this.equipo(); const jor = this.jornada();
-    if (!eq || !jor) return;
-    const p = await this.falm.miPeticion(eq.id, jor.id);
+    const eq = this.equipo(); const v = this.ventana();
+    if (!eq || !v) return;
+    const p = await this.falm.miPeticion(eq.id, v.ventana);
     this.peticion.set(p);
     const de = (n: number) => {
       const o = p?.opciones.find((x) => x.prioridad === n);
       return o ? this.mercado().find((a) => a.activo_id === o.activo_id) ?? null : null;
     };
     this.p1.set(de(1)); this.p2.set(de(2));
+    this.baja.set(p?.baja_id ?? null);
   }
 
   /** Lo que pasa los filtros; el orden y la página los lleva la lista. */
@@ -361,14 +478,15 @@ export class FichajesComponent implements OnInit {
 
   async ngOnInit() {
     try {
-      const [eq, jor, merc, acum] = await Promise.all([
-        this.falm.miEquipo(), this.falm.jornadaActualLiga(), this.falm.mercadoLibre(), this.falm.puntuacionesAcumuladas(),
+      const [eq, ven, merc, acum] = await Promise.all([
+        this.falm.miEquipo(), this.falm.ventanaFichajes(), this.falm.mercadoLibre(), this.falm.puntuacionesAcumuladas(),
       ]);
-      this.equipo.set(eq); this.jornada.set(jor); this.mercado.set(merc);
+      this.equipo.set(eq); this.ventana.set(ven); this.mercado.set(merc);
       const m: Record<number, PuntosJugador> = {};
       for (const p of acum) m[p.jugador.id] = p;
       this.acum.set(m);
       this.caras.set(await carasDePorterias(this.falm, merc));
+      this.falm.noticiasFichajes().then((n) => this.noticias.set(n)).catch(() => {});
       if (eq) {
         const [mp, ex] = await Promise.all([this.falm.miPlantilla(eq.id), this.falm.fichajesExtra(eq.id)]);
         this.miPlantilla.set(mp); this.extras.set(ex);
@@ -405,14 +523,14 @@ export class FichajesComponent implements OnInit {
       this.aviso.set('Modo demo: la petición no se envía hasta que actives tu cuenta (login). El formulario es totalmente funcional.');
       return;
     }
-    const eq = this.equipo(); const jor = this.jornada();
-    if (!eq || !jor || !this.p1()) return;
+    const eq = this.equipo(); const v = this.ventana();
+    if (!eq || !v || !v.jornada_id || !this.p1()) return;
     const opciones = [{ activo_id: this.p1()!.activo_id, prioridad: 1 }];
     if (this.p2()) opciones.push({ activo_id: this.p2()!.activo_id, prioridad: 2 });
     this.enviando.set(true);
     try {
       const habia = this.peticion() !== null;
-      await this.falm.crearPeticion(eq.id, jor.id, opciones);
+      await this.falm.crearPeticion(eq.id, v.jornada_id, opciones, v.ventana, this.baja());
       await this.cargarPeticion();
       this.aviso.set(habia
         ? 'Petición actualizada: cuenta esta y se anula la anterior.'

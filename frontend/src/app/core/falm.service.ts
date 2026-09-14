@@ -162,6 +162,22 @@ export interface PeticionViva {
   id: string;
   fecha: string;
   opciones: { activo_id: string; prioridad: number }[];
+  /** A quién se da de baja si el fichaje sale adelante. */
+  baja_id: string | null;
+}
+
+/**
+ * La semana de fichajes: se pide cualquier día y se reparte el martes a las
+ * 23:59. La jornada a la que aplica es la primera que se cierra después de ese
+ * martes, así que una jornada entre semana no recibe fichajes.
+ */
+export interface VentanaFichajes {
+  ventana: string;
+  cierre: string;
+  jornada_id: string | null;
+  jornada_numero: number | null;
+  jornada_cierra: string | null;
+  admite_fichajes: boolean;
 }
 
 export interface Alineado {
@@ -667,15 +683,6 @@ export class FalmService {
     return data;
   }
 
-  /** Jornada de liga a editar (demo: la primera de la temporada). */
-  async jornadaActualLiga(): Promise<JornadaFalm | null> {
-    const comps = await this.competiciones();
-    const liga = comps.find((c) => c.tipo === 'LIGA') ?? comps[0];
-    if (!liga) return null;
-    const js = await this.jornadas(liga.id);
-    return js[0] ?? null;
-  }
-
   /**
    * Alineación guardada de un equipo para un partido (con roles por activo).
    * El once cuelga del enfrentamiento: en una jornada doble hay dos, y sin
@@ -992,12 +999,12 @@ export class FalmService {
    * necesita para no dejar mandar otra a ciegas: se mandaron cuatro seguidas
    * en la jornada 1 porque nada decia que ya habia una.
    */
-  async miPeticion(equipoId: string, jornadaObjetivoId: string): Promise<PeticionViva | null> {
+  async miPeticion(equipoId: string, ventana: string): Promise<PeticionViva | null> {
     const { data, error } = await this.sb.client
       .from('peticion_fichaje')
-      .select('id, fecha_creacion, peticion_fichaje_opcion (prioridad, activo_id)')
+      .select('id, fecha_creacion, activo_baja_id, peticion_fichaje_opcion (prioridad, activo_id)')
       .eq('equipo_falm_id', equipoId)
-      .eq('jornada_objetivo_id', jornadaObjetivoId)
+      .eq('ventana', ventana)
       .eq('estado', 'PENDIENTE')
       .order('fecha_creacion', { ascending: false })
       .limit(1);
@@ -1007,10 +1014,27 @@ export class FalmService {
     return {
       id: p.id,
       fecha: p.fecha_creacion,
+      baja_id: p.activo_baja_id ?? null,
       opciones: (p.peticion_fichaje_opcion ?? [])
         .map((o: any) => ({ activo_id: o.activo_id, prioridad: o.prioridad }))
         .sort((a: any, b: any) => a.prioridad - b.prioridad),
     };
+  }
+
+  /** El acta de los fichajes ya resueltos, para el teletipo de la pantalla. */
+  async noticiasFichajes(limite = 20): Promise<any[]> {
+    const { data, error } = await this.sb.client.rpc('noticias_fichajes', { p_limite: limite });
+    if (error) throw error;
+    const d = typeof data === 'string' ? JSON.parse(data) : data;
+    return Array.isArray(d) ? d : [];
+  }
+
+  /** En qué semana estamos pidiendo y a qué jornada irá a parar. */
+  async ventanaFichajes(): Promise<VentanaFichajes> {
+    const { data, error } = await this.sb.client.rpc('ventana_fichajes');
+    if (error) throw error;
+    const d = typeof data === 'string' ? JSON.parse(data) : data;
+    return d as VentanaFichajes;
   }
 
   /**
@@ -1023,20 +1047,25 @@ export class FalmService {
   async crearPeticion(
     equipoId: string,
     jornadaObjetivoId: string,
-    opciones: { activo_id: string; prioridad: number }[]
+    opciones: { activo_id: string; prioridad: number }[],
+    ventana: string,
+    bajaId: string | null
   ): Promise<void> {
+    // La unidad es la SEMANA, no la jornada: en un parón varias semanas caen en
+    // la misma jornada y son fichajes distintos.
     const { error: e0 } = await this.sb.client
       .from('peticion_fichaje')
       .update({ estado: 'RECHAZADA', fecha_procesamiento: new Date().toISOString(),
                 observaciones: 'Sustituida por una petición posterior del mismo equipo' })
       .eq('equipo_falm_id', equipoId)
-      .eq('jornada_objetivo_id', jornadaObjetivoId)
+      .eq('ventana', ventana)
       .eq('estado', 'PENDIENTE');
     if (e0) throw e0;
 
     const { data: pet, error } = await this.sb.client
       .from('peticion_fichaje')
-      .insert({ equipo_falm_id: equipoId, jornada_objetivo_id: jornadaObjetivoId, estado: 'PENDIENTE' })
+      .insert({ equipo_falm_id: equipoId, jornada_objetivo_id: jornadaObjetivoId,
+                estado: 'PENDIENTE', ventana, activo_baja_id: bajaId })
       .select('id')
       .single();
     if (error) throw error;
