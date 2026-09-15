@@ -126,6 +126,19 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
         }
       }
       @if (aviso()) { <p class="aviso">{{ aviso() }}</p> }
+      <!-- Un envio rechazado no puede parecerse a uno guardado: salia en el mismo
+           recuadro y se leia como un OK. -->
+      @if (errorEnvio()) { <p class="aviso mal">{{ errorEnvio() }}</p> }
+
+      <!-- Quien va puesto y ya no puede jugar esta jornada: la base rebota el
+           once entero por el, asi que se dice antes de darle a enviar. -->
+      @if (yaJugaronPuestos().length) {
+        <p class="tocados">
+          <b>No pueden ir en el once:</b>
+          @for (n of yaJugaronPuestos(); track n) { <span class="tj">{{ n }}</span> }
+          <i>su partido de esta jornada ya se jugó. Quítalos para poder enviar.</i>
+        </p>
+      }
 
       <!-- Lo que uno querría saber antes de darle a guardar: a quién tienes
            puesto que no está para jugar. -->
@@ -433,6 +446,9 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
     .aviso { background: var(--surface); border: 1px solid var(--accent); color: var(--accent);
       padding: 10px 15px; border-radius: var(--r-xs); margin-bottom: 12px; font-size: var(--t-sm); font-weight: 600; }
 
+    .aviso.mal { border-color: var(--bad); color: var(--bad);
+      background: color-mix(in oklab, var(--bad) 7%, var(--surface)); }
+
     /* El plazo. En la última hora se pone en rojo, que es cuando se mira de verdad. */
     .plazo { margin: 0 0 12px; padding: 9px 15px; border-radius: var(--r-xs);
       font-size: var(--t-sm); line-height: 1.5; color: var(--text);
@@ -717,6 +733,16 @@ export class AlineacionComponent implements OnInit, OnDestroy {
   yaJugo(j: ItemPlantilla): boolean { return !!this.yaJugaron()[j.activo_id]; }
   /** Apagado en el selector: ya jugó y no está puesto (el puesto se sigue viendo marcado). */
   apagado(j: ItemPlantilla): boolean { return this.yaJugo(j) && !this.seleccionado(j); }
+
+  /** Lo que ha salido mal al enviar; va aparte del aviso para verse en rojo. */
+  errorEnvio = signal('');
+
+  /** Puestos en el once o el banquillo cuyo partido se jugó antes de abrir la jornada. */
+  readonly yaJugaronPuestos = computed(() => {
+    const yj = this.yaJugaron();
+    const ids = [...new Set([...this.titulares(), ...this.banca().map((b) => b.id)])];
+    return ids.filter((id) => yj[id] === 'BLOQUEADO').map((id) => this.nombreDe(id));
+  });
 
   /** Titulares y suplentes que llegan tocados, para avisar antes de guardar. */
   readonly tocados = computed(() => {
@@ -1152,7 +1178,7 @@ export class AlineacionComponent implements OnInit, OnDestroy {
     else { this.jornada.set(null); this.limpiar(); }
   }
   async seleccionarJornada(j: JornadaFalm) {
-    this.jornada.set(j); this.aviso.set('');
+    this.jornada.set(j); this.aviso.set(''); this.errorEnvio.set('');
     // Contra quién juega cada uno esa jornada y quién llega tocado. Es un
     // apaño de ayuda: si falla, la pantalla sigue funcionando igual.
     this.ctx.set({});
@@ -1303,6 +1329,10 @@ export class AlineacionComponent implements OnInit, OnDestroy {
    * puede quedar el número correcto de jugadores mal repartido.
    */
   problema(): string | null {
+    const yj = this.yaJugaronPuestos();
+    if (yj.length) {
+      return `Quita a ${yj.join(', ')}: su partido de esta jornada ya se jugó y no pueden ir en el once.`;
+    }
     const t = this.titulares().length;
     if (t !== 11) {
       const faltan = 11 - t;
@@ -1338,13 +1368,13 @@ export class AlineacionComponent implements OnInit, OnDestroy {
   async copiarAlOtro() { await this.enviar(true); }
 
   private async enviar(aLosDos: boolean) {
-    this.aviso.set('');
+    this.aviso.set(''); this.errorEnvio.set('');
     if (this.cerrada()) {
-      this.aviso.set('La jornada ya está cerrada: el once no se puede cambiar.');
+      this.errorEnvio.set('La jornada ya está cerrada: el once no se puede cambiar.');
       return;
     }
     const falla = this.problema();
-    if (falla) { this.aviso.set(falla); return; }
+    if (falla) { this.errorEnvio.set(`No se ha guardado. ${falla}`); return; }
     const eq = this.equipo(); const jor = this.jornada(); if (!eq || !jor) return;
     const jugadores: Alineado[] = [
       ...this.titulares().map((id) => ({ activo_id: id, rol: 'TITULAR' as const, lineas: [], orden: 0 })),
@@ -1370,7 +1400,7 @@ export class AlineacionComponent implements OnInit, OnDestroy {
         : enTodos ? `Alineación guardada para los dos partidos.`
         : `Alineación guardada para el partido contra ${contra}. El otro se queda como estaba.`);
       try { await this.falm.recalcular(); } catch { /* la tabla se rehará sola */ }
-    } catch (e: any) { this.aviso.set(e?.message ?? 'Error al guardar'); }
+    } catch (e: any) { this.errorEnvio.set(`No se ha guardado. ${e?.message ?? 'Error al guardar'}`); }
     finally { this.guardando.set(false); }
   }
 
