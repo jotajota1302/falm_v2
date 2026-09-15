@@ -77,7 +77,9 @@ import { DetallePartidoComponent } from '../../shared/detalle-partido.component'
               @if (e.en_juego) {
                 En juego · {{ e.partidos_jugados }}/{{ e.partidos_total }} partidos
               } @else {
-                {{ e.jornada_jugada ? e.puntos_clasif_local + ' – ' + e.puntos_clasif_visitante + ' en la tabla' : 'Sin jugar' }}
+                <!-- El marcador ya dice los puntos de cada uno; los de la tabla
+                     ("0 – 3 en la tabla") debajo no se entendian. -->
+                {{ e.jornada_jugada ? 'Jornada cerrada' : 'Sin jugar' }}
               }
             </span>
             <span class="lado der" [class.gana]="e.puntos_clasif_visitante > e.puntos_clasif_local">
