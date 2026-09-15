@@ -159,7 +159,10 @@ import { DetallePartidoComponent } from '../../shared/detalle-partido.component'
     .eq { display: flex; flex-direction: column; min-width: 0; }
     .lado.izq .eq { align-items: flex-end; }
     .lado.der .eq { align-items: flex-start; }
-    .pend { font-size: var(--t-xs); color: var(--text2); white-space: nowrap; }
+    /* Puede partirse: "pendiente de alineación" no cabe al lado del nombre en
+       el movil y con nowrap se salia de la tarjeta. */
+    .pend { font-size: var(--t-xs); color: var(--text2); line-height: 1.25; overflow-wrap: anywhere; }
+    .lado.izq .pend { text-align: right; }
     .lado.izq { justify-content: flex-end; } .lado.der { justify-content: flex-start; }
     .marca { width: 3px; height: 24px; border-radius: 2px; flex: 0 0 auto; }
     /* Si ese equipo ya ha mandado su once. */
@@ -266,8 +269,15 @@ export class JornadasComponent implements OnInit {
     this.falm.jornadasDobles(js.map((j) => j.id))
       .then((d) => this.dobles.set(d)).catch(() => {});
     if (js.length === 0) { this.enfrentamientos.set([]); this.cargando.set(false); return; }
-    // Se abre en la que se está jugando, no en la última del calendario.
-    const i = this.indiceActual(js);
+    // Se abre en la que toca: la que se está jugando, o si esa ya ha terminado,
+    // la siguiente. Con solo "la última que ha cerrado" se abria la J1 ya
+    // acabada mientras la J2 esperaba a cerrar el once.
+    let i = this.indiceActual(js);
+    const empezada = !!js[i].fecha && new Date(js[i].fecha!).getTime() <= Date.now();
+    if (empezada && i + 1 < js.length) {
+      const enf = await this.falm.enfrentamientos(js[i].id).catch(() => [] as EnfrentamientoFila[]);
+      if (enf.length && enf.every((e) => e.jornada_jugada)) i++;
+    }
     this.bloque.set(Math.floor(i / this.porPagina));
     await this.seleccionarJornada(js[i].id);
   }
