@@ -294,7 +294,10 @@ export class FalmService {
       .from('equipo_falm')
       .select('id, nombre, puntos_clasif, puntos_totales, puntos_contra, victorias, victorias_min, empates, derrotas_min, derrotas')
       .eq('temporada_id', id)
-      .order('puntos_clasif', { ascending: false });
+      // A igualdad de puntos manda quien más puntos ha hecho: sin el segundo
+      // criterio el empate salía en el orden que devolviera la base.
+      .order('puntos_clasif', { ascending: false })
+      .order('puntos_totales', { ascending: false });
     if (error) throw error;
     return (data ?? []).map((e: any, i: number) => ({
       competicion_id: competicionId,
