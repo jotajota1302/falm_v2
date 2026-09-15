@@ -539,6 +539,10 @@ export class FalmService {
     if (e2) throw e2;
     const n = new Map((eqs ?? []).map((e: any) => [e.id, e.nombre]));
     const alineados = await this.quienHaAlineado(jornadaFalmId, ids);
+    const { data: jor } = await this.sb.client
+      .from('jornada_falm').select('fecha_cierre').eq('id', jornadaFalmId).maybeSingle();
+    const cierre = (jor as any)?.fecha_cierre;
+    const empezada = !!cierre && new Date(cierre).getTime() <= Date.now();
 
     // falm.enfrentamiento solo se escribe al cerrar la jornada. Mientras se
     // juega, el marcador sale de lo que lleva puntuado cada once; al cerrarse,
@@ -570,7 +574,12 @@ export class FalmService {
 
     return filas.map((f) => {
       const vl = enVivo.get(`${f.id}|${f.equipo_local_id}`), vv = enVivo.get(`${f.id}|${f.equipo_visitante_id}`);
-      const enJuego = !cerrada && (vl != null || vv != null);
+      // En juego es que la jornada ya ha cerrado el plazo del once y no se ha
+      // procesado. Antes se deducia de que hubiera onces mandados, y como se
+      // mandan con dias de antelacion la jornada salia "en juego" sin empezar
+      // (y el cruce sin onces, "sin jugar"). Tampoco vale el primer partido de
+      // LaLiga: en la 2 hubo uno adelantado que no es nuestro.
+      const enJuego = empezada && !cerrada;
       const pl = enJuego ? (vl?.pts ?? 0) : Number(f.puntos_local ?? 0);
       const pv = enJuego ? (vv?.pts ?? 0) : Number(f.puntos_visitante ?? 0);
       const [cl, cv] = reparto(pl, pv);

@@ -62,6 +62,8 @@ import { DetallePartidoComponent } from '../../shared/detalle-partido.component'
                      pregunta uno mirando un marcador a medias. -->
                 @if (e.en_juego) {
                   <span class="pend">{{ pendientes(e, true) }}</span>
+                } @else if (!e.jornada_jugada && !e.alineado_local) {
+                  <span class="pend">pendiente de alineación</span>
                 }
               </span>
               <span class="ali" [class.si]="e.alineado_local"
@@ -92,6 +94,8 @@ import { DetallePartidoComponent } from '../../shared/detalle-partido.component'
                 <span class="nm">{{ e.equipo_visitante }}</span>
                 @if (e.en_juego) {
                   <span class="pend">{{ pendientes(e, false) }}</span>
+                } @else if (!e.jornada_jugada && !e.alineado_visitante) {
+                  <span class="pend">pendiente de alineación</span>
                 }
               </span>
             </span>
