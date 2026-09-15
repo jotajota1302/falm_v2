@@ -1032,6 +1032,16 @@ export class FalmService {
     return Array.isArray(d) ? d : [];
   }
 
+  /**
+   * Suelta a un jugador de la plantilla y lo devuelve al mercado. La base solo
+   * lo deja cuando te pasas de 23, que es justo después de fichar.
+   */
+  async liberarJugador(activoId: string): Promise<number> {
+    const { data, error } = await this.sb.client.rpc('liberar_jugador', { p_activo: activoId });
+    if (error) throw error;
+    return Number(data ?? 0);
+  }
+
   /** En qué semana estamos pidiendo y a qué jornada irá a parar. */
   async ventanaFichajes(): Promise<VentanaFichajes> {
     const { data, error } = await this.sb.client.rpc('ventana_fichajes');

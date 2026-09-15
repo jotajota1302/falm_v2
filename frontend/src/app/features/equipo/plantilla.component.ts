@@ -35,6 +35,39 @@ const ETI: Record<string, string> = { PORTERO: 'Porteros', DEFENSA: 'Defensas', 
         </div>
       </div>
 
+      @if (hecho()) { <p class="hecho">{{ hecho() }}</p> }
+
+      <!-- Despues de fichar se pasa de 23 y hasta soltar a uno no se alinea.
+           Quien sale lo decide el manager, con dias para pensarlo. -->
+      @if (sobran() > 0) {
+        <section class="liberar">
+          <p class="lt"><b>Tienes {{ items().length }} jugadores y el máximo es 23.</b>
+            Libera a {{ sobran() === 1 ? 'uno' : sobran() }} para poder mandar la alineación.
+            Vuelve al mercado y cualquiera lo puede pedir.</p>
+          <div class="lf">
+            <select [value]="aLiberar()" (change)="elegir($any($event.target).value)" [disabled]="liberando()">
+              <option value="">Elige a quién liberas…</option>
+              @for (j of filas(); track j.activo_id) {
+                <option [value]="j.activo_id">{{ abr(j.posicion) }} · {{ j.nombre }} ({{ j.club }})</option>
+              }
+            </select>
+            @if (elegido() && !confirmando()) {
+              <button class="bl" (click)="confirmando.set(true)">Liberar</button>
+            }
+          </div>
+          @if (confirmando() && elegido(); as j) {
+            <div class="conf">
+              <span>¿Liberar a <b>{{ j.nombre }}</b>? No tiene vuelta atrás.</span>
+              <span class="cb">
+                <button class="bl si" [disabled]="liberando()" (click)="liberar(j)">{{ liberando() ? 'Liberando…' : 'Sí, liberar' }}</button>
+                <button class="bl" [disabled]="liberando()" (click)="confirmando.set(false)">Cancelar</button>
+              </span>
+            </div>
+          }
+          @if (errLib()) { <p class="le">{{ errLib() }}</p> }
+        </section>
+      }
+
       <div class="tabla">
         <div class="fila cab">
           <span>Pos</span><span>Jugador</span><span>Club</span>
@@ -121,6 +154,24 @@ const ETI: Record<string, string> = { PORTERO: 'Porteros', DEFENSA: 'Defensas', 
     .media { color: var(--text2); }
     .muted { color: var(--text2); } .err { color: var(--bad); }
 
+    /* Sobra alguien: es lo primero que hay que resolver, va antes de la lista. */
+    .liberar { margin: 0 0 16px; padding: 13px 15px; border-radius: var(--r-sm);
+      background: color-mix(in oklab, var(--bad) 7%, var(--surface));
+      border: 1px solid color-mix(in oklab, var(--bad) 35%, var(--line)); }
+    .liberar .lt { margin: 0 0 10px; font-size: var(--t-sm); line-height: 1.5; }
+    .liberar .lf { display: flex; gap: 8px; flex-wrap: wrap; }
+    .liberar select { flex: 1 1 260px; min-width: 0; }
+    .liberar .conf { margin-top: 10px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      font-size: var(--t-sm); }
+    .liberar .cb { display: flex; gap: 8px; }
+    .bl { border: 1px solid var(--line); border-radius: var(--r-xs); padding: 8px 14px; cursor: pointer;
+      font-family: var(--fb); font-weight: 700; font-size: var(--t-sm); background: var(--surface); color: var(--text); }
+    .bl.si { background: var(--bad); border-color: var(--bad); color: #fff; }
+    .bl:disabled { opacity: .5; cursor: default; }
+    .liberar .le { margin: 8px 0 0; color: var(--bad); font-size: var(--t-sm); }
+    .hecho { margin: 0 0 14px; padding: 10px 14px; border-radius: var(--r-sm); font-size: var(--t-sm);
+      background: var(--accent-soft); border: 1px solid var(--accent-line); color: var(--accent); }
+
     @media (max-width: 760px) {
       /* Sin club ni media: quedan tres celdas, y la rejilla tiene que ser de
          tres o los puntos no llegan al borde. */
@@ -173,6 +224,32 @@ export class PlantillaComponent implements OnInit {
     return [`${por('PORTERO')} POR`, `${por('DEFENSA')} DEF`,
             `${por('MEDIO')} MED`, `${por('DELANTERO')} DEL`].join(' · ');
   });
+
+  /** Cuántos sobran de 23: después de fichar, uno. */
+  sobran = computed(() => this.items().length - 23);
+  aLiberar = signal('');
+  confirmando = signal(false);
+  liberando = signal(false);
+  errLib = signal('');
+  hecho = signal('');
+  elegido = computed(() => this.items().find((j) => j.activo_id === this.aLiberar()) ?? null);
+  elegir(id: string) { this.aLiberar.set(id); this.confirmando.set(false); this.errLib.set(''); }
+
+  async liberar(j: ItemPlantilla) {
+    const eq = this.equipo();
+    if (!eq) return;
+    this.liberando.set(true); this.errLib.set('');
+    try {
+      await this.falm.liberarJugador(j.activo_id);
+      this.items.set(await this.falm.miPlantilla(eq.id));
+      this.aLiberar.set(''); this.confirmando.set(false);
+      this.hecho.set(`${j.nombre} vuelve al mercado. Ya puedes mandar la alineación.`);
+    } catch (e: any) {
+      this.errLib.set(e?.message ?? 'No se pudo liberar');
+    } finally {
+      this.liberando.set(false);
+    }
+  }
 
   constructor(private falm: FalmService, public ficha: FichaService) {}
   abr(p: string) { return ({ PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'MED', DELANTERO: 'DEL' } as Record<string, string>)[p] ?? p; }

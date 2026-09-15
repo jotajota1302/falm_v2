@@ -4,6 +4,7 @@ import {
   Alineado, AlineacionGuardada, Competicion, ContextoActivo, Equipo, FalmService, FORMACIONES,
   ItemPlantilla, JornadaFalm, PartidoDeJornada,
 } from '../../core/falm.service';
+import { RouterLink } from '@angular/router';
 import { FutCardComponent } from '../../shared/fut-card.component';
 
 const ETI: Record<string, string> = { PORTERO: 'Portero', DEFENSA: 'Defensa', MEDIO: 'Medio', DELANTERO: 'Delantero' };
@@ -14,7 +15,7 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
 @Component({
   selector: 'app-alineacion',
   standalone: true,
-  imports: [FormsModule, FutCardComponent],
+  imports: [FormsModule, FutCardComponent, RouterLink],
   template: `
     @if (cargando()) {
       <p class="muted">Cargando…</p>
@@ -252,6 +253,10 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
       <div class="envio">
         @if (cerrada()) {
           <span class="est cerr">Jornada cerrada · el once ya no se puede cambiar</span>
+        } @else if (sobran() > 0) {
+          <!-- Tras fichar se pasa de 23: la base rebota el once hasta soltar a uno. -->
+          <span class="est">Tienes {{ plantilla().length }} jugadores y el máximo es 23:
+            libera a uno en <a routerLink="/plantilla">Plantilla</a> para poder enviar</span>
         } @else {
           <span class="est" [class.ok]="titulares().length === 11">
             {{ titulares().length }} de 11 titulares@if (banca().length) { · {{ banca().length }} en el banquillo }
@@ -392,6 +397,7 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
     .envio .est { font-size: var(--t-sm); color: var(--bad); font-weight: 700; }
     .envio .est.ok { color: var(--good); }
     .envio .est.cerr { color: var(--text2); }
+    .envio .est a { color: inherit; text-decoration: underline; }
     /* Las dos acciones, juntas y de la misma altura: la de verdad en granate. */
     .envio .btn-sec, .envio .btn { padding: 11px 20px; font-size: var(--t-sm); }
     .envio .btn-sec { order: 2; }
@@ -751,6 +757,9 @@ export class AlineacionComponent implements OnInit, OnDestroy {
    * Lo que va a hacer el boton, dicho tal cual: mientras el otro partido no
    * tenga once, este envio vale para los dos.
    */
+  /** Cuántos sobran de 23: después de fichar hay que soltar a uno para alinear. */
+  sobran = computed(() => this.plantilla().length - 23);
+
   textoEnviar = computed(() => {
     const r = this.rivalSel();
     if (!r) return 'Enviar alineación';

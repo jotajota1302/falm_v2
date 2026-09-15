@@ -202,6 +202,23 @@ export class AdminService {
     }));
   }
 
+  /**
+   * Como quedaria el reparto de la semana si se aplicara ahora. La base corre
+   * el reparto de verdad y lo deshace, asi que es exactamente lo que pasara.
+   */
+  async propuestaFichajes(): Promise<PropuestaFichajes> {
+    const { data, error } = await this.sb.client.rpc('propuesta_fichajes', {});
+    if (error) throw error;
+    return (typeof data === 'string' ? JSON.parse(data) : data) as PropuestaFichajes;
+  }
+
+  /** Mete en las plantillas el reparto de la semana ya cerrada. */
+  async aplicarFichajes(): Promise<{ ventana: string; peticiones: number; fichados: number }> {
+    const { data, error } = await this.sb.client.rpc('aplicar_fichajes', {});
+    if (error) throw error;
+    return typeof data === 'string' ? JSON.parse(data) : data;
+  }
+
   /** Rechaza una peticion dejando dicho por que; el equipo lo ve en su pantalla. */
   async rechazarPeticion(id: string, motivo: string): Promise<void> {
     const { error } = await this.sb.client
@@ -444,6 +461,16 @@ export interface EdicionJugador {
   activoId: string; jugadorLfpId: string;
   pila: string; apellido: string; posicion: string;
   clubId: string; dorsal: number | null; primerEquipo: boolean;
+}
+
+export interface PropuestaFichajes {
+  ventana: string; cierre: string; abierta: boolean; pendientes: number; jornada: string | null;
+  filas: {
+    equipo: string; estado: string;
+    fichado: string | null; fichado_club: string | null; fichado_pos: string | null;
+    opcion: number | null; pedia: { prioridad: number; nombre: string; club: string }[] | null;
+    plantilla: number; observaciones: string | null;
+  }[];
 }
 
 export interface JornadaAdmin {

@@ -1,6 +1,6 @@
 import { Component, OnInit, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { AdminPeticion, AdminService, JornadaAdmin } from './admin.service';
+import { AdminPeticion, AdminService, JornadaAdmin, PropuestaFichajes } from './admin.service';
 
 const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'MED', DELANTERO: 'DEL' };
 
@@ -22,6 +22,43 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     @if (cargando()) {
       <p class="muted">Cargando peticiones…</p>
     } @else {
+      <!-- El reparto de la semana lo valida el gestor: el cron del miercoles ya
+           no lo aplica solo. "Ver" corre el reparto de verdad y lo deshace. -->
+      <section class="tabla reparto">
+        <div class="barra">
+          <span class="lb">Reparto de la semana</span>
+          <button class="bn" [disabled]="calculando()" (click)="verPropuesta()">
+            {{ calculando() ? 'Calculando…' : propuesta() ? 'Recalcular' : 'Ver cómo quedaría' }}
+          </button>
+          @if (propuesta(); as pr) {
+            <button class="bn si" [disabled]="pr.abierta || !pr.pendientes || aplicando()" (click)="aplicar()"
+                    [title]="pr.abierta ? 'La semana sigue abierta hasta el martes a las 23:59' : 'Mete los fichajes en las plantillas'">
+              {{ aplicando() ? 'Aplicando…' : 'Aplicar reparto' }}
+            </button>
+          }
+        </div>
+        @if (propuesta(); as pr) {
+          <p class="muted pad mini">
+            Semana del {{ dia(pr.ventana) }} · jornada {{ pr.jornada }} · {{ pr.pendientes }}
+            {{ pr.pendientes === 1 ? 'petición pendiente' : 'peticiones pendientes' }}.
+            {{ pr.abierta ? 'Aún pueden cambiar lo que piden hasta el martes a las 23:59: así quedaría ahora.'
+                          : 'Semana cerrada: esto es lo que se aplicará.' }}
+          </p>
+          @for (f of pr.filas; track f.equipo) {
+            <div class="rep" [class.sin]="!f.fichado">
+              <strong>{{ f.equipo }}</strong>
+              @if (f.fichado) {
+                <span>ficha a <b>{{ f.fichado }}</b> ({{ f.fichado_club }}) · {{ f.opcion }}ª opción ·
+                  queda con {{ f.plantilla }}</span>
+              } @else {
+                <span>sin fichaje · pedía {{ pedia(f) }}</span>
+              }
+            </div>
+          }
+          @if (!pr.filas.length) { <p class="muted pad">No hay nada que repartir.</p> }
+        }
+      </section>
+
       <!-- El mercado, jornada a jornada. Cerrarlo aqui no es un aviso de
            pantalla: la base rebota la peticion aunque alguien se la salte. -->
       <section class="tabla mercado">
@@ -136,6 +173,13 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     .obs { grid-column: 1 / -1; margin: 4px 0 0; color: var(--text2); font-size: var(--t-sm); }
 
     .mercado { margin-bottom: 14px; }
+    .reparto { margin-bottom: 14px; }
+    .reparto .barra { gap: 8px; flex-wrap: wrap; }
+    .bn.si { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+    .rep { display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap;
+      padding: 10px 18px; border-top: 1px solid var(--line); font-size: var(--t-sm); }
+    .rep strong { font-family: var(--fh); text-transform: uppercase; min-width: 150px; }
+    .rep.sin { color: var(--text2); }
     .jors { display: flex; flex-wrap: wrap; gap: 8px; padding: 14px 18px; }
     .jm { display: flex; flex-direction: column; align-items: center; gap: 2px;
       min-width: 74px; padding: 8px 10px; cursor: pointer;
@@ -176,6 +220,40 @@ export class AdminFichajesComponent implements OnInit {
   pendientes = computed(() => this.peticiones().filter((p) => p.estado === 'PENDIENTE'));
   visibles = computed(() =>
     this.solo() ? this.pendientes() : this.peticiones());
+
+  propuesta = signal<PropuestaFichajes | null>(null);
+  calculando = signal(false);
+  aplicando = signal(false);
+
+  dia(f: string) {
+    return new Date(f + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'long' });
+  }
+  pedia(f: PropuestaFichajes['filas'][number]) {
+    return (f.pedia ?? []).map((o) => o.nombre).join(' o ') || 'nada';
+  }
+
+  async verPropuesta() {
+    this.aviso.set(''); this.error.set('');
+    this.calculando.set(true);
+    try { this.propuesta.set(await this.admin.propuestaFichajes()); }
+    catch (e: any) { this.error.set(e?.message ?? 'No se pudo calcular el reparto'); }
+    finally { this.calculando.set(false); }
+  }
+
+  async aplicar() {
+    this.aviso.set(''); this.error.set('');
+    this.aplicando.set(true);
+    try {
+      const r = await this.admin.aplicarFichajes();
+      this.propuesta.set(null);
+      await this.cargar();
+      this.aviso.set(`Reparto aplicado: ${r.fichados} de ${r.peticiones} peticiones con fichaje.`);
+    } catch (e: any) {
+      this.error.set(e?.message ?? 'No se pudo aplicar el reparto');
+    } finally {
+      this.aplicando.set(false);
+    }
+  }
 
   constructor(private admin: AdminService) {}
 

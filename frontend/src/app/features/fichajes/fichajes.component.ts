@@ -129,36 +129,11 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
                 </div>
               }
             }
-            <!-- Con la plantilla a 23 de 23 no entra nadie si no sale nadie, y
-                 quien se va lo elige el manager: automatico se llevaria por
-                 delante a alguien que querias conservar. -->
-            <div class="baja">
-              <span class="bt">Doy de baja</span>
-              @if (bajaSel(); as b) {
-                <div class="slot lleno">
-                  <span class="prio sale">✗</span>
-                  <div class="sw">
-                    <span class="sn">{{ b.nombre }}</span>
-                    <span class="smeta">{{ abr(b.posicion) }} · {{ b.club }}</span>
-                  </div>
-                  <button class="rm" (click)="baja.set(null)" aria-label="Quitar">✕</button>
-                </div>
-              } @else {
-                <select class="bsel" [ngModel]="baja()" (ngModelChange)="baja.set($event || null)">
-                  <option [ngValue]="null">Elige a quién dejas salir…</option>
-                  @for (j of miPlantilla(); track j.activo_id) {
-                    <option [ngValue]="j.activo_id">{{ j.nombre }} · {{ abr(j.posicion) }}</option>
-                  }
-                </select>
-              }
-              @if (plantillaLlena() && !baja()) {
-                <p class="bav">Tu plantilla está llena ({{ miPlantilla().length }} de 23): sin una baja
-                  el fichaje no puede entrar.</p>
-              } @else {
-                <p class="bav">Solo sale si entra el fichaje. Si no te dan a ninguno de los dos,
-                  no se va nadie.</p>
-              }
-            </div>
+            <!-- La baja ya no se elige al pedir: el fichaje entra aunque pases de
+                 23 y luego tienes dias para pensar a quien sueltas. -->
+            <p class="baja bav">Si te dan el fichaje entra en tu plantilla aunque pases de 23.
+              Luego liberas a uno desde <a routerLink="/plantilla">Plantilla</a>: hasta entonces no
+              podrás mandar alineación.</p>
 
             <!-- La regla de desempate, junto a lo que has pedido: es donde
                  sirve, y en la cabecera ocupaba tres líneas. -->
@@ -166,7 +141,7 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
               semana pasada; si sigue el empate, el peor clasificado.</p>
 
             <div class="pieCaja">
-              <span class="lb">{{ hayMercado() ? 'La plantilla no puede pasar de 23 jugadores'
+              <span class="lb">{{ hayMercado() ? 'Un fichaje por semana'
                                                  : 'Todavía no hay mercado en esta jornada' }}</span>
               <button class="btn" [disabled]="!p1() || enviando() || !hayMercado()" (click)="enviar()">
                 {{ enviando() ? 'Enviando…' : peticion() ? 'Actualizar' : 'Enviar' }}
@@ -392,10 +367,6 @@ export class FichajesComponent implements OnInit {
     const d = new Date(iso);
     return d.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' });
   }
-  /** A quien dejo salir si entra el fichaje. */
-  baja = signal<string | null>(null);
-  bajaSel = computed(() => this.miPlantilla().find((j) => j.activo_id === this.baja()) ?? null);
-  plantillaLlena = computed(() => this.miPlantilla().length >= 23);
   /** Si la jornada de esta semana admite fichajes; sin ventana no se bloquea nada. */
   hayMercado = computed(() => this.ventana()?.admite_fichajes !== false);
 
@@ -421,7 +392,6 @@ export class FichajesComponent implements OnInit {
       return o ? this.mercado().find((a) => a.activo_id === o.activo_id) ?? null : null;
     };
     this.p1.set(de(1)); this.p2.set(de(2));
-    this.baja.set(p?.baja_id ?? null);
   }
 
   /** Lo que pasa los filtros; el orden y la página los lleva la lista. */
@@ -530,7 +500,7 @@ export class FichajesComponent implements OnInit {
     this.enviando.set(true);
     try {
       const habia = this.peticion() !== null;
-      await this.falm.crearPeticion(eq.id, v.jornada_id, opciones, v.ventana, this.baja());
+      await this.falm.crearPeticion(eq.id, v.jornada_id, opciones, v.ventana, null);
       await this.cargarPeticion();
       this.aviso.set(habia
         ? 'Petición actualizada: cuenta esta y se anula la anterior.'
