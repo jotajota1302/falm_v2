@@ -1033,6 +1033,20 @@ export class FalmService {
   }
 
   /**
+   * Quién ya no se puede meter en el once de esa jornada porque su partido ya
+   * se ha jugado: BLOQUEADO si fue antes de abrir la jornada, CONGELADO si ya
+   * ha empezado. La base rebota el once igual; esto es para no ofrecerlos.
+   */
+  async noAlineables(jornadaId: string): Promise<Record<string, string>> {
+    const { data, error } = await this.sb.client
+      .rpc('activos_no_editables', { p_jornada_falm: jornadaId });
+    if (error) throw error;
+    const out: Record<string, string> = {};
+    for (const r of (data ?? []) as any[]) out[r.activo_id] = r.motivo;
+    return out;
+  }
+
+  /**
    * Suelta a un jugador de la plantilla y lo devuelve al mercado. La base solo
    * lo deja cuando te pasas de 23, que es justo después de fichar.
    */

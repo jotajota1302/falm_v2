@@ -279,7 +279,10 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
           </div>
           <div class="cands">
             @for (j of candidatos(); track j.activo_id) {
-              <button class="cand" [class.sel]="seleccionado(j)" (click)="elegir(j)">
+              <!-- Quien ya jugó su partido sale apagado: la base no lo deja meter
+                   y ofrecerlo como elegible solo estorbaba. -->
+              <button class="cand" [class.sel]="seleccionado(j)" [class.off]="apagado(j)"
+                      [disabled]="apagado(j)" (click)="elegir(j)">
                 <span class="cav" [class]="abr(j.posicion)">
                   @if (j.foto) { <img [src]="j.foto" alt="" loading="lazy" (error)="j.foto=null" /> }
                   @else if (j.escudo) { <img class="esc" [src]="j.escudo" alt="" /> }
@@ -293,6 +296,9 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
                          está cubriendo la lleva en sólido, porque entra en el
                          hueco pero juega y puntúa en la suya. -->
                     @if (posCand(j); as o) { <b class="cpos" [class]="o.eti" [class.suave]="!o.distinta">{{ o.eti }}</b> }
+                    @if (yaJugo(j)) {
+                      <b class="yj" title="Su partido de esta jornada ya se ha jugado: no se puede alinear">Ya jugó</b>
+                    }
                     <!-- Solo avisa. Nadie te impide alinear a un tocado. -->
                     @if (parte(j.activo_id); as e) {
                       <b class="parte" [class]="e.clase" [title]="e.title">{{ e.eti }}</b>
@@ -650,6 +656,11 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
     .tocados .tj i { color: var(--text2); font-style: normal; }
 
     .cand.sel { border-color: var(--accent); background: var(--accent-soft); }
+    .cand.off { opacity: .45; cursor: not-allowed; }
+    .cand.off:hover { background: var(--surface); }
+    .yj { margin-left: 6px; padding: 1px 6px; border-radius: var(--r-xs); font-size: var(--t-xs);
+      font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+      background: var(--surface2); border: 1px solid var(--line); color: var(--text2); }
     .cav { width: 40px; height: 40px; border-radius: var(--r-xs); display: flex; align-items: center; justify-content: center;
       font-family: var(--fb); font-weight: 700; font-size: var(--t-md); color: var(--accent-ink); overflow: hidden; }
     .cav img { width: 100%; height: 100%; object-fit: cover; } .cav img.esc { object-fit: contain; padding: 5px; }
@@ -700,6 +711,12 @@ export class AlineacionComponent implements OnInit, OnDestroy {
       title: [c.detalle, c.vuelve].filter(Boolean).join(' · ') || eti,
     };
   }
+
+  /** Los que ya han jugado su partido de esta jornada: no se pueden meter. */
+  yaJugaron = signal<Record<string, string>>({});
+  yaJugo(j: ItemPlantilla): boolean { return !!this.yaJugaron()[j.activo_id]; }
+  /** Apagado en el selector: ya jugó y no está puesto (el puesto se sigue viendo marcado). */
+  apagado(j: ItemPlantilla): boolean { return this.yaJugo(j) && !this.seleccionado(j); }
 
   /** Titulares y suplentes que llegan tocados, para avisar antes de guardar. */
   readonly tocados = computed(() => {
@@ -890,7 +907,14 @@ export class AlineacionComponent implements OnInit, OnDestroy {
   /** Cuántas cartas tiene la línea más poblada: marca el ancho de todas. */
   maxPorLinea = computed(() => Math.max(1, ...Object.values(this.cupos())));
 
+  /** Los candidatos, con los que ya han jugado al final (el orden se mantiene). */
   candidatos = computed(() => {
+    const yj = this.yaJugaron();
+    return [...this.candidatosBase()]
+      .sort((a, b) => Number(!!yj[a.activo_id]) - Number(!!yj[b.activo_id]));
+  });
+
+  private candidatosBase = computed(() => {
     const p = this.picker();
     if (!p) return [] as ItemPlantilla[];
     // Suplente para una zona concreta: puede valer cualquiera que no sea
@@ -992,7 +1016,7 @@ export class AlineacionComponent implements OnInit, OnDestroy {
   }
   elegir(j: ItemPlantilla) {
     const p = this.picker();
-    if (!p) return;
+    if (!p || this.apagado(j)) return;
     if (p.banca) {
       const l = p.pos!;
       if (this.cubren(l) >= 2) {
@@ -1133,6 +1157,8 @@ export class AlineacionComponent implements OnInit, OnDestroy {
     // apaño de ayuda: si falla, la pantalla sigue funcionando igual.
     this.ctx.set({});
     this.falm.contextoJornada(j.id).then((c) => this.ctx.set(c)).catch(() => {});
+    this.yaJugaron.set({});
+    this.falm.noAlineables(j.id).then((m) => this.yaJugaron.set(m)).catch(() => {});
     this.copiadaDe.set(null);
     this.borradores.clear();
     const eq = this.equipo(); if (!eq) return;
