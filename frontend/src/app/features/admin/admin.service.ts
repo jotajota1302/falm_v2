@@ -219,6 +219,21 @@ export class AdminService {
     return typeof data === 'string' ? JSON.parse(data) : data;
   }
 
+  /** Las semanas ya repartidas, para saber que jornada tiene acta. */
+  async ventanasFichajes(): Promise<{ ventana: string; jornada: number | null; fecha: string; fichajes: number; peticiones: number }[]> {
+    const { data, error } = await this.sb.client.rpc('ventanas_fichajes', { p_limite: 40 });
+    if (error) throw error;
+    const d = typeof data === 'string' ? JSON.parse(data) : data;
+    return Array.isArray(d) ? d : [];
+  }
+
+  /** El acta de una semana ya repartida: lo mismo que ven los equipos. */
+  async actaFichajes(ventana: string): Promise<any> {
+    const { data, error } = await this.sb.client.rpc('acta_fichajes', { p_ventana: ventana });
+    if (error) throw error;
+    return typeof data === 'string' ? JSON.parse(data) : data;
+  }
+
   /** Rechaza una peticion dejando dicho por que; el equipo lo ve en su pantalla. */
   async rechazarPeticion(id: string, motivo: string): Promise<void> {
     const { error } = await this.sb.client

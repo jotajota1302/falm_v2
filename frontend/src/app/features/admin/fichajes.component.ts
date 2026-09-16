@@ -82,11 +82,28 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
           <button [class.on]="solo() === ''" (click)="solo.set('')">Todas</button>
           <!-- Y por jornada: lo que se pregunta es "que se ficho en la 3". -->
           <span class="sep"></span>
-          <button [class.on]="jorSel() === null" (click)="jorSel.set(null)">Toda la liga</button>
+          <button [class.on]="jorSel() === null" (click)="verJornada(null)">Toda la liga</button>
           @for (j of jornadasConPeticiones(); track j) {
-            <button [class.on]="jorSel() === j" (click)="jorSel.set(j)">J{{ j }}</button>
+            <button [class.on]="jorSel() === j" (click)="verJornada(j)">J{{ j }}</button>
           }
         </div>
+
+        <!-- El acta de esa jornada: que pidio cada uno y que se ficho. En un
+             paron pueden ser varias semanas, y cada una lleva la suya. -->
+        @if (jorSel() !== null) {
+          @if (cargandoActas()) {
+            <p class="muted pad">Cargando el acta…</p>
+          } @else if (actas().length) {
+            @for (a of actas(); track a.ventana) {
+              <div class="pad">
+                <p class="lb2">Semana del {{ dia(a.ventana) }} · {{ a.fichajes }} fichajes</p>
+                <falm-acta-fichajes [acta]="a" [cabecera]="false" />
+              </div>
+            }
+          } @else {
+            <p class="muted pad">La jornada {{ jorSel() }} todavía no tiene reparto aplicado.</p>
+          }
+        }
 
         @if (visibles().length === 0) {
           <p class="muted pad">
@@ -145,6 +162,8 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     .pad { padding: 16px 18px; margin: 0; }
     .cuenta { font-style: normal; margin-left: 6px; }
     .barra .sep { width: 1px; height: 20px; background: var(--line); margin: 0 2px; }
+    .lb2 { margin: 0 0 8px; font-size: var(--t-xs); font-weight: 700; letter-spacing: .1em;
+      text-transform: uppercase; color: var(--text2); }
 
     .pet { display: grid; grid-template-columns: 190px 1fr auto; gap: 14px; align-items: center;
       padding: 13px 18px; border-bottom: 1px solid var(--line); }
@@ -222,6 +241,24 @@ export class AdminFichajesComponent implements OnInit {
   pendientes = computed(() => this.peticiones().filter((p) => p.estado === 'PENDIENTE'));
   /** La jornada elegida en el filtro; null es "toda la liga". */
   jorSel = signal<number | null>(null);
+  /** Las semanas ya repartidas y el acta de la jornada elegida. */
+  ventanas = signal<{ ventana: string; jornada: number | null; fichajes: number }[]>([]);
+  actas = signal<any[]>([]);
+  cargandoActas = signal(false);
+
+  /** Elegir jornada: filtra la lista y trae el acta de sus semanas. */
+  async verJornada(j: number | null) {
+    this.jorSel.set(j);
+    this.actas.set([]);
+    if (j === null) return;
+    const vs = this.ventanas().filter((v) => v.jornada === j);
+    if (!vs.length) return;
+    this.cargandoActas.set(true);
+    try {
+      this.actas.set(await Promise.all(vs.map((v) => this.admin.actaFichajes(v.ventana))));
+    } catch { this.actas.set([]); }
+    finally { this.cargandoActas.set(false); }
+  }
   /** Las jornadas de las que hay algo pedido, de la mas nueva a la mas vieja. */
   jornadasConPeticiones = computed(() =>
     [...new Set(this.peticiones().map((p) => p.jornada).filter((j): j is number => j != null))]
@@ -271,6 +308,7 @@ export class AdminFichajesComponent implements OnInit {
     try {
       const [ps, js] = await Promise.all([this.admin.peticiones(), this.admin.jornadasFalm()]);
       this.peticiones.set(ps); this.jornadas.set(js);
+      this.admin.ventanasFichajes().then((vs) => this.ventanas.set(vs)).catch(() => {});
     } catch (e: any) {
       this.error.set(e?.message ?? 'Error cargando las peticiones');
     } finally {
