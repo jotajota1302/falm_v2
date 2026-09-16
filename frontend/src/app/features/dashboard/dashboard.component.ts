@@ -109,8 +109,19 @@ interface Once { equipo: string; formacion: string; campo: EnCampo[]; banca: EnB
            "X ficha a Y" a secas siempre acababa en discusion. -->
       @if (acta()?.ventana) {
         <section class="prensa">
-          <falm-acta-fichajes [acta]="acta()" />
-          <a class="mas" routerLink="/fichajes">Ver todos los fichajes ›</a>
+          <!-- Plegado: el acta entera son siete entradillas y se comia Inicio.
+               En una linea se ve que ha habido mercado y cuanto se ha movido. -->
+          <button class="ph" (click)="verActa.set(!verActa())"
+                  [attr.aria-expanded]="verActa()">
+            <span class="pt">Mercado · jornada {{ acta().jornada }}</span>
+            <span class="pn">{{ acta().fichajes }}
+              {{ acta().fichajes === 1 ? 'fichaje' : 'fichajes' }}</span>
+            <span class="chev">{{ verActa() ? '−' : '+' }}</span>
+          </button>
+          @if (verActa()) {
+            <falm-acta-fichajes [acta]="acta()" [cabecera]="false" />
+            <a class="mas" routerLink="/fichajes">Ver todos los fichajes ›</a>
+          }
         </section>
       }
 
@@ -363,6 +374,12 @@ interface Once { equipo: string; formacion: string; campo: EnCampo[]; banca: EnB
     /* La nota de prensa del mercado: papel, como el resto de tarjetas. */
     .prensa { background: var(--surface); border: 1px solid var(--line);
       border-radius: var(--r); padding: 14px 16px; margin-bottom: 14px; }
+    /* La cabecera es el propio interruptor: ocupa una linea plegada. */
+    .prensa .ph { width: 100%; display: flex; align-items: baseline; gap: 10px;
+      background: none; border: 0; padding: 0; cursor: pointer; text-align: left; color: var(--text); }
+    .prensa .pt { font-family: var(--fh); text-transform: uppercase; font-size: var(--t-md); }
+    .prensa .pn { flex: 1; color: var(--text2); font-size: var(--t-xs); }
+    .prensa .chev { color: var(--text2); font-family: var(--fm); font-size: var(--t-md); }
     .prensa .mas { display: inline-block; margin-top: 10px; font-size: var(--t-xs);
       font-weight: 700; color: var(--accent); text-decoration: none; }
     .prensa .mas:hover { text-decoration: underline; }
@@ -418,6 +435,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
   acta = signal<any>(null);
   /** Lo que le falla a mi plantilla, si es que le falla algo. */
   inf = signal<any>(null);
+  /** El acta empieza plegada: en Inicio manda la jornada, no el mercado. */
+  verActa = signal(false);
 
   /** El partido cuyo detalle se está mirando, sin salir de Inicio. */
   verEnf = signal<string | null>(null);
