@@ -505,7 +505,20 @@ export class FichajesComponent implements OnInit {
       return;
     }
     const eq = this.equipo(); const v = this.ventana();
-    if (!eq || !v || !v.jornada_id || !this.p1()) return;
+    // Sin equipo (sesión caída) esto se iba en silencio: dabas a Enviar, no
+    // pasaba nada y te quedabas pensando que habías pedido.
+    if (!eq) {
+      this.error.set('No se ha podido identificar tu equipo: vuelve a entrar en la web y repite la petición.');
+      return;
+    }
+    if (!v || !v.jornada_id) {
+      this.error.set('Ahora mismo no hay ninguna jornada a la que mandar el fichaje.');
+      return;
+    }
+    if (!this.p1()) {
+      this.error.set('Elige al menos un jugador de la lista antes de enviar.');
+      return;
+    }
     const opciones = [{ activo_id: this.p1()!.activo_id, prioridad: 1 }];
     if (this.p2()) opciones.push({ activo_id: this.p2()!.activo_id, prioridad: 2 });
     this.enviando.set(true);
