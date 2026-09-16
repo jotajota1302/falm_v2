@@ -58,10 +58,13 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
               <p class="pd">
                 <span class="lb">Pidió</span>
                 @for (o of e.pidio ?? []; track o.prioridad) {
-                  <span class="op" [class.si]="o.suyo">
+                  <span class="op" [class.si]="o.suyo" [class.no]="!!o.motivo">
                     <i class="pr">{{ o.prioridad }}ª</i>
                     @if (o.escudo) { <img [src]="o.escudo" alt="" loading="lazy" /> }
                     {{ o.nombre }}@if (o.suyo) { <b class="ok">✓</b> }
+                    <!-- Por que no fue: sin esto, "pedi a este y me dieron el otro"
+                         parece un fallo del reparto. -->
+                    @if (o.motivo) { <i class="mo">{{ o.motivo }}</i> }
                   </span>
                 }
                 @if (!(e.pidio ?? []).length) { <span class="op">nada</span> }
@@ -146,6 +149,10 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     .op .pr { font-style: normal; opacity: .7; }
     .op.si { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
     .op .ok { margin-left: 3px; }
+    /* La opción que no pudo ser, con el motivo pegado: se lee de corrido. */
+    .op.no { background: var(--surface); }
+    .op .mo { font-style: normal; margin-left: 5px; padding-left: 6px;
+      border-left: 1px solid var(--line); opacity: .85; }
 
     /* Las disputas: es lo que mas se discute, asi que va aparte y con cara. */
     .disp { margin-top: 12px; padding: 11px 13px; border-radius: var(--r-sm);

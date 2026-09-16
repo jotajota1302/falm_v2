@@ -146,3 +146,8 @@ commit;
 -- acta_fichajes los sube tambien en "pidio" y en las disputas (2026-09-16).
 -- Una porteria de club usa la cara del portero de dorsal mas bajo con foto,
 -- el mismo criterio que el resto de pantallas. El cuerpo esta en la base.
+
+-- Y cada opcion dice por que no pudo ser (2026-09-16): "se lo llevo X",
+-- "ya tenia dueño" o "ya tienes N del club, que es el tope". Sin eso, que a
+-- RIVER XAVALEO le entrara la segunda opcion -tiene ya 3 de la Real Sociedad,
+-- que es el tope de ese club- parecia un fallo del reparto.
