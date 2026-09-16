@@ -120,7 +120,6 @@ interface Once { equipo: string; formacion: string; campo: EnCampo[]; banca: EnB
           </button>
           @if (verActa()) {
             <falm-acta-fichajes [acta]="acta()" [cabecera]="false" />
-            <a class="mas" routerLink="/fichajes">Ver todos los fichajes ›</a>
           }
         </section>
       }
@@ -380,9 +379,6 @@ interface Once { equipo: string; formacion: string; campo: EnCampo[]; banca: EnB
     .prensa .pt { font-family: var(--fh); text-transform: uppercase; font-size: var(--t-md); }
     .prensa .pn { flex: 1; color: var(--text2); font-size: var(--t-xs); }
     .prensa .chev { color: var(--text2); font-family: var(--fm); font-size: var(--t-md); }
-    .prensa .mas { display: inline-block; margin-top: 10px; font-size: var(--t-xs);
-      font-weight: 700; color: var(--accent); text-decoration: none; }
-    .prensa .mas:hover { text-decoration: underline; }
 
     .accion { display: flex; align-items: center; gap: 12px; padding: 13px 17px; margin-bottom: 14px;
       background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-sm); }
