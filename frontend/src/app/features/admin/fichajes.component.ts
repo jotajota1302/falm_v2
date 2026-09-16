@@ -59,7 +59,7 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
       <section class="tabla mercado">
         <div class="barra">
           <span class="lb">Mercado abierto</span>
-          <span class="muted mini">Una jornada cerrada no admite peticiones de fichaje</span>
+          <span class="muted mini">Toca una jornada para abrir o cerrar su mercado. Esto no filtra nada.</span>
         </div>
         <div class="jors">
           @for (j of jornadasLiga(); track j.id) {
@@ -80,11 +80,17 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
             Pendientes @if (pendientes().length) { <i class="cuenta num">{{ pendientes().length }}</i> }
           </button>
           <button [class.on]="solo() === ''" (click)="solo.set('')">Todas</button>
+          <!-- Y por jornada: lo que se pregunta es "que se ficho en la 3". -->
+          <span class="sep"></span>
+          <button [class.on]="jorSel() === null" (click)="jorSel.set(null)">Toda la liga</button>
+          @for (j of jornadasConPeticiones(); track j) {
+            <button [class.on]="jorSel() === j" (click)="jorSel.set(j)">J{{ j }}</button>
+          }
         </div>
 
         @if (visibles().length === 0) {
           <p class="muted pad">
-            {{ solo() === 'PENDIENTE' ? 'No hay ninguna petición pendiente.' : 'Todavía no ha pedido nadie.' }}
+            {{ jorSel() ? 'No hay peticiones de la jornada ' + jorSel() + ' con ese filtro.' : (solo() === 'PENDIENTE' ? 'No hay ninguna petición pendiente.' : 'Todavía no ha pedido nadie.') }}
           </p>
         }
 
@@ -138,6 +144,7 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     .err { color: var(--bad); } .muted { color: var(--text2); }
     .pad { padding: 16px 18px; margin: 0; }
     .cuenta { font-style: normal; margin-left: 6px; }
+    .barra .sep { width: 1px; height: 20px; background: var(--line); margin: 0 2px; }
 
     .pet { display: grid; grid-template-columns: 190px 1fr auto; gap: 14px; align-items: center;
       padding: 13px 18px; border-bottom: 1px solid var(--line); }
@@ -213,8 +220,17 @@ export class AdminFichajesComponent implements OnInit {
   /** Solo la liga: la copa y la clausura no tienen mercado propio. */
   jornadasLiga = computed(() => this.jornadas().filter((j) => j.competicion === 'LIGA'));
   pendientes = computed(() => this.peticiones().filter((p) => p.estado === 'PENDIENTE'));
-  visibles = computed(() =>
-    this.solo() ? this.pendientes() : this.peticiones());
+  /** La jornada elegida en el filtro; null es "toda la liga". */
+  jorSel = signal<number | null>(null);
+  /** Las jornadas de las que hay algo pedido, de la mas nueva a la mas vieja. */
+  jornadasConPeticiones = computed(() =>
+    [...new Set(this.peticiones().map((p) => p.jornada).filter((j): j is number => j != null))]
+      .sort((a, b) => b - a));
+  visibles = computed(() => {
+    const base = this.solo() ? this.pendientes() : this.peticiones();
+    const j = this.jorSel();
+    return j == null ? base : base.filter((p) => p.jornada === j);
+  });
 
   propuesta = signal<PropuestaFichajes | null>(null);
   calculando = signal(false);
