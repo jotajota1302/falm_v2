@@ -1,6 +1,7 @@
 import { Component, OnInit, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AdminPeticion, AdminService, JornadaAdmin, PropuestaFichajes } from './admin.service';
+import { ActaFichajesComponent } from '../../shared/acta-fichajes.component';
 
 const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'MED', DELANTERO: 'DEL' };
 
@@ -14,7 +15,7 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
 @Component({
   selector: 'app-admin-fichajes',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, ActaFichajesComponent],
   template: `
     @if (aviso()) { <p class="aviso">{{ aviso() }}</p> }
     @if (error()) { <p class="err">{{ error() }}</p> }
@@ -44,18 +45,12 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
             {{ pr.abierta ? 'Aún pueden cambiar lo que piden hasta el martes a las 23:59: así quedaría ahora.'
                           : 'Semana cerrada: esto es lo que se aplicará.' }}
           </p>
-          @for (f of pr.filas; track f.equipo) {
-            <div class="rep" [class.sin]="!f.fichado">
-              <strong>{{ f.equipo }}</strong>
-              @if (f.fichado) {
-                <span>ficha a <b>{{ f.fichado }}</b> ({{ f.fichado_club }}) · {{ f.opcion }}ª opción ·
-                  queda con {{ f.plantilla }}</span>
-              } @else {
-                <span>sin fichaje · pedía {{ pedia(f) }}</span>
-              }
-            </div>
-          }
-          @if (!pr.filas.length) { <p class="muted pad">No hay nada que repartir.</p> }
+          <!-- El acta entera, la misma que veran todos en Inicio: asi se revisa
+               tambien como se han resuelto los disputados y con que criterio. -->
+          <div class="pad">
+            <falm-acta-fichajes [acta]="pr.acta" [cabecera]="false" />
+            @if (!(pr.acta?.equipos ?? []).length) { <p class="muted">No hay nada que repartir.</p> }
+          </div>
         }
       </section>
 
@@ -228,10 +223,6 @@ export class AdminFichajesComponent implements OnInit {
   dia(f: string) {
     return new Date(f + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'long' });
   }
-  pedia(f: PropuestaFichajes['filas'][number]) {
-    return (f.pedia ?? []).map((o) => o.nombre).join(' o ') || 'nada';
-  }
-
   async verPropuesta() {
     this.aviso.set(''); this.error.set('');
     this.calculando.set(true);

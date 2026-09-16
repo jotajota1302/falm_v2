@@ -127,3 +127,17 @@ grant execute on function falm.acta_fichajes(date) to authenticated;
 grant execute on function falm.ventanas_fichajes(integer) to authenticated;
 
 commit;
+
+-- Y la previsualizacion del reparto devuelve la misma acta (2026-09-16): antes
+-- enseñaba un resumen propio y el gestor no veia ni las disputas ni el criterio
+-- hasta despues de aplicarlo. Se calcula dentro del ensayo que se deshace.
+--
+--   create or replace function falm.propuesta_fichajes(p_ventana date default null)
+--   ...
+--     perform falm.procesar_fichajes_semana(v_ventana);
+--     v_acta := falm.acta_fichajes(v_ventana);
+--     raise exception using message = '__ensayo_fichajes__';
+--   ...
+--   return jsonb_build_object(..., 'acta', coalesce(v_acta, '{}'::jsonb));
+--
+-- El cuerpo completo esta aplicado en la base.

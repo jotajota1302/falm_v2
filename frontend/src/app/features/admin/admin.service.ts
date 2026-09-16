@@ -465,12 +465,8 @@ export interface EdicionJugador {
 
 export interface PropuestaFichajes {
   ventana: string; cierre: string; abierta: boolean; pendientes: number; jornada: string | null;
-  filas: {
-    equipo: string; estado: string;
-    fichado: string | null; fichado_club: string | null; fichado_pos: string | null;
-    opcion: number | null; pedia: { prioridad: number; nombre: string; club: string }[] | null;
-    plantilla: number; observaciones: string | null;
-  }[];
+  /** El acta tal cual quedaria, la misma que se publica al aplicar el reparto. */
+  acta: any;
 }
 
 export interface JornadaAdmin {
