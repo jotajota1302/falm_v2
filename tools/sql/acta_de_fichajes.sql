@@ -141,3 +141,8 @@ commit;
 --   return jsonb_build_object(..., 'acta', coalesce(v_acta, '{}'::jsonb));
 --
 -- El cuerpo completo esta aplicado en la base.
+
+-- Y el acta lleva cara: _nombre_activo devuelve tambien foto y escudo, y
+-- acta_fichajes los sube tambien en "pidio" y en las disputas (2026-09-16).
+-- Una porteria de club usa la cara del portero de dorsal mas bajo con foto,
+-- el mismo criterio que el resto de pantallas. El cuerpo esta en la base.
