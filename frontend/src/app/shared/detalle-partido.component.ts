@@ -50,6 +50,13 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
                           <span class="dn">
                             {{ j.nombre }}
                             @if (j.entra_por) { <b class="entra" title="Entra por un titular que no jugó">▲</b> }
+                            <!-- A que huecos entra. Un suplente puede cubrir dos lineas y
+                                 aqui salia solo con su posicion, como si cubriera la suya. -->
+                            @if (cubre(j); as ls) {
+                              <span class="cubre" title="Puede entrar en estas líneas">
+                                @for (l of ls; track l) { <b [class]="abrPos(l)">{{ abrPos(l) }}</b> }
+                              </span>
+                            }
                           </span>
                           <!-- El escudo va siempre que lo haya. Antes se escondia cuando
                                el jugador no tenia retrato -porque entonces su hueco de cara
@@ -129,6 +136,13 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
     .drol { display: block; margin: 12px 0 5px; font-size: var(--t-xs); font-weight: 700;
       letter-spacing: .1em; text-transform: uppercase; color: var(--text2); }
     .dcol > .drol:first-child { margin-top: 0; }
+    /* Las lineas que cubre un suplente, junto a su nombre y con el color de
+       cada linea, igual que en Alineacion. */
+    .cubre { display: inline-flex; gap: 3px; margin-left: 5px; vertical-align: 1px; }
+    .cubre b { font-size: 9px; font-weight: 700; letter-spacing: .04em; line-height: 1;
+      padding: 2px 4px; border-radius: 3px; color: var(--accent-ink); }
+    .cubre b.DEF { background: var(--def); } .cubre b.MED { background: var(--med); }
+    .cubre b.DEL { background: var(--del); } .cubre b.POR { background: var(--por); }
     .dj { display: grid; grid-template-columns: 32px 24px 1fr 16px auto; align-items: center; gap: 8px;
       padding: 5px 8px; background: var(--surface); border: 1px solid var(--line);
       border-radius: var(--r-xs); font-size: var(--t-sm);
@@ -217,6 +231,17 @@ export class DetallePartidoComponent {
 
   /** El jugador cuyo desglose está desplegado. */
   verJug = signal<string | null>(null);
+  /**
+   * Las lineas que ese suplente puede tapar. Solo se dicen cuando aportan algo:
+   * si cubre unicamente la suya, su propia posicion ya lo dice.
+   */
+  cubre(j: any): string[] | null {
+    if (j?.rol === 'TITULAR') return null;
+    const ls: string[] = Array.isArray(j?.lineas) ? j.lineas : [];
+    if (!ls.length || (ls.length === 1 && ls[0] === j.pos)) return null;
+    return ls;
+  }
+
   tocar(j: any) { this.verJug.set(this.verJug() === j.activo_id ? null : j.activo_id); }
 
   /**
