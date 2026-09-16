@@ -1065,6 +1065,25 @@ export class FalmService {
     return Number(data ?? 0);
   }
 
+  /**
+   * El acta de un reparto semanal: quién pidió qué, quién se llevó a quién y
+   * cómo se resolvieron los disputados. Sin ventana, la última repartida.
+   */
+  async actaFichajes(ventana?: string): Promise<any> {
+    const { data, error } = await this.sb.client
+      .rpc('acta_fichajes', ventana ? { p_ventana: ventana } : {});
+    if (error) throw error;
+    return typeof data === 'string' ? JSON.parse(data) : data;
+  }
+
+  /** Las semanas ya repartidas, de la más nueva a la más vieja. */
+  async ventanasFichajes(limite = 20): Promise<any[]> {
+    const { data, error } = await this.sb.client.rpc('ventanas_fichajes', { p_limite: limite });
+    if (error) throw error;
+    const d = typeof data === 'string' ? JSON.parse(data) : data;
+    return Array.isArray(d) ? d : [];
+  }
+
   /** En qué semana estamos pidiendo y a qué jornada irá a parar. */
   async ventanaFichajes(): Promise<VentanaFichajes> {
     const { data, error } = await this.sb.client.rpc('ventana_fichajes');

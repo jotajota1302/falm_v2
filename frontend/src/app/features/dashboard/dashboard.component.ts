@@ -1,5 +1,6 @@
 import { Component, OnDestroy, OnInit, computed, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { ActaFichajesComponent } from '../../shared/acta-fichajes.component';
 import { DetallePartidoComponent } from '../../shared/detalle-partido.component';
 import { ActivoResuelto, Agenda, AgendaItem, Alineado, FalmService, ItemPlantilla, MarcadorJornada, PorteroClub, RolAlineacion } from '../../core/falm.service';
 
@@ -28,7 +29,7 @@ interface Once { equipo: string; formacion: string; campo: EnCampo[]; banca: EnB
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [RouterLink, DetallePartidoComponent],
+  imports: [RouterLink, DetallePartidoComponent, ActaFichajesComponent],
   template: `
     @if (cargando()) {
       <p class="muted">Cargando…</p>
@@ -89,6 +90,16 @@ interface Once { equipo: string; formacion: string; campo: EnCampo[]; banca: EnB
         </div>
         <a class="btn-sec" routerLink="/fichajes">Pedir fichaje</a>
       </section>
+
+      <!-- La nota de prensa del ultimo reparto. La ven todos y cuenta tambien
+           lo que habia pedido cada uno y como se resolvieron los disputados:
+           "X ficha a Y" a secas siempre acababa en discusion. -->
+      @if (acta()?.ventana) {
+        <section class="prensa">
+          <falm-acta-fichajes [acta]="acta()" />
+          <a class="mas" routerLink="/fichajes">Ver todos los fichajes ›</a>
+        </section>
+      }
 
       @if (ag()?.proximo; as pr) {
         <section class="next">
@@ -322,6 +333,13 @@ interface Once { equipo: string; formacion: string; campo: EnCampo[]; banca: EnB
 
     /* Misma franja que .live: el acento se lo queda la jornada en juego, que es
        lo que esta pasando; esto solo vence. */
+    /* La nota de prensa del mercado: papel, como el resto de tarjetas. */
+    .prensa { background: var(--surface); border: 1px solid var(--line);
+      border-radius: var(--r); padding: 14px 16px; margin-bottom: 14px; }
+    .prensa .mas { display: inline-block; margin-top: 10px; font-size: var(--t-xs);
+      font-weight: 700; color: var(--accent); text-decoration: none; }
+    .prensa .mas:hover { text-decoration: underline; }
+
     .accion { display: flex; align-items: center; gap: 12px; padding: 13px 17px; margin-bottom: 14px;
       background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-sm); }
     .accion .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--por); flex: 0 0 auto; }
@@ -369,6 +387,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
   doble = signal(false);
 
   actual = computed<AgendaItem | null>(() => this.ag()?.en_juego ?? this.ag()?.ultimo ?? null);
+  /** El acta del último reparto de fichajes, para la nota de prensa. */
+  acta = signal<any>(null);
+
   /** El partido cuyo detalle se está mirando, sin salir de Inicio. */
   verEnf = signal<string | null>(null);
   /** La jornada cuyo once enseñamos: la que viene, y si no la que está en juego. */
@@ -549,6 +570,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
   async ngOnInit() {
     try {
       const eq = await this.falm.miEquipo();
+      // Un extra: si falla, Inicio se ve igual.
+      this.falm.actaFichajes().then((a) => this.acta.set(a)).catch(() => {});
       if (eq) {
         this.nombre.set(eq.nombre);
         this.ag.set(await this.falm.agenda(eq.id));

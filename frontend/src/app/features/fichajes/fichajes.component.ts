@@ -9,6 +9,7 @@ import { FichaService } from '../../shared/ficha.service';
 import { crearLista } from '../../shared/lista';
 import { OrdDirective } from '../../shared/orden.directive';
 import { PaginasComponent } from '../../shared/paginas.component';
+import { ActaFichajesComponent } from '../../shared/acta-fichajes.component';
 
 const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
 
@@ -16,7 +17,7 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
 @Component({
   selector: 'app-fichajes',
   standalone: true,
-  imports: [FormsModule, RouterLink, NavFichajesComponent, OrdDirective, PaginasComponent],
+  imports: [FormsModule, RouterLink, NavFichajesComponent, OrdDirective, PaginasComponent, ActaFichajesComponent],
   template: `
     <header class="phead">
       <div>
@@ -183,28 +184,25 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
 
       <falm-paginas [l]="l" unidad="libres" />
 
-      <!-- El acta de cada martes: quien ficho a quien y a quien solto. Sale de
-           las propias peticiones resueltas, no hay nada guardado aparte. -->
-      @if (noticias().length) {
+      <!-- El historico: una semana por pastilla y el acta entera de la
+           elegida. Antes solo habia un teletipo de las ultimas lineas. -->
+      @if (ventanas().length) {
         <section class="news">
-          <h2>Lo que ha movido cada uno</h2>
-          @for (n of noticias(); track $index) {
-            <article class="nw" [class.vacia]="!n.ficho">
-              @if (n.ficha_foto) {
-                <img class="nfo" [src]="n.ficha_foto" alt="" loading="lazy" />
-              } @else { <span class="nfo es"></span> }
-              <p class="ntx">
-                <b>{{ n.equipo }}</b>
-                @if (n.ficho) {
-                  ficha a <b>{{ n.ficha_nombre }}</b> ({{ n.ficha_club }})@if (n.baja_nombre) {
-                    y deja salir a <b>{{ n.baja_nombre }}</b>
-                  }.
-                } @else {
-                  se queda sin fichar: no le entró ninguna de sus opciones.
-                }
-                <span class="nmeta">Jornada {{ n.jornada }} · {{ cuandoFue(n.fecha) }}</span>
-              </p>
-            </article>
+          <div class="nh">
+            <h2>Fichajes resueltos</h2>
+            <div class="chips">
+              @for (v of ventanas(); track v.ventana) {
+                <button [class.on]="ventanaSel() === v.ventana" (click)="verVentana(v.ventana)"
+                        [title]="'Semana del ' + dia(v.ventana)">
+                  Jornada {{ v.jornada }}
+                </button>
+              }
+            </div>
+          </div>
+          @if (cargandoActa()) {
+            <p class="muted">Cargando…</p>
+          } @else {
+            <falm-acta-fichajes [acta]="acta()" />
           }
         </section>
       }
@@ -305,20 +303,13 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
     .baja .prio.sale { color: var(--bad); font-family: var(--fb); font-weight: 700; }
     .baja .bav { margin: 6px 0 0; font-size: var(--t-xs); line-height: 1.5; color: var(--text2); }
 
-    /* El acta de los fichajes, a lo ancho: se lee como un teletipo. */
-    .news { margin-top: 22px; }
+    /* El historico de fichajes, a lo ancho debajo de la lista. */
+    .news { margin-top: 22px; background: var(--surface); border: 1px solid var(--line);
+      border-radius: var(--r); padding: 15px 17px; }
+    .news .nh { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-bottom: 12px; }
     .news h2 { font-family: var(--fh); font-size: var(--t-lg); font-weight: 600;
-      text-transform: uppercase; letter-spacing: -.01em; margin: 0 0 10px; }
-    .nw { display: flex; align-items: center; gap: 11px; padding: 9px 14px;
-      background: var(--surface); border: 1px solid var(--line);
-      border-radius: var(--r-sm); margin-bottom: 7px; }
-    .nw.vacia { opacity: .6; }
-    .nfo { width: 30px; height: 30px; border-radius: 50%; flex: 0 0 auto;
-      object-fit: cover; object-position: top center; background: var(--surface2); }
-    .nfo.es { border: 1px solid var(--line); }
-    .ntx { margin: 0; font-size: var(--t-sm); line-height: 1.5; }
-    .ntx b { font-weight: 700; }
-    .nmeta { display: block; font-size: var(--t-xs); color: var(--text2); }
+      text-transform: uppercase; letter-spacing: -.01em; margin: 0; }
+    .news .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 
     .muted { color: var(--text2); } .err { color: var(--bad); }
 
@@ -361,8 +352,25 @@ export class FichajesComponent implements OnInit {
   peticion = signal<PeticionViva | null>(null);
   /** La semana en curso: hasta cuando se pide y a que jornada va. */
   ventana = signal<VentanaFichajes | null>(null);
-  /** El acta de los martes: quien ficho y a quien solto. */
-  noticias = signal<any[]>([]);
+  /** Las semanas ya repartidas y el acta de la que se está mirando. */
+  ventanas = signal<any[]>([]);
+  ventanaSel = signal<string>('');
+  acta = signal<any>(null);
+  cargandoActa = signal(false);
+
+  /** "15 de septiembre", para decir de qué semana es cada pastilla. */
+  dia(f: string): string {
+    return new Date(f + 'T12:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'long' });
+  }
+
+  async verVentana(v: string) {
+    if (this.ventanaSel() === v) return;
+    this.ventanaSel.set(v);
+    this.cargandoActa.set(true);
+    try { this.acta.set(await this.falm.actaFichajes(v)); }
+    catch { this.acta.set(null); }
+    finally { this.cargandoActa.set(false); }
+  }
   cuandoFue(iso: string): string {
     const d = new Date(iso);
     return d.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' });
@@ -456,7 +464,10 @@ export class FichajesComponent implements OnInit {
       for (const p of acum) m[p.jugador.id] = p;
       this.acum.set(m);
       this.caras.set(await carasDePorterias(this.falm, merc));
-      this.falm.noticiasFichajes().then((n) => this.noticias.set(n)).catch(() => {});
+      this.falm.ventanasFichajes().then((vs) => {
+        this.ventanas.set(vs);
+        if (vs.length) { this.ventanaSel.set(vs[0].ventana); this.falm.actaFichajes(vs[0].ventana).then((a) => this.acta.set(a)).catch(() => {}); }
+      }).catch(() => {});
       if (eq) {
         const [mp, ex] = await Promise.all([this.falm.miPlantilla(eq.id), this.falm.fichajesExtra(eq.id)]);
         this.miPlantilla.set(mp); this.extras.set(ex);
