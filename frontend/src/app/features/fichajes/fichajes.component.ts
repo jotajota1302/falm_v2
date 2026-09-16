@@ -132,9 +132,9 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
             }
             <!-- La baja ya no se elige al pedir: el fichaje entra aunque pases de
                  23 y luego tienes dias para pensar a quien sueltas. -->
-            <p class="baja bav">Si te dan el fichaje entra en tu plantilla aunque pases de 23.
-              Luego liberas a uno desde <a routerLink="/plantilla">Plantilla</a>: hasta entonces no
-              podrás mandar alineación.</p>
+            <p class="baja bav">Pide a quien quieras: el fichaje entra aunque te pases de 23 o del
+              tope de jugadores de un club. Luego sueltas a uno desde
+              <a routerLink="/plantilla">Plantilla</a>, y hasta entonces no podrás mandar alineación.</p>
 
             <!-- La regla de desempate, junto a lo que has pedido: es donde
                  sirve, y en la cabecera ocupaba tres líneas. -->

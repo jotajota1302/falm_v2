@@ -37,17 +37,17 @@ const ETI: Record<string, string> = { PORTERO: 'Porteros', DEFENSA: 'Defensas', 
 
       @if (hecho()) { <p class="hecho">{{ hecho() }}</p> }
 
-      <!-- Despues de fichar se pasa de 23 y hasta soltar a uno no se alinea.
-           Quien sale lo decide el manager, con dias para pensarlo. -->
-      @if (sobran() > 0) {
+      <!-- Tras fichar puedes pasarte de 23 o del tope de un club, y hasta
+           arreglarlo no se alinea. La lista solo ofrece a quien lo arregla: si
+           te sobra uno del Real Sociedad, soltar a otro no desbloquea nada. -->
+      @if (inf()?.bloquea) {
         <section class="liberar">
-          <p class="lt"><b>Tienes {{ items().length }} jugadores y el máximo es 23.</b>
-            Libera a {{ sobran() === 1 ? 'uno' : sobran() }} para poder mandar la alineación.
-            Vuelve al mercado y cualquiera lo puede pedir.</p>
+          <p class="lt"><b>{{ inf().aviso }}</b>
+            Quien sueltes vuelve al mercado y cualquiera lo puede pedir.</p>
           <div class="lf">
             <select [value]="aLiberar()" (change)="elegir($any($event.target).value)" [disabled]="liberando()">
               <option value="">Elige a quién liberas…</option>
-              @for (j of filas(); track j.activo_id) {
+              @for (j of liberables(); track j.activo_id) {
                 <option [value]="j.activo_id">{{ abr(j.posicion) }} · {{ j.nombre }} ({{ j.club }})</option>
               }
             </select>
@@ -225,8 +225,14 @@ export class PlantillaComponent implements OnInit {
             `${por('MEDIO')} MED`, `${por('DELANTERO')} DEL`].join(' · ');
   });
 
-  /** Cuántos sobran de 23: después de fichar, uno. */
-  sobran = computed(() => this.items().length - 23);
+  /** Lo que le falla a la plantilla, tal como lo cuenta la base. */
+  inf = signal<any>(null);
+  /** Solo quien arregla la infracción: los demás no desbloquean nada. */
+  liberables = computed(() => {
+    const ids: string[] = this.inf()?.liberables ?? [];
+    const set = new Set(ids);
+    return this.filas().filter((j) => set.has(j.activo_id));
+  });
   aLiberar = signal('');
   confirmando = signal(false);
   liberando = signal(false);
@@ -242,6 +248,7 @@ export class PlantillaComponent implements OnInit {
     try {
       await this.falm.liberarJugador(j.activo_id);
       this.items.set(await this.falm.miPlantilla(eq.id));
+      this.inf.set(await this.falm.infraccionesPlantilla(eq.id).catch(() => null));
       this.aLiberar.set(''); this.confirmando.set(false);
       this.hecho.set(`${j.nombre} vuelve al mercado. Ya puedes mandar la alineación.`);
     } catch (e: any) {
@@ -290,6 +297,7 @@ export class PlantillaComponent implements OnInit {
         ]);
         // Un extra: si falla, la plantilla se ve igual.
         this.falm.estadosActivos().then((e) => this.estados.set(e)).catch(() => {});
+        this.falm.infraccionesPlantilla(eq.id).then((i) => this.inf.set(i)).catch(() => {});
         this.items.set(items);
         this.statsEq.set(stats);
         const clubes = items.filter((j) => j.tipo === 'DEFENSA').map((j) => j.club_id!);

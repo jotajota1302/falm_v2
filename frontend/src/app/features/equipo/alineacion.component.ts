@@ -266,10 +266,11 @@ const LINEAS = ['DEFENSA', 'MEDIO', 'DELANTERO'];
       <div class="envio">
         @if (cerrada()) {
           <span class="est cerr">Jornada cerrada · el once ya no se puede cambiar</span>
-        } @else if (sobran() > 0) {
-          <!-- Tras fichar se pasa de 23: la base rebota el once hasta soltar a uno. -->
-          <span class="est">Tienes {{ plantilla().length }} jugadores y el máximo es 23:
-            libera a uno en <a routerLink="/plantilla">Plantilla</a> para poder enviar</span>
+        } @else if (inf()?.bloquea) {
+          <!-- Aqui se valida la plantilla: pasarse de 23 o del tope de un club.
+               La base rebota el once igual; esto lo dice antes y adonde ir. -->
+          <span class="est">{{ inf().aviso }}
+            <a routerLink="/plantilla">Ir a Plantilla</a></span>
         } @else {
           <span class="est" [class.ok]="titulares().length === 11">
             {{ titulares().length }} de 11 titulares@if (banca().length) { · {{ banca().length }} en el banquillo }
@@ -800,8 +801,8 @@ export class AlineacionComponent implements OnInit, OnDestroy {
    * Lo que va a hacer el boton, dicho tal cual: mientras el otro partido no
    * tenga once, este envio vale para los dos.
    */
-  /** Cuántos sobran de 23: después de fichar hay que soltar a uno para alinear. */
-  sobran = computed(() => this.plantilla().length - 23);
+  /** Lo que le falla a la plantilla: de 23 para arriba o del tope de un club. */
+  inf = signal<any>(null);
 
   textoEnviar = computed(() => {
     const r = this.rivalSel();
@@ -1152,6 +1153,7 @@ export class AlineacionComponent implements OnInit, OnDestroy {
         this.falm.competiciones(), this.falm.miPlantilla(eq.id), this.falm.puntosEquipo(eq.id),
       ]);
       this.plantilla.set(plant); this.puntos.set(pts);
+      this.falm.infraccionesPlantilla(eq.id).then((i) => this.inf.set(i)).catch(() => {});
       const orden = { LIGA: 0, CHAMPIONS: 1, CLAUSURA: 2 } as Record<string, number>;
       comps.sort((a, b) => (orden[a.tipo] ?? 9) - (orden[b.tipo] ?? 9));
       // La Champions y la Clausura empiezan a mitad de temporada: hasta que no

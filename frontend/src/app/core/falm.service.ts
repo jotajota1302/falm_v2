@@ -1056,6 +1056,17 @@ export class FalmService {
   }
 
   /**
+   * Lo que le falla a la plantilla —pasarse de 23 o del tope de un club— y a
+   * quién se puede soltar para arreglarlo. Es lo que bloquea la alineación.
+   */
+  async infraccionesPlantilla(equipoId: string): Promise<any> {
+    const { data, error } = await this.sb.client
+      .rpc('infracciones_plantilla', { p_equipo: equipoId });
+    if (error) throw error;
+    return typeof data === 'string' ? JSON.parse(data) : data;
+  }
+
+  /**
    * Suelta a un jugador de la plantilla y lo devuelve al mercado. La base solo
    * lo deja cuando te pasas de 23, que es justo después de fichar.
    */

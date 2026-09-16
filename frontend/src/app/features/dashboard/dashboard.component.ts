@@ -80,6 +80,19 @@ interface Once { equipo: string; formacion: string; campo: EnCampo[]; banca: EnB
 
       <falm-detalle-partido [enfrentamiento]="verEnf()" (cerrar)="verEnf.set(null)" />
 
+      <!-- Lo primero de todo: si la plantilla no cumple no se puede alinear, y
+           eso no se puede descubrir al intentar mandar el once. -->
+      @if (inf()?.bloquea) {
+        <section class="alerta">
+          <span class="ico">!</span>
+          <div class="lt">
+            <strong>Tu plantilla no cumple</strong>
+            <p>{{ inf().aviso }} Hasta que lo arregles no puedes mandar alineación.</p>
+          </div>
+          <a class="btn-sec" routerLink="/plantilla">Arreglarlo</a>
+        </section>
+      }
+
       <!-- Los avisos van juntos y arriba: primero lo que esta pasando, luego lo
            que vence. Este bloque estaba al final, detras de los dos onces. -->
       <section class="accion">
@@ -333,6 +346,20 @@ interface Once { equipo: string; formacion: string; campo: EnCampo[]; banca: EnB
 
     /* Misma franja que .live: el acento se lo queda la jornada en juego, que es
        lo que esta pasando; esto solo vence. */
+    /* La alerta de plantilla: mismo formato que el aviso de cierre, en rojo,
+       porque bloquea lo unico que hay que hacer cada semana. */
+    .alerta { display: flex; align-items: center; gap: 12px; margin-bottom: 14px;
+      padding: 12px 15px; border-radius: var(--r);
+      background: color-mix(in oklab, var(--bad) 8%, var(--surface));
+      border: 1px solid color-mix(in oklab, var(--bad) 38%, var(--line)); }
+    .alerta .ico { flex: 0 0 auto; width: 24px; height: 24px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center; font-weight: 700;
+      background: var(--bad); color: #fff; }
+    .alerta .lt { flex: 1; min-width: 0; }
+    .alerta strong { display: block; font-family: var(--fh); text-transform: uppercase;
+      font-size: var(--t-sm); color: var(--bad); }
+    .alerta p { margin: 2px 0 0; font-size: var(--t-sm); color: var(--text2); }
+
     /* La nota de prensa del mercado: papel, como el resto de tarjetas. */
     .prensa { background: var(--surface); border: 1px solid var(--line);
       border-radius: var(--r); padding: 14px 16px; margin-bottom: 14px; }
@@ -389,6 +416,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
   actual = computed<AgendaItem | null>(() => this.ag()?.en_juego ?? this.ag()?.ultimo ?? null);
   /** El acta del último reparto de fichajes, para la nota de prensa. */
   acta = signal<any>(null);
+  /** Lo que le falla a mi plantilla, si es que le falla algo. */
+  inf = signal<any>(null);
 
   /** El partido cuyo detalle se está mirando, sin salir de Inicio. */
   verEnf = signal<string | null>(null);
@@ -572,6 +601,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
       const eq = await this.falm.miEquipo();
       // Un extra: si falla, Inicio se ve igual.
       this.falm.actaFichajes().then((a) => this.acta.set(a)).catch(() => {});
+      if (eq) this.falm.infraccionesPlantilla(eq.id).then((i) => this.inf.set(i)).catch(() => {});
       if (eq) {
         this.nombre.set(eq.nombre);
         this.ag.set(await this.falm.agenda(eq.id));
