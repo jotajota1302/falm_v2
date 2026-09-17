@@ -71,16 +71,25 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
           @for (p of l.visibles(); track p.jugador.id; let i = $index) {
             <button class="fila" (click)="abrirFicha(p)">
               <span class="rk num">{{ l.desde() + i + 1 }}</span>
-              <span class="av">
-                @if (p.jugador.escudo) { <img class="wm" [src]="p.jugador.escudo" alt="" /> }
-                @if (p.jugador.foto) { <img class="pl" [src]="p.jugador.foto" alt="" loading="lazy" (error)="p.jugador.foto = ''" /> }
-                @else { <span class="ini">{{ p.jugador.nombre.charAt(0) }}</span> }
-              </span>
+              <!-- La misma cara que en Mercado y Fichajes: retrato redondo, y si no
+                   hay foto, el escudo. Aqui iba cuadrado con el escudo de marca de
+                   agua y el club escrito, y parecian jugadores de otra app. -->
+              @if (p.jugador.foto) {
+                <img class="fo" [src]="p.jugador.foto" alt="" loading="lazy" (error)="p.jugador.foto = ''" />
+              } @else if (p.jugador.escudo) {
+                <img class="fo es" [src]="p.jugador.escudo" alt="" loading="lazy" />
+              } @else {
+                <span class="fo ini">{{ p.jugador.nombre.charAt(0) }}</span>
+              }
               <span class="who">
                 <span class="nm">{{ p.jugador.nombre }}</span>
                 <span class="meta">
                   <span class="pos" [class]="abr(p.jugador.posicion)">{{ abr(p.jugador.posicion) }}</span>
-                  {{ p.jugador.equipo }} · {{ modo() === 'jornada' ? p.minutosJugados + "'" : jorn(p) + ' jorn.' }}
+                  <span class="club">
+                    @if (p.jugador.escudo) { <img [src]="p.jugador.escudo" alt="" loading="lazy" /> }
+                    {{ p.jugador.equipo }}
+                  </span>
+                  · {{ modo() === 'jornada' ? p.minutosJugados + "'" : jorn(p) + ' jorn.' }}
                 </span>
               </span>
               <span class="hechos">
@@ -133,12 +142,15 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
       gap: 12px; padding: 9px 18px; }
     .rk { text-align: center; color: var(--text2); font-size: var(--t-sm); }
 
-    .av { position: relative; width: 42px; height: 42px; border-radius: var(--r-xs); overflow: hidden;
-      background: var(--surface2); border: 1px solid var(--line);
-      display: flex; align-items: flex-end; justify-content: center; }
-    .av .wm { position: absolute; width: 118%; left: 50%; top: 50%; transform: translate(-50%,-50%); opacity: .16; object-fit: contain; }
-    .av .pl { position: relative; z-index: 1; height: 100%; width: 100%; object-fit: contain; }
-    .av .ini { position: relative; z-index: 1; font-family: var(--fb); font-weight: 700; font-size: var(--t-md); padding-bottom: 6px; color: var(--text2); }
+    /* Misma cara y mismo escudo que en Mercado y Fichajes. */
+    .fo { width: 36px; height: 36px; border-radius: 50%; object-fit: cover;
+      object-position: top center; background: var(--surface2); }
+    .fo.es { object-fit: contain; padding: 5px; border: 1px solid var(--line); }
+    .fo.ini { display: flex; align-items: center; justify-content: center;
+      font-family: var(--fb); font-weight: 700; color: var(--text2); border: 1px solid var(--line); }
+    .meta .club { display: inline-flex; align-items: center; gap: 5px; min-width: 0;
+      overflow: hidden; text-overflow: ellipsis; }
+    .meta .club img { width: 14px; height: 14px; object-fit: contain; flex: 0 0 auto; }
 
     .who { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
     .nm { font-weight: 700; font-size: var(--t-md); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -169,7 +181,7 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
       .fila { grid-template-columns: 24px 38px 1fr 48px; gap: 10px; padding: 9px 13px; }
       .barra-p { display: none; }
       .barra .buscar { flex: 1 1 100%; margin-left: 0; }
-      .av { width: 38px; height: 38px; }
+      .fo { width: 32px; height: 32px; }
       .pts { font-size: var(--t-md); }
     }
   `],

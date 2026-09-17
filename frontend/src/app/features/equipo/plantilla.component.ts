@@ -77,15 +77,15 @@ const ETI: Record<string, string> = { PORTERO: 'Porteros', DEFENSA: 'Defensas', 
           <button class="fila" (click)="abrir(j)">
             <span class="pos" [class]="abr(j.posicion)">{{ abr(j.posicion) }}</span>
             <span class="quien">
-              <span class="av" [class.esc]="j.tipo === 'DEFENSA'">
-                @if (j.tipo === 'DEFENSA') {
-                  @if (j.escudo) { <img class="pl" [src]="j.escudo" alt="" loading="lazy" /> }
-                } @else {
-                  @if (j.escudo) { <img class="wm" [src]="j.escudo" alt="" loading="lazy" /> }
-                  @if (j.foto) { <img class="pl" [src]="j.foto" alt="" loading="lazy" (error)="j.foto = ''" /> }
-                  @else { <span class="ini">{{ j.nombre.charAt(0) }}</span> }
-                }
-              </span>
+              <!-- La misma cara que en Mercado, Fichajes y Estadisticas: retrato
+                   redondo, y el escudo si no hay foto o es una porteria. -->
+              @if (j.tipo !== 'DEFENSA' && j.foto) {
+                <img class="fo" [src]="j.foto" alt="" loading="lazy" (error)="j.foto = ''" />
+              } @else if (j.escudo) {
+                <img class="fo es" [src]="j.escudo" alt="" loading="lazy" />
+              } @else {
+                <span class="fo ini">{{ j.nombre.charAt(0) }}</span>
+              }
               <span class="nom">
                 <span class="txt">{{ j.nombre }}</span>
                 @if (parte(j.activo_id); as e) { <b class="parte" [class]="e.clase" [title]="e.title">{{ e.eti }}</b> }
@@ -127,16 +127,12 @@ const ETI: Record<string, string> = { PORTERO: 'Porteros', DEFENSA: 'Defensas', 
     .fila { grid-template-columns: 46px 2fr 150px 74px 78px; }
     /* El retrato del jugador, si lo hay, junto a su nombre. */
     .quien { display: flex; align-items: center; gap: 10px; min-width: 0; }
-    .av { position: relative; width: 36px; height: 36px; flex: 0 0 auto; border-radius: var(--r-xs);
-      overflow: hidden; background: var(--surface2); border: 1px solid var(--line);
-      display: flex; align-items: flex-end; justify-content: center; }
-    .av .wm { position: absolute; width: 116%; left: 50%; top: 50%;
-      transform: translate(-50%,-50%); opacity: .16; object-fit: contain; }
-    .av .pl { position: relative; z-index: 1; width: 100%; height: 100%; object-fit: contain; }
-    .av .ini { position: relative; z-index: 1; font-weight: 700; color: var(--text2); padding-bottom: 4px; }
-    /* La portería no tiene cara: lleva el escudo del club, entero. */
-    .av.esc { align-items: center; }
-    .av.esc .pl { width: 74%; height: 74%; object-fit: contain; }
+    /* Misma cara y mismo escudo que en el resto de tablas. */
+    .fo { width: 36px; height: 36px; flex: 0 0 auto; border-radius: 50%; object-fit: cover;
+      object-position: top center; background: var(--surface2); }
+    .fo.es { object-fit: contain; padding: 5px; border: 1px solid var(--line); }
+    .fo.ini { display: flex; align-items: center; justify-content: center;
+      font-weight: 700; color: var(--text2); border: 1px solid var(--line); }
     /* A su derecha, quiénes paran de verdad en ese club. */
     .caras { display: flex; align-items: center; flex: 0 0 auto; }
     .caras img { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; object-position: top;
@@ -179,7 +175,7 @@ const ETI: Record<string, string> = { PORTERO: 'Porteros', DEFENSA: 'Defensas', 
       .fila > :nth-child(3), .fila > :nth-child(5) { display: none; }
       /* Las caras de los porteros se comen el nombre en una pantalla estrecha. */
       .caras { display: none; }
-      .av { width: 32px; height: 32px; }
+      .fo { width: 32px; height: 32px; }
     }
   `],
 })
