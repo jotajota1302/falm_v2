@@ -269,12 +269,17 @@ export class JornadasComponent implements OnInit {
     this.falm.jornadasDobles(js.map((j) => j.id))
       .then((d) => this.dobles.set(d)).catch(() => {});
     if (js.length === 0) { this.enfrentamientos.set([]); this.cargando.set(false); return; }
-    // Se abre en la que toca: la que se está jugando, o si esa ya ha terminado,
-    // la siguiente. Con solo "la última que ha cerrado" se abria la J1 ya
-    // acabada mientras la J2 esperaba a cerrar el once.
+    // Se abre en la que toca. "La última que ha cerrado" no basta: la J1 ya
+    // acabada tapaba a la J2, y una jornada con un partido aplazado se queda
+    // esperando semanas y taparía a todas las demás.
     let i = this.indiceActual(js);
-    const empezada = !!js[i].fecha && new Date(js[i].fecha!).getTime() <= Date.now();
-    if (empezada && i + 1 < js.length) {
+    const prox = js[i + 1];
+    const faltaParaLaSiguiente = prox?.fecha
+      ? new Date(prox.fecha).getTime() - Date.now() : Number.POSITIVE_INFINITY;
+    if (faltaParaLaSiguiente <= 24 * 60 * 60 * 1000) {
+      // La siguiente cierra hoy: es la que se está preparando.
+      i = i + 1;
+    } else if (!!js[i].fecha && new Date(js[i].fecha!).getTime() <= Date.now() && i + 1 < js.length) {
       const enf = await this.falm.enfrentamientos(js[i].id).catch(() => [] as EnfrentamientoFila[]);
       if (enf.length && enf.every((e) => e.jornada_jugada)) i++;
     }
