@@ -264,7 +264,7 @@ export class DetallePartidoComponent {
     if (n(x.golesPenalti)) p.push(plural(n(x.golesPenalti), 'gol de penalti', 'goles de penalti'));
     if (n(x.asistencias)) p.push(plural(n(x.asistencias), 'asistencia', 'asistencias'));
     if (n(x.estrellas)) p.push(`${n(x.estrellas)} ${Math.abs(n(x.estrellas)) === 1 ? 'estrella' : 'estrellas'}`);
-    if ((pos === 'POR' || pos === 'DEF') && x.imbatido && n(x.minutosJugados) > 45) p.push('portería a cero');
+    if ((pos === 'POR' || pos === 'DEF') && x.imbatido && n(x.minutosJugados) >= 45) p.push('portería a cero');
     if (pos === 'POR' && n(x.penaltiParado)) p.push(plural(n(x.penaltiParado), 'penalti parado', 'penaltis parados'));
     if (n(x.penaltiFallado)) p.push(plural(n(x.penaltiFallado), 'penalti fallado', 'penaltis fallados'));
     if (n(x.golesEnPropia)) p.push(plural(n(x.golesEnPropia), 'gol en propia', 'goles en propia'));

@@ -247,9 +247,9 @@ export class FichaJugadorComponent {
         encajados: sum('golesEnContra'),
         asis: sum('asistencias'),
         estrellas: sum('estrellas'),
-        // Mismo criterio que stats_equipo: hay que pasar de 45 minutos.
+        // Mismo criterio que stats_equipo: con media parte entera ya cuenta.
         imbatidos: cero
-          ? h.filter((x) => x.imbatido && Number(x.minutosJugados ?? 0) > 45).length
+          ? h.filter((x) => x.imbatido && Number(x.minutosJugados ?? 0) >= 45).length
           : 0,
         minutos: sum('minutosJugados'),
         jugadas: h.filter((x) => Number(x.minutosJugados ?? 0) > 0).length,
@@ -306,7 +306,7 @@ export class FichaJugadorComponent {
     // se le cuenta: la porteria a cero al portero (+2) y al defensa (+1), y el penalti
     // parado y los goles encajados solo al portero. Enumerarselos a un medio o a un
     // delantero hacia leer como suma o resta algo que no le toco un punto.
-    if (this.puntuaImbatido() && x.imbatido && n(x.minutosJugados) > 45) p.push('portería a cero');
+    if (this.puntuaImbatido() && x.imbatido && n(x.minutosJugados) >= 45) p.push('portería a cero');
     if (this.esPortero() && n(x.penaltiParado)) p.push(plural(n(x.penaltiParado), 'penalti parado', 'penaltis parados'));
     if (n(x.penaltiFallado)) p.push(plural(n(x.penaltiFallado), 'penalti fallado', 'penaltis fallados'));
     if (n(x.golesEnPropia)) p.push(plural(n(x.golesEnPropia), 'gol en propia', 'goles en propia'));
