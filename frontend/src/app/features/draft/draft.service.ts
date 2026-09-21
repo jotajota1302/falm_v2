@@ -322,9 +322,15 @@ export class DraftService {
     );
   }
 
+  /** Un draft acabado ya no cambia: ni canal ni sondeo. Ver `enVivo`. */
+  private enVivo(): boolean {
+    const e = this.draft()?.estado;
+    return e === 'CREADO' || e === 'EN_CURSO';
+  }
+
   suscribir(): void {
     const d = this.draft();
-    if (!d || this.canal) return;
+    if (!d || this.canal || !this.enVivo()) return;
     this.canal = this.sb.client
       .channel(`draft:${d.id}`)
       .on(
@@ -369,8 +375,16 @@ export class DraftService {
     }
   }
 
+  /**
+   * El sondeo es el plan B de Realtime, y solo mientras el draft está vivo. Sin
+   * la guarda, una pantalla del draft ya consolidado abierta en una pestaña
+   * seguía preguntando cada 5 segundos: el 20 de septiembre, con el draft
+   * cerrado desde el día 3, se contaron 1.102 llamadas a `draft_pick` en una
+   * sola hora y desde un solo navegador. La quinta parte de todo el tráfico de
+   * la base ese día, para leer algo que ya no cambia.
+   */
   private arrancarSondeo() {
-    if (this.sondeo) return;
+    if (this.sondeo || !this.enVivo()) return;
     this.sondeo = setInterval(() => this.refrescarPicks(), 5000);
   }
 
