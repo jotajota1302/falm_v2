@@ -390,3 +390,66 @@ select cron.unschedule('falm-respaldo-diario')
 
 select cron.schedule('falm-respaldo-diario', '15 4 * * *',
   $cron$select falm.respaldo_crear('diario'); select falm.respaldo_purgar(3);$cron$);
+
+-- ---------------------------------------------------------------------------
+-- Caducidad por fecha (2026-09-21). La purga de arriba solo rota los DIARIOS;
+-- los etiquetados no caducaban nunca y se habian juntado 8 respaldos y 15 MB,
+-- mas que todos los datos de la liga juntos (6 MB). Se decide quedarse con dos
+-- semanas: pasados 14 dias, fuera, lleve la etiqueta que lleve.
+--
+-- Dos frenos para no quedarse sin nada:
+--   * nunca baja de `p_minimo` respaldos, por viejos que sean;
+--   * se borra del mas antiguo al mas nuevo, parando al llegar a ese minimo.
+--
+-- La fecha sale del propio nombre del schema, que es como se ordenan.
+-- ---------------------------------------------------------------------------
+create or replace function falm.respaldo_caducar(p_dias integer default 14,
+                                                 p_minimo integer default 3)
+returns jsonb
+language plpgsql
+security definer
+set search_path to 'public', 'falm'
+as $function$
+declare
+  v_s text;
+  v_borrados text[] := '{}';
+  v_quedan int;
+begin
+  if not falm.puede_gestionar() then
+    raise exception 'Solo un administrador puede caducar respaldos';
+  end if;
+  if p_dias < 1 then
+    raise exception 'Los respaldos tienen que durar al menos un dia';
+  end if;
+  if p_minimo < 1 then
+    raise exception 'Hay que conservar al menos un respaldo';
+  end if;
+
+  select count(*) into v_quedan from pg_namespace where nspname like 'bk\_falm\_%';
+
+  for v_s in
+    select nspname from pg_namespace
+     where nspname ~ '^bk_falm_[0-9]{8}_[0-9]{6}'
+       and to_date(substring(nspname from '^bk_falm_([0-9]{8})'), 'YYYYMMDD')
+           < current_date - p_dias
+     order by nspname asc
+  loop
+    exit when v_quedan <= p_minimo;
+    execute format('drop schema %I cascade', v_s);
+    v_borrados := v_borrados || v_s;
+    v_quedan := v_quedan - 1;
+  end loop;
+
+  return jsonb_build_object('borrados', v_borrados, 'dias', p_dias, 'quedan', v_quedan);
+end $function$;
+
+grant execute on function falm.respaldo_caducar(int, int) to authenticated;
+revoke execute on function falm.respaldo_caducar(int, int) from public, anon;
+
+-- Justo despues del respaldo diario de las 04:15, para que el del dia ya este
+-- hecho antes de barrer los viejos.
+select cron.unschedule('falm-respaldos-caducar')
+ where exists (select 1 from cron.job where jobname = 'falm-respaldos-caducar');
+
+select cron.schedule('falm-respaldos-caducar', '20 4 * * *',
+  $cron$select falm.respaldo_caducar(14, 3);$cron$);
