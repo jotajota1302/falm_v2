@@ -63,9 +63,11 @@ import { SubnavComponent, SubnavItem } from '../../shared/subnav.component';
         <div class="fila cab">
           <span>#</span><span>Equipo</span>
           <span class="der" title="Partidos jugados">PJ</span>
-          <span class="der" title="Victorias">V</span>
-          <span class="der" title="Empates">E</span>
-          <span class="der" title="Derrotas">D</span>
+          <span class="der" title="Victorias por 3 puntos o más (3)">V</span>
+          <span class="der" title="Victorias por menos de 3 puntos (2)">Vm</span>
+          <span class="der" title="Empates: menos de medio punto de diferencia (1,5)">E</span>
+          <span class="der" title="Derrotas por menos de 3 puntos (1)">Dm</span>
+          <span class="der" title="Derrotas por 3 puntos o más (0)">D</span>
           <span class="der">Puntos</span>
           <span class="der" title="Puntos fantasy a favor">A favor</span>
           <span class="der">Beneficio</span>
@@ -79,7 +81,9 @@ import { SubnavComponent, SubnavItem } from '../../shared/subnav.component';
             <span class="nm">{{ f.equipo_nombre }}</span>
             <span class="der num sec">{{ f.partidos_jugados }}</span>
             <span class="der num sec">{{ f.victorias }}</span>
+            <span class="der num sec">{{ f.victorias_minimas }}</span>
             <span class="der num sec">{{ f.empates }}</span>
+            <span class="der num sec">{{ f.derrotas_minimas }}</span>
             <span class="der num sec">{{ f.derrotas }}</span>
             <span class="der num pts">{{ f.puntos_clasificacion }}</span>
             <span class="der num sec">{{ f.puntos_favor }}</span>
@@ -90,7 +94,12 @@ import { SubnavComponent, SubnavItem } from '../../shared/subnav.component';
           </div>
         }
       </div>
-      <p class="nota">La marca de color identifica a cada equipo en el resto de la app. El beneficio suma premios de jornada y de competición.</p>
+      <p class="nota">
+        Cada cruce reparte 3 puntos: <b>V</b> gana por 3 o más (3–0), <b>Vm</b> gana por menos de 3 (2–1),
+        <b>E</b> es diferencia de menos de medio punto (1,5 cada uno), <b>Dm</b> pierde por menos de 3 (1)
+        y <b>D</b> pierde por 3 o más (0).
+        La marca de color identifica a cada equipo en el resto de la app. El beneficio suma premios de jornada y de competición.
+      </p>
     }
   `,
   styles: [`
@@ -102,7 +111,9 @@ import { SubnavComponent, SubnavItem } from '../../shared/subnav.component';
     .comps { margin-bottom: 16px; }
 
     /* La caja y las filas salen de styles.css; aquí, las columnas y lo propio. */
-    .fila { grid-template-columns: 52px 1.9fr 42px 40px 40px 40px 66px 74px 92px; }
+    /* Cinco casillas de resultado, no tres: en FALM se gana por 3 o por 2 y se
+       pierde por 0 o por 1. Sin las mínimas, PJ no cuadraba con V+E+D. */
+    .fila { grid-template-columns: 52px 1.9fr 42px 38px 38px 38px 38px 38px 66px 74px 92px; }
     /* Los tres primeros cobran el premio: el papel se tiñe, sin medallas.
        Solo con la liga empezada: con todos a cero el orden es el que salga, y
        teñir tres filas anunciaba un podio que todavía no existe. */
@@ -136,7 +147,8 @@ import { SubnavComponent, SubnavItem } from '../../shared/subnav.component';
       /* En el móvil solo caben los datos que deciden la liga. */
       .fila { grid-template-columns: 44px 1fr 56px 84px; }
       .fila > :nth-child(3), .fila > :nth-child(4), .fila > :nth-child(5),
-      .fila > :nth-child(6), .fila > :nth-child(8) { display: none; }
+      .fila > :nth-child(6), .fila > :nth-child(7), .fila > :nth-child(8),
+      .fila > :nth-child(10) { display: none; }
     }
   `],
 })
