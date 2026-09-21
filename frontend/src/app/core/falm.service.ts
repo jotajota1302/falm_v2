@@ -522,6 +522,39 @@ export class FalmService {
     return dobles;
   }
 
+  /**
+   * Partidos de LaLiga de esa jornada que todavía no se han jugado. Una jornada
+   * espera a los suyos para cerrarse, y con un aplazado esa espera puede durar
+   * semanas: el Levante - Athletic de la J2 se fue al 21 de octubre. Sin decirlo
+   * en pantalla, la jornada parece rota.
+   */
+  async partidosPorJugar(jornadaFalmId: string): Promise<{ local: string; visitante: string; fecha: string | null }[]> {
+    const { data: mapeo, error: e1 } = await this.sb.client
+      .from('mapeo_jornada').select('jornada_lfp_id').eq('jornada_falm_id', jornadaFalmId);
+    if (e1) throw e1;
+    const lfp = (mapeo ?? []).map((m: any) => m.jornada_lfp_id);
+    if (!lfp.length) return [];
+    const { data, error } = await this.sb.client
+      .from('partido_lfp')
+      .select('fecha, estado, local_id, visitante_id')
+      .in('jornada_lfp_id', lfp)
+      .neq('estado', 'FINISHED')
+      .order('fecha');
+    if (error) throw error;
+    const filas: any[] = data ?? [];
+    if (!filas.length) return [];
+    const ids = [...new Set(filas.flatMap((p) => [p.local_id, p.visitante_id]))];
+    const { data: clubes, error: e2 } = await this.sb.client
+      .from('equipo_lfp').select('id, nombre').in('id', ids);
+    if (e2) throw e2;
+    const n = new Map((clubes ?? []).map((c: any) => [c.id, c.nombre]));
+    return filas.map((p) => ({
+      local: n.get(p.local_id) ?? '?',
+      visitante: n.get(p.visitante_id) ?? '?',
+      fecha: p.fecha ?? null,
+    }));
+  }
+
   async enfrentamientos(jornadaFalmId: string): Promise<EnfrentamientoFila[]> {
     const { data, error } = await this.sb.client
       .from('enfrentamiento')

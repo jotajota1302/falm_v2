@@ -52,6 +52,15 @@ import { DetallePartidoComponent } from '../../shared/detalle-partido.component'
         <p class="doble-av">Jornada doble: cada equipo juega dos partidos, y en cada
           uno puede alinear un once distinto.</p>
       }
+      <!-- Un aplazado puede irse semanas, y sin decirlo la jornada parece rota. -->
+      @if (porJugar().length > 0) {
+        <p class="espera">
+          Esta jornada no se cierra hasta que se juegue
+          @for (p of porJugar(); track $index) {
+            <b>{{ p.local }} – {{ p.visitante }}</b>{{ p.fecha ? ' (' + cuando(p.fecha) + ')' : '' }}{{ $last ? '' : ', ' }}
+          }. Hasta entonces no cuenta en la clasificación.
+        </p>
+      }
       <div class="lista">
         @for (e of enfrentamientos(); track e.enfrentamiento_id) {
           <button class="match" (click)="abrirDetalle(e)">
@@ -136,6 +145,11 @@ import { DetallePartidoComponent } from '../../shared/detalle-partido.component'
     .doble-av { margin: 0 0 12px; padding: 9px 13px; font-size: var(--t-sm);
       background: var(--surface); border: 1px solid var(--line);
       border-left: 3px solid var(--por); border-radius: var(--r-sm); color: var(--text2); }
+    /* El aplazado, con su fecha: es una espera de semanas, no un error. */
+    .espera { margin: 0 0 12px; padding: 9px 13px; font-size: var(--t-sm);
+      background: var(--surface); border: 1px solid var(--line);
+      border-left: 3px solid var(--accent); border-radius: var(--r-sm); color: var(--text2); }
+    .espera b { color: var(--text); font-weight: 700; }
 
     /* Un partido no ocupa mas de lo que ocupa: a 1280px la tarjeta se estiraba
        entera y dejaba los dos nombres y el marcador apinados en el centro con
@@ -309,8 +323,21 @@ export class JornadasComponent implements OnInit {
   async seleccionarJornada(id: string) {
     this.jornadaId.set(id);
     this.cargando.set(true); this.error.set('');
+    this.porJugar.set([]);
     try { this.enfrentamientos.set(await this.falm.enfrentamientos(id)); }
     catch (e: any) { this.error.set(e?.message ?? 'Error'); }
     finally { this.cargando.set(false); }
+    // Aparte del marcador: si falla, la jornada se ve igual, solo sin el aviso.
+    this.falm.partidosPorJugar(id).then((p) => this.porJugar.set(p)).catch(() => {});
+  }
+
+  porJugar = signal<{ local: string; visitante: string; fecha: string | null }[]>([]);
+
+  /** "el martes 21 de octubre a las 20:00", para que se vea que es una espera larga. */
+  cuando(f: string): string {
+    const d = new Date(f);
+    const dia = d.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
+    const hora = d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+    return `${dia}, ${hora}`;
   }
 }

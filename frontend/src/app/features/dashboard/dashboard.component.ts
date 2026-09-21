@@ -74,6 +74,15 @@ interface Once { equipo: string; formacion: string; campo: EnCampo[]; banca: EnB
             @if (avance(r); as av) { <p class="av">{{ av }}</p> }
           }
           @if (ag()?.en_juego) { <p class="av cerrada">La alineación ya está cerrada.</p> }
+          <!-- Un aplazado puede irse semanas: sin decirlo, la jornada parece colgada. -->
+          @if (porJugar().length > 0) {
+            <p class="av espera">
+              Falta por jugarse
+              @for (p of porJugar(); track $index) {
+                {{ p.local }} – {{ p.visitante }}{{ p.fecha ? ' (' + cuando(p.fecha) + ')' : '' }}{{ $last ? '' : ', ' }}
+              }: hasta entonces la jornada no se cierra ni cuenta en la clasificación.
+            </p>
+          }
           <p class="av pista">Toca el marcador para ver los onces y los puntos de cada uno.</p>
         </section>
       }
@@ -346,6 +355,8 @@ interface Once { equipo: string; formacion: string; campo: EnCampo[]; banca: EnB
     .actual .amatch:hover { border-color: var(--accent-line); background: var(--surface2); }
     .actual.vivo .amatch:hover { background: color-mix(in oklab, var(--accent) 8%, transparent); }
     .actual .av.pista { opacity: .8; }
+    /* El aplazado con su fecha: no es un error, es que toca esperar. */
+    .actual .av.espera { margin-top: 6px; color: var(--text); font-weight: 600; }
     .actual .t { flex: 1; text-align: center; font-weight: 600; font-size: var(--t-sm); color: var(--text2);
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .actual .t.win { color: var(--text); font-weight: 700; }
@@ -427,6 +438,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
   doble = signal(false);
 
   actual = computed<AgendaItem | null>(() => this.ag()?.en_juego ?? this.ag()?.ultimo ?? null);
+
+  /** Los partidos de LaLiga que esa jornada todavía espera (un aplazado, casi siempre). */
+  porJugar = signal<{ local: string; visitante: string; fecha: string | null }[]>([]);
+  cuando(f: string): string {
+    const d = new Date(f);
+    return `${d.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}, ` +
+           d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+  }
   /** El acta del último reparto de fichajes, para la nota de prensa. */
   acta = signal<any>(null);
   /** Lo que le falla a mi plantilla, si es que le falla algo. */
@@ -633,6 +652,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
         }
         const ac = this.actual();
         if (ac?.jornada_id) {
+          // Otro extra: si falla, se ve igual pero sin el aviso del aplazado.
+          this.falm.partidosPorJugar(ac.jornada_id)
+            .then((p) => this.porJugar.set(p)).catch(() => {});
           // Un marcador por partido y por lado: en una jornada doble los dos
           // cruces llevan onces distintos, asi que tambien puntos distintos.
           const rivs = this.rivales(ac);
