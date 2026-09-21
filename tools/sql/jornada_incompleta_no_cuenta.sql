@@ -52,3 +52,21 @@ end $parche$;
 
 -- Y se rehace la tabla, que ya llevaba la J3 dentro.
 select falm.recalcular_clasificacion((select id from falm.temporada where activa order by created_at desc limit 1));
+
+-- 2026-09-21, despues: el cierre de oficio pasa de 3 a 5 dias.
+--
+-- `procesar_jornada_auto` cierra la jornada "con lo que haya" pasados unos dias
+-- de su fecha_fin, y eso NO tiene vuelta atras: los jugadores sin nota se
+-- quedan a cero para siempre. Con el Valencia - Real Sociedad sin 1x1 en la
+-- fuente, tres dias se quedaban cortos. Para la J3 el plazo pasa del miercoles
+-- 23 al viernes 25 a las 21:00 de Madrid.
+do $plazo$
+declare def text; nuevo text;
+begin
+  def := pg_get_functiondef('falm.procesar_jornada_auto()'::regprocedure);
+  nuevo := replace(def,
+    'if v_sin_puntos > 0 and v_fin + interval ''3 days'' > now() then',
+    'if v_sin_puntos > 0 and v_fin + interval ''5 days'' > now() then');
+  if nuevo = def then raise exception 'no casa el parche del plazo'; end if;
+  execute nuevo;
+end $plazo$;
