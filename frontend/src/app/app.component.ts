@@ -325,10 +325,13 @@ export class AppComponent implements AfterViewChecked {
     falm.warmup(); // despierta el dyno del backend al arrancar
     // Hay que esperar a la sesión: preguntado en el constructor, la llamada sale
     // como anon, que no tiene permiso, y el enlace no aparecía nunca.
+    // allowSignalWrites porque el caso "sin sesión" apaga la señal aquí mismo,
+    // y Angular lo prohíbe por defecto: sin esto salta NG0600 en cada arranque
+    // sin sesión y el efecto se corta.
     effect(() => {
       if (!this.auth.session()) { this.esAdmin.set(false); return; }
       this.sb.client.rpc('es_admin').then(({ data }) => this.esAdmin.set(data === true));
-    });
+    }, { allowSignalWrites: true });
 
     // El tablero se proyecta en un televisor: ahí sobran la cabecera, la barra
     // de secciones y los márgenes. Ocupa la pantalla entera.

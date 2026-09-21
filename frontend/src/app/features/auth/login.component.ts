@@ -15,6 +15,12 @@ import { AuthService } from '../../core/auth.service';
         <h1>FALM</h1>
         <p class="sub">Entra con el nombre de tu equipo.</p>
 
+        <!-- Aquí se llega solo cuando la sesión se ha caído por el camino: sin
+             decirlo, parece que la app te ha echado sin motivo. -->
+        @if (caducada()) {
+          <p class="aviso">Tu sesión había caducado. Vuelve a entrar y sigues donde estabas.</p>
+        }
+
         <label>Equipo
           <input type="text" [(ngModel)]="equipo" name="equipo" autocomplete="username"
                  placeholder="GOLDEN BOYS" required />
@@ -54,6 +60,10 @@ import { AuthService } from '../../core/auth.service';
       color: var(--accent-ink); font-family: var(--fb); font-weight: 700; cursor: pointer; font-size: var(--t-md); margin-top: 4px; }
     button:disabled { opacity: .55; cursor: not-allowed; }
     .err { color: var(--bad); font-size: var(--t-sm); margin: 0; }
+    /* La sesión caducada no es culpa de nadie: se avisa sin el rojo del error. */
+    .aviso { margin: 0; padding: 8px 11px; font-size: var(--t-sm); color: var(--text2);
+      background: var(--surface); border: 1px solid var(--line);
+      border-left: 3px solid var(--accent); border-radius: var(--r-sm); }
     .hint { margin: 2px 0 0; color: var(--text2); font-size: var(--t-xs); }
   `],
 })
@@ -63,7 +73,19 @@ export class LoginComponent {
   cargando = signal(false);
   error = signal('');
 
-  constructor(private auth: AuthService, private router: Router) {}
+  /** Lo pone el cliente de Supabase al toparse con un 401: ver supabase.service.ts. */
+  caducada = signal(false);
+  private vuelve = '';
+
+  constructor(private auth: AuthService, private router: Router) {
+    const q = new URLSearchParams(location.search);
+    this.caducada.set(q.get('caducada') === '1');
+    const v = q.get('vuelve') ?? '';
+    // Solo rutas de aquí dentro: un "vuelve" con http:// llevaría a otro sitio.
+    this.vuelve = v.startsWith('/') && !v.startsWith('//') ? v : '';
+    const guardado = localStorage.getItem('falm_equipo');
+    if (guardado) this.equipo = guardado;
+  }
 
   async submit() {
     this.error.set('');
@@ -72,7 +94,7 @@ export class LoginComponent {
     this.cargando.set(true);
     try {
       await this.auth.loginEquipo(this.equipo, this.password);
-      this.router.navigateByUrl('/dashboard');
+      this.router.navigateByUrl(this.vuelve || '/dashboard');
     } catch (e: any) {
       // Supabase responde 'Invalid login credentials'; en castellano y sin pistas de si
       // lo que falla es el equipo o la contraseña.
