@@ -125,6 +125,12 @@ export interface ActivoLibre {
   ext_id?: number | null;
 }
 
+/** Lo mismo, pero de alguien: el que ya está en una plantilla, con su dueño. */
+export interface ActivoFichado extends ActivoLibre {
+  equipo_falm_id: string;
+  equipo_falm: string;
+}
+
 /** Con quién se juega esa jornada y en qué estado se llega. */
 export interface ContextoActivo {
   /** Uno normalmente; dos en las jornadas dobles. */
@@ -1027,6 +1033,49 @@ export class FalmService {
     if (error) throw error;
     const d = typeof data === 'string' ? JSON.parse(data) : data;
     return (d ?? {}) as Record<string, ContextoActivo>;
+  }
+
+  /**
+   * Los que ya tienen dueño, con el equipo que los tiene. Es la otra cara del
+   * mercado: la pregunta de verdad no es solo "¿quién está libre?" sino "¿de
+   * quién es este?", y hasta ahora no había forma de saberlo desde la app.
+   *
+   * Sale de `plantilla` y no de una vista nueva a propósito: es la misma
+   * consulta que «Mi plantilla» sin filtrar por equipo, son 230 filas para diez
+   * equipos, y así esto no depende de tocar la base.
+   */
+  async mercadoFichado(): Promise<ActivoFichado[]> {
+    const { data, error } = await this.sb.client
+      .from('plantilla')
+      .select(
+        'precio, equipo_falm:equipo_falm_id (id, nombre), ' +
+          'activo:activo_id (id, tipo, precio_mercado, ' +
+          'jugador_lfp:jugador_lfp_id (nombre, apellido, posicion, foto, ext_id, equipo_lfp:equipo_lfp_id (id, nombre, escudo)), ' +
+          'equipo_lfp:equipo_lfp_id (id, nombre, escudo))'
+      )
+      .is('fecha_baja', null);
+    if (error) throw error;
+    return (data ?? []).map((p: any) => {
+      const a = p.activo;
+      const esPorteria = a.tipo === 'DEFENSA';
+      const club = esPorteria ? a.equipo_lfp : a.jugador_lfp?.equipo_lfp;
+      return {
+        activo_id: a.id,
+        tipo: a.tipo,
+        posicion: esPorteria ? 'PORTERO' : a.jugador_lfp?.posicion ?? '',
+        nombre: esPorteria
+          ? `Portería ${a.equipo_lfp?.nombre ?? ''}`.trim()
+          : `${a.jugador_lfp?.nombre ?? ''} ${a.jugador_lfp?.apellido ?? ''}`.trim(),
+        club: club?.nombre ?? '',
+        club_id: club?.id ?? null,
+        precio_mercado: a.precio_mercado ?? p.precio ?? 0,
+        foto: esPorteria ? null : a.jugador_lfp?.foto ?? null,
+        escudo: club?.escudo ?? null,
+        ext_id: esPorteria ? null : a.jugador_lfp?.ext_id ?? null,
+        equipo_falm_id: p.equipo_falm?.id ?? '',
+        equipo_falm: p.equipo_falm?.nombre ?? '',
+      } as ActivoFichado;
+    });
   }
 
   /** Mercado: activos libres en la temporada activa. */

@@ -1,4 +1,5 @@
 import { Component, OnInit, computed, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { Competicion, FalmService, FilaClasificacion, RondaEliminatoria } from '../../core/falm.service';
 import { colorEquipo } from '../../shared/equipo-colores';
 import { SubnavComponent, SubnavItem } from '../../shared/subnav.component';
@@ -7,7 +8,7 @@ import { SubnavComponent, SubnavItem } from '../../shared/subnav.component';
 @Component({
   selector: 'app-clasificacion',
   standalone: true,
-  imports: [SubnavComponent],
+  imports: [SubnavComponent, RouterLink],
   template: `
     <header class="phead">
       <h1>Clasificación</h1>
@@ -78,7 +79,10 @@ import { SubnavComponent, SubnavItem } from '../../shared/subnav.component';
               <span class="marca" [style.background]="color(f.equipo_nombre)"></span>
               <span class="num">{{ f.posicion || i + 1 }}</span>
             </span>
-            <span class="nm">{{ f.equipo_nombre }}</span>
+            <!-- Ver su plantilla: el Mercado ya sabe filtrar por equipo, así que
+                 desde aquí se llega con el suyo puesto. -->
+            <a class="nm" [routerLink]="['/mercado']" [queryParams]="{ equipo: f.equipo_falm_id }"
+               title="Ver la plantilla de este equipo">{{ f.equipo_nombre }}</a>
             <span class="der num sec">{{ f.partidos_jugados }}</span>
             <span class="der num sec">{{ f.victorias }}</span>
             <span class="der num sec">{{ f.victorias_minimas }}</span>
@@ -120,7 +124,9 @@ import { SubnavComponent, SubnavItem } from '../../shared/subnav.component';
     .fila.podio { background: var(--accent-soft); }
     .puesto { display: flex; align-items: center; gap: 8px; }
     .marca { width: 3px; height: 20px; border-radius: 2px; flex: 0 0 auto; }
-    .nm { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .nm { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      color: inherit; text-decoration: none; }
+    .nm:hover { text-decoration: underline; }
     .sec { color: var(--text2); }
     .pts { font-weight: 700; }
     .ben { font-weight: 700; color: var(--good); }

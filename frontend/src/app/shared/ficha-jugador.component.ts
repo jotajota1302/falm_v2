@@ -1,4 +1,5 @@
 import { Component, computed, effect, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { FalmService } from '../core/falm.service';
 import { FichaService, JugadorRef } from './ficha.service';
 
@@ -9,6 +10,7 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
 @Component({
   selector: 'falm-ficha-jugador',
   standalone: true,
+  imports: [RouterLink],
   template: `
     @if (ficha.abierto(); as j) {
       <div class="back" (click)="ficha.close()">
@@ -30,6 +32,12 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
               <span class="eq">
                 @if (j.escudo) { <img class="esc" [src]="j.escudo" alt="" /> } {{ j.equipo }}
               </span>
+              <!-- De quién es en NUESTRA liga, que es otra cosa que su club. -->
+              @if (j.dueno) {
+                <span class="dueno" [class.libre]="j.dueno === 'Libre'">
+                  {{ j.dueno === 'Libre' ? 'Libre' : 'Lo tiene ' + j.dueno }}
+                </span>
+              }
             </div>
           </div>
 
@@ -119,6 +127,11 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
               <p class="muted">Aún sin puntos esta temporada.</p>
             }
           }
+
+          @if (j.accion; as ac) {
+            <a class="btn accion" [routerLink]="ac.ruta" [queryParams]="ac.params"
+               (click)="ficha.close()">{{ ac.texto }}</a>
+          }
         </div>
       </div>
     }
@@ -158,6 +171,13 @@ const ABR: Record<string, string> = { Portero: 'POR', PORTERO: 'POR', Defensa: '
     /* El club se escribe como en Mercado o Inicio: texto normal con su escudo. */
     .eq { display: flex; align-items: center; gap: 7px; color: var(--text2); font-size: var(--t-sm); }
     .esc { width: 18px; height: 18px; object-fit: contain; }
+    /* El dueño va en su propia píldora: es dato de la liga, no del club. */
+    .dueno { display: inline-block; margin-top: 5px; padding: 2px 9px; font-size: var(--t-xs);
+      font-weight: 700; color: var(--accent-ink); background: var(--accent);
+      border-radius: var(--pill); }
+    .dueno.libre { color: var(--text2); background: var(--surface2); }
+    /* El boton de la ficha va al pie, a lo ancho: es la salida de la ficha. */
+    .accion { display: block; margin-top: 18px; text-align: center; }
 
     .acum { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; margin-bottom: 20px;
       background: var(--line); border: 1px solid var(--line); border-radius: var(--r-sm); overflow: hidden; }

@@ -1,5 +1,6 @@
 import { Component, OnInit, WritableSignal, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { NavFichajesComponent } from '../../shared/nav-fichajes.component';
 import { environment } from '../../../environments/environment';
 import { ActivoMini, Equipo, FalmService, ItemPlantilla, OfertaIntercambio } from '../../core/falm.service';
@@ -263,7 +264,7 @@ export class IntercambiosComponent implements OnInit {
     return o.estado === 'PENDIENTE' && !!o.expira && new Date(o.expira) < new Date();
   }
 
-  constructor(private falm: FalmService) {}
+  constructor(private falm: FalmService, private ruta: ActivatedRoute) {}
   abr(p?: string) { return ABR[p ?? ''] ?? 'MED'; }
 
   async ngOnInit() {
@@ -276,6 +277,18 @@ export class IntercambiosComponent implements OnInit {
       ]);
       this.ofertas.set(ofs); this.rivales.set(rivs); this.miPlantilla.set(mp);
       await this.ponerCaras(mp);
+
+      // Desde el Mercado se llega con el rival y el jugador ya elegidos: aquí
+      // solo queda decir qué se ofrece a cambio, que es la parte que se piensa.
+      const q = this.ruta.snapshot.queryParamMap;
+      const con = q.get('con'), pide = q.get('pide');
+      if (con && rivs.some((r) => r.id === con)) {
+        this.tab.set('nueva');
+        await this.seleccionarRival(con);
+        if (pide && this.plantillaRival().some((j) => j.activo_id === pide)) {
+          this.solicitadosSet.set(new Set([pide]));
+        }
+      }
     } catch (e: any) { this.error.set(e?.message ?? 'Error'); }
     finally { this.cargando.set(false); }
   }
