@@ -24,7 +24,9 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
           </p>
         }
 
-        @for (e of acta.equipos; track e.equipo) {
+        <!-- Por indice y no por equipo: quien ficha por lesion sale dos veces,
+             una por la peticion semanal y otra por la de la lesion. -->
+        @for (e of acta.equipos; track $index) {
           <article class="fi" [class.sin]="!e.ficho">
             <!-- La cara del fichado, con su escudo colgando: es lo que hace que
                  esto se lea como una noticia y no como una tabla. -->
@@ -47,10 +49,12 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
                 <p class="sub">
                   <span class="pos" [class]="abr(e.ficha.posicion)">{{ abr(e.ficha.posicion) }}</span>
                   <span class="club">{{ e.ficha.club }}</span>
+                  @if (e.extra) { <span class="sale">por la lesión de {{ e.lesionado }}</span> }
                   @if (e.baja) { <span class="sale">sale {{ e.baja.nombre }}</span> }
                 </p>
               } @else {
-                <p class="tt"><b class="eq">{{ e.equipo }}</b> se queda sin fichar</p>
+                <p class="tt"><b class="eq">{{ e.equipo }}</b>
+                  {{ e.extra ? 'se queda sin el fichaje por la lesión de ' + e.lesionado : 'se queda sin fichar' }}</p>
                 @if (e.motivo) { <p class="sub"><span class="club">{{ e.motivo }}</span></p> }
               }
               <!-- Lo que habia mandado, con un visto en lo que se llevo: sin esto
@@ -88,8 +92,9 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
                 <div class="dtx">
                   <p class="dn"><b>{{ d.jugador }}</b> <i>{{ d.club }}</i></p>
                   <p class="dq">
-                    @for (q of d.lo_pidieron ?? []; track q.equipo) {
-                      <span class="q" [class.gana]="q.se_lo_lleva">{{ q.equipo }} <i>{{ q.prioridad }}ª</i></span>
+                    @for (q of d.lo_pidieron ?? []; track $index) {
+                      <span class="q" [class.gana]="q.se_lo_lleva">{{ q.equipo }}
+                        <i>{{ q.prioridad }}ª{{ q.extra ? ' · lesión' : '' }}</i></span>
                     }
                   </p>
                   <p class="dr">Se lo lleva <b>{{ d.se_lo_lleva }}</b>{{ porQue(d) }}.</p>
