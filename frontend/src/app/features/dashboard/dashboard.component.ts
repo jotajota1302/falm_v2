@@ -151,7 +151,7 @@ interface Once { equipo: string; formacion: string; campo: EnCampo[]; banca: EnB
             </div>
           }
           <p class="cd">{{ cuentaPartido() }}</p>
-          @if (!mio()?.enviada) { <a class="btn" routerLink="/alineacion">Manda tu alineación</a> }
+          @if (!todasEnviadas()) { <a class="btn" routerLink="/alineacion">Manda tu alineación</a> }
         </section>
       } @else {
         <section class="next vacio"><p class="muted">Sin próximos partidos programados.</p></section>
@@ -162,16 +162,23 @@ interface Once { equipo: string; formacion: string; campo: EnCampo[]; banca: EnB
            Este bloque es el once de la jornada que VIENE, no el que esta
            puntuando arriba; sin decirlo se leian como el mismo y parecia que la
            alineacion en juego se habia quedado sin puntos. -->
-      @if (mio()?.enviada) {
+      @if (algunaEnviada()) {
         <section class="once">
           @if (foco(); as f) {
             <div class="oh">
-              <span class="ol">Jornada {{ f.numero }} · {{ etiqueta(f.comp) }}
-                @if (doble()) { · {{ f.es_local ? 'vs' : '@' }} {{ f.rival }} }
-              </span>
-              <span class="oq">
-                {{ enMarcha() ? 'Así está saliendo' : 'Así vas a salir' }}@if (doble()) { en el primer partido }
-              </span>
+              <span class="ol">Jornada {{ f.numero }} · {{ etiqueta(f.comp) }}</span>
+              <span class="oq">{{ enMarcha() ? 'Así está saliendo' : 'Así vas a salir' }}</span>
+            </div>
+          }
+          <!-- En una jornada doble cada partido lleva su once: una pestaña por
+               rival. Antes solo se cargaba el del primero y el segundo no se veía. -->
+          @if (onces().length > 1) {
+            <div class="pestanas">
+              @for (p of onces(); track p.enf.enfrentamiento_id; let i = $index) {
+                <button [class.on]="sel() === i" (click)="sel.set(i)">
+                  {{ p.enf.es_local ? 'vs' : '@' }} {{ p.enf.rival }}
+                </button>
+              }
             </div>
           }
           <div class="duelo" [class.sinpts]="!enMarcha()">
@@ -292,6 +299,11 @@ interface Once { equipo: string; formacion: string; campo: EnCampo[]; banca: EnB
     .oh .ol { font-size: var(--t-xs); text-transform: uppercase; letter-spacing: .16em;
       color: var(--text2); font-weight: 700; }
     .oh .oq { font-size: var(--t-sm); color: var(--text2); }
+    .pestanas { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+    .pestanas button { font: inherit; font-size: var(--t-sm); font-weight: 600; cursor: pointer;
+      padding: 6px 14px; border-radius: var(--pill); border: 1px solid var(--line);
+      background: var(--surface); color: var(--text2); }
+    .pestanas button.on { background: var(--accent-soft); border-color: var(--accent-line); color: var(--accent); }
     /* Los dos onces, uno a cada lado y en tabla. */
     .duelo { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
     .tabla .barra { justify-content: space-between; padding: 12px 14px; }
@@ -419,9 +431,17 @@ export class DashboardComponent implements OnInit, OnDestroy {
   cuentaPartido = signal('');
   private timer: any = null;
 
-  /** Los dos onces de la jornada que viene (o de la que se está jugando). */
-  mio = signal<Once | null>(null);
-  rival = signal<Once | null>(null);
+  /**
+   * Los onces de la jornada que viene (o de la que se está jugando), uno por
+   * partido: en una jornada doble son dos cruces y cada uno lleva el suyo.
+   */
+  onces = signal<{ enf: AgendaItem; mio: Once; rival: Once }[]>([]);
+  /** El partido cuyos onces se enseñan. */
+  sel = signal(0);
+  mio = computed<Once | null>(() => this.onces()[this.sel()]?.mio ?? null);
+  rival = computed<Once | null>(() => this.onces()[this.sel()]?.rival ?? null);
+  algunaEnviada = computed(() => this.onces().some((p) => p.mio.enviada));
+  todasEnviadas = computed(() => this.onces().length > 0 && this.onces().every((p) => p.mio.enviada));
   /**
    * Lo que lleva cada lado, por PARTIDO. En una jornada doble cada cruce tiene
    * su propio once, asi que tambien su propio marcador: no vale guardar uno
@@ -553,7 +573,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     if (pr) {
       const ms = new Date(pr.fecha).getTime() - Date.now();
       this.cuentaPartido.set(ms > 0
-        ? this.restante(ms) + (this.mio()?.enviada ? ' para el cierre' : ' para cerrar tu alineación')
+        ? this.restante(ms) + (this.todasEnviadas() ? ' para el cierre' : ' para cerrar tu alineación')
         : 'Alineación cerrada');
     }
   }
@@ -643,12 +663,13 @@ export class DashboardComponent implements OnInit, OnDestroy {
         if (f?.jornada_id) {
           this.falm.jornadasDobles([f.jornada_id])
             .then((d) => this.doble.set(d.has(f.jornada_id))).catch(() => {});
-          const [yo, otro] = await Promise.all([
-            this.onceDe(eq.id, eq.nombre, f.jornada_id, f.enfrentamiento_id),
-            this.onceDe(f.rival_id, f.rival, f.jornada_id, f.enfrentamiento_id),
-          ]);
-          this.mio.set(yo);
-          this.rival.set(otro);
+          this.onces.set(await Promise.all(this.rivales(f).map(async (r) => {
+            const [mio, rival] = await Promise.all([
+              this.onceDe(eq.id, eq.nombre, f.jornada_id, r.enfrentamiento_id),
+              this.onceDe(r.rival_id, r.rival, f.jornada_id, r.enfrentamiento_id),
+            ]);
+            return { enf: r, mio, rival };
+          })));
         }
         const ac = this.actual();
         if (ac?.jornada_id) {
