@@ -61,6 +61,14 @@ import { DetallePartidoComponent } from '../../shared/detalle-partido.component'
           }. Hasta entonces no cuenta en la clasificación.
         </p>
       }
+      <!-- Notas sacadas de la página de cada partido porque la de la jornada
+           aún no las tenía: valen, pero pueden cambiar. -->
+      @if (provisionales().length > 0) {
+        <p class="espera">
+          Puntos provisionales de <b>{{ provisionales().join(', ') }}</b>: pueden
+          cambiar cuando se publiquen las notas definitivas.
+        </p>
+      }
       <div class="lista">
         @for (e of enfrentamientos(); track e.enfrentamiento_id) {
           <button class="match" (click)="abrirDetalle(e)">
@@ -324,12 +332,17 @@ export class JornadasComponent implements OnInit {
     this.jornadaId.set(id);
     this.cargando.set(true); this.error.set('');
     this.porJugar.set([]);
+    this.provisionales.set([]);
     try { this.enfrentamientos.set(await this.falm.enfrentamientos(id)); }
     catch (e: any) { this.error.set(e?.message ?? 'Error'); }
     finally { this.cargando.set(false); }
     // Aparte del marcador: si falla, la jornada se ve igual, solo sin el aviso.
     this.falm.partidosPorJugar(id).then((p) => this.porJugar.set(p)).catch(() => {});
+    this.falm.clubesProvisionales(id).then((c) => this.provisionales.set(c)).catch(() => {});
   }
+
+  /** Clubes con notas provisionales en la jornada que se está mirando. */
+  provisionales = signal<string[]>([]);
 
   porJugar = signal<{ local: string; visitante: string; fecha: string | null }[]>([]);
 

@@ -83,6 +83,12 @@ interface Once { equipo: string; formacion: string; campo: EnCampo[]; banca: EnB
               }: hasta entonces la jornada no se cierra ni cuenta en la clasificación.
             </p>
           }
+          @if (provisionales().length > 0) {
+            <p class="av espera">
+              Puntos provisionales de {{ provisionales().join(', ') }}: pueden cambiar
+              cuando se publiquen las notas definitivas.
+            </p>
+          }
           <p class="av pista">Toca el marcador para ver los onces y los puntos de cada uno.</p>
         </section>
       }
@@ -461,6 +467,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   /** Los partidos de LaLiga que esa jornada todavía espera (un aplazado, casi siempre). */
   porJugar = signal<{ local: string; visitante: string; fecha: string | null }[]>([]);
+  /** Clubes con notas provisionales en esa jornada: salieron de la página del partido. */
+  provisionales = signal<string[]>([]);
   cuando(f: string): string {
     const d = new Date(f);
     return `${d.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}, ` +
@@ -676,6 +684,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
           // Otro extra: si falla, se ve igual pero sin el aviso del aplazado.
           this.falm.partidosPorJugar(ac.jornada_id)
             .then((p) => this.porJugar.set(p)).catch(() => {});
+          this.falm.clubesProvisionales(ac.jornada_id)
+            .then((c) => this.provisionales.set(c)).catch(() => {});
           // Un marcador por partido y por lado: en una jornada doble los dos
           // cruces llevan onces distintos, asi que tambien puntos distintos.
           const rivs = this.rivales(ac);

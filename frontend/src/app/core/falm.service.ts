@@ -529,6 +529,17 @@ export class FalmService {
   }
 
   /**
+   * Clubes de esa jornada cuyas notas son provisionales: futbolfantasy no las
+   * tenía en la página de la jornada y se cogieron de la del partido. Las
+   * buenas las sustituyen solas en cuanto salen.
+   */
+  async clubesProvisionales(jornadaFalmId: string): Promise<string[]> {
+    const { data, error } = await this.sb.client.rpc('clubes_provisionales', { p_jornada_falm: jornadaFalmId });
+    if (error) throw error;
+    return (data ?? []) as string[];
+  }
+
+  /**
    * Partidos de LaLiga de esa jornada que todavía no se han jugado. Una jornada
    * espera a los suyos para cerrarse, y con un aplazado esa espera puede durar
    * semanas: el Levante - Athletic de la J2 se fue al 21 de octubre. Sin decirlo
