@@ -70,6 +70,7 @@ dentro del repo.
 | `once_resuelto.sql` | Quién suma y quién se queda fuera: relevos, `puntos_once` y el marcador en vivo |
 | `suplente_pendiente_guarda_el_hueco.sql` | Un suplente que aún no ha jugado guarda su hueco: no entra el siguiente del banquillo |
 | `suplente_que_guarda_se_ve_encendido.sql` | El suplente que guarda un hueco lo dice (`hueco`, `guarda`) para verse encendido |
+| `catalogo_ff_enlaces_y_filial.sql` | El refresco del catálogo lee los enlaces nuevos de futbolfantasy; primer equipo = dorsal y no filial, y quien no sale en ninguna plantilla deja de serlo |
 | `marcadores_por_jugar_y_sin_nota.sql` | `marcadores_jornada_detalle`: lo que falta, separado en por jugar y pendiente de puntuación |
 
 ### Operación y datos
