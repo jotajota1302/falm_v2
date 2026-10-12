@@ -41,7 +41,7 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
                         <button class="dj" [class.supl]="j.rol !== 'TITULAR'"
                                 [class.nojugo]="j.estado === 'NO_JUGO' || j.estado === 'SIN_PARTIDO'"
                                 [class.hecho]="j.estado === 'PUNTUADO' || j.estado === 'ESPERANDO' || j.estado === 'EN_JUEGO'"
-                                [class.fuera]="j.rol !== 'TITULAR' && !j.cuenta"
+                                [class.fuera]="j.rol !== 'TITULAR' && !j.cuenta && !j.guarda"
                                 [class.abierto]="verJug() === j.activo_id"
                                 (click)="tocar(j)" [title]="porQue(j)">
                           <span class="pos" [class]="abrPos(j.pos)">{{ abrPos(j.pos) }}</span>
@@ -289,6 +289,8 @@ export class DetallePartidoComponent {
 
   /** En qué anda cada uno, que un 0 y un "aún no se sabe" no son lo mismo. */
   porQue(j: any): string {
+    // Encendido aunque no cuente: si juega, entra por el titular que no jugo.
+    if (j.guarda) return `${j.nombre} aún no ha jugado · si juega, entra por un titular que no jugó`;
     switch (j.estado) {
       case 'EN_JUEGO': return `${j.nombre}: su partido se está jugando ahora`;
       case 'ESPERANDO': return `${j.nombre} ya ha jugado · falta la nota de la prensa`;

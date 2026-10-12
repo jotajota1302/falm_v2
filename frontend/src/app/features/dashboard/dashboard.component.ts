@@ -19,6 +19,11 @@ interface EnCampo {
   jugo: boolean; cuenta: boolean; pendiente: boolean;
   /** Titular: quien entro en su lugar. Suplente: a quien sustituye. */
   releva: string | null;
+  /**
+   * Un suplente que aun no ha jugado guarda el hueco del titular caido: este es
+   * ese titular. En el titular, al reves: el suplente que le espera.
+   */
+  espera: string | null;
 }
 /** Un suplente: quién es, qué líneas cubre y lo que lleva sumado. */
 interface EnBanca extends EnCampo { cubre: string[]; }
@@ -228,7 +233,8 @@ interface Once { equipo: string; formacion: string; campo: EnCampo[]; banca: EnB
                          titular: los que no entran van apagados y el que entra
                          lleva flecha y dice por quien. -->
                     @for (b of suplentes(o); track $index) {
-                      <div class="fila j11" [class.fuera]="enMarcha() && !b.cuenta"
+                      <!-- El que guarda un hueco sigue encendido: puede entrar. -->
+                      <div class="fila j11" [class.fuera]="enMarcha() && !b.cuenta && !b.espera"
                            [title]="enMarcha() ? porQue(b, false) : ''">
                         <span class="p" [class]="abr(b.pos)">
                           @if (enMarcha() && b.cuenta) { <i class="sube">↑</i> }{{ abr(b.pos) }}
@@ -236,7 +242,7 @@ interface Once { equipo: string; formacion: string; campo: EnCampo[]; banca: EnB
                         <img class="fo" [class.es]="!b.foto" [src]="b.foto || b.escudo" alt=""
                              loading="lazy" (error)="b.foto = null" />
                         <span class="nb">
-                          {{ b.nombre }}@if (enMarcha() && b.cuenta && b.releva) { <b class="por">por {{ b.releva }}</b> }
+                          {{ b.nombre }}@if (enMarcha() && b.cuenta && b.releva) { <b class="por">por {{ b.releva }}</b> }@else if (enMarcha() && b.espera) { <b class="por">si juega, por {{ b.espera }}</b> }
                         </span>
                         @if (b.escudo) {
                           <img class="cl" [src]="b.escudo" alt="" loading="lazy" />
@@ -507,8 +513,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
     if (!j.jugo) {
       // Mientras su club tenga el partido por jugar no ha fallado nadie: eso es
       // esperar, no caerse, y se pintaba igual que una baja.
-      if (j.pendiente) return titular ? 'Aún no ha jugado' : 'Aún no ha jugado · en el banquillo';
-      return titular && j.releva ? `No jugó · entra ${j.releva} en su lugar` : 'No jugó';
+      if (j.pendiente) {
+        if (titular) return 'Aún no ha jugado';
+        return j.espera ? `Aún no ha jugado · si juega, entra por ${j.espera}` : 'Aún no ha jugado · en el banquillo';
+      }
+      if (titular && j.releva) return `No jugó · entra ${j.releva} en su lugar`;
+      return titular && j.espera ? `No jugó · espera a ${j.espera}, que aún no ha jugado` : 'No jugó';
     }
     if (j.cuenta) {
       return titular ? `Suma ${j.pts ?? 0}`
@@ -609,6 +619,16 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }
     const apellido = (id: string | null | undefined) =>
       id ? this.corto(ficha.get(id)?.nombre ?? '') || null : null;
+    // once_resuelto dice que linea guarda el suplente pendiente, no de quien: se
+    // empareja aqui con los titulares caidos sin relevo, en el mismo orden.
+    const espera = new Map<string, string>();
+    const caidos = resuelto.filter((r) => r.rol === 'TITULAR' && !r.jugo && !r.pendiente && !releva.has(r.activo_id));
+    for (const s of resuelto.filter((r) => r.rol === 'SUPLENTE' && !r.cuenta && r.pendiente && r.hueco)) {
+      const t = caidos.find((c) => c.pos === s.hueco && !espera.has(c.activo_id));
+      if (!t) continue;
+      espera.set(t.activo_id, s.activo_id);
+      espera.set(s.activo_id, t.activo_id);
+    }
 
     const dentro = (rol: RolAlineacion) => al.jugadores.filter((j: Alineado) => j.rol === rol);
     const datos = (p: ItemPlantilla): EnCampo => {
@@ -623,6 +643,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         cuenta: r ? r.cuenta : true,
         pendiente: r ? r.pendiente : true,
         releva: r ? apellido(r.entra_por ?? releva.get(p.activo_id)) : null,
+        espera: apellido(espera.get(p.activo_id)),
       };
     };
     const once: Once = {

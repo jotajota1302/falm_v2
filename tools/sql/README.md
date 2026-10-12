@@ -69,6 +69,7 @@ dentro del repo.
 | `bloqueo_y_congelacion.sql` | `guardar_alineacion`, bloqueos y congelación por jornada |
 | `once_resuelto.sql` | Quién suma y quién se queda fuera: relevos, `puntos_once` y el marcador en vivo |
 | `suplente_pendiente_guarda_el_hueco.sql` | Un suplente que aún no ha jugado guarda su hueco: no entra el siguiente del banquillo |
+| `suplente_que_guarda_se_ve_encendido.sql` | El suplente que guarda un hueco lo dice (`hueco`, `guarda`) para verse encendido |
 | `marcadores_por_jugar_y_sin_nota.sql` | `marcadores_jornada_detalle`: lo que falta, separado en por jugar y pendiente de puntuación |
 
 ### Operación y datos
