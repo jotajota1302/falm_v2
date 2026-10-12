@@ -68,6 +68,7 @@ dentro del repo.
 | `calendario_liga_lectura.sql` | `calendario_liga`, lectura para el editor del panel |
 | `bloqueo_y_congelacion.sql` | `guardar_alineacion`, bloqueos y congelación por jornada |
 | `once_resuelto.sql` | Quién suma y quién se queda fuera: relevos, `puntos_once` y el marcador en vivo |
+| `suplente_pendiente_guarda_el_hueco.sql` | Un suplente que aún no ha jugado guarda su hueco: no entra el siguiente del banquillo |
 
 ### Operación y datos
 
