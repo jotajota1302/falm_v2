@@ -77,6 +77,7 @@ dentro del repo.
 |---|---|
 | `carga_inicial_2026-27.sql` | Carga inicial del catálogo |
 | `calendario_lfp.sql`, `refrescar_catalogo_ff.sql` | Ingesta de calendario y catálogo |
+| `calendario_no_desjuega_partidos.sql` | El refresco de football-data no devuelve a «por jugar» un partido acabado |
 | `ingestar_jornada_ff_marcadores.sql` | Ingesta de puntuaciones de una jornada |
 | `parseo_por_slug_ff.sql` | Emparejar por slug de futbolfantasy (y el año es el de FIN de temporada) |
 | `puntuaciones_a_demanda.sql` | Leer una jornada desde el panel, con guardias de rol |
