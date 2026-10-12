@@ -243,7 +243,12 @@ export class JornadasComponent implements OnInit {
   pendientes(e: EnfrentamientoFila, local: boolean): string {
     const n = e.plazas - (local ? e.resueltos_local : e.resueltos_visitante);
     if (n <= 0) return 'ya está';
-    return `${n} por jugar`;
+    // Los que ya jugaron y esperan la nota no estan "por jugar": se dicen aparte.
+    const sinNota = Math.min(n, local ? e.sin_nota_local : e.sin_nota_visitante);
+    const partes = [];
+    if (n - sinNota > 0) partes.push(`${n - sinNota} por jugar`);
+    if (sinNota > 0) partes.push(`${sinNota} pendiente${sinNota > 1 ? 's' : ''} de puntuación`);
+    return partes.join(' · ');
   }
   etiqueta(t: string) { return t === 'CHAMPIONS' ? 'Champions' : t === 'CLAUSURA' ? 'Clausura' : 'Liga'; }
 

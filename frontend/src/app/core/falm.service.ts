@@ -95,6 +95,9 @@ export interface EnfrentamientoFila {
   resueltos_local: number;
   resueltos_visitante: number;
   plazas: number;
+  /** De los que faltan, cuántos ya jugaron y esperan su nota. */
+  sin_nota_local: number;
+  sin_nota_visitante: number;
   /** Partidos de LaLiga de esa jornada: cuántos van jugados de cuántos. */
   partidos_jugados: number;
   partidos_total: number;
@@ -598,17 +601,18 @@ export class FalmService {
     // juega, el marcador sale de lo que lleva puntuado cada once; al cerrarse,
     // los dos números coinciden y manda el guardado.
     const { data: viva, error: e3 } = await this.sb.client
-      .rpc('marcadores_jornada', { p_jornada: jornadaFalmId });
+      .rpc('marcadores_jornada_detalle', { p_jornada: jornadaFalmId });
     if (e3) throw e3;
     // Por partido, no por equipo: en una jornada doble el mismo equipo sale en
     // dos cruces y puede llevar un once distinto (y por tanto otros puntos) en
     // cada uno.
-    const enVivo = new Map<string, { pts: number; res: number; plazas: number }>();
+    const enVivo = new Map<string, { pts: number; res: number; plazas: number; sinNota: number }>();
     let cerrada = true, pJugados = 0, pTotal = 0;
     for (const m of (viva ?? []) as any[]) {
       cerrada = m.cerrada;
       enVivo.set(`${m.enfrentamiento_id}|${m.equipo_falm_id}`, {
         pts: Number(m.puntos ?? 0), res: Number(m.resueltos ?? 0), plazas: Number(m.plazas ?? 0),
+        sinNota: Number(m.sin_nota ?? 0),
       });
       pJugados = Number(m.partidos_jugados ?? 0); pTotal = Number(m.partidos_total ?? 0);
     }
@@ -648,6 +652,8 @@ export class FalmService {
         resueltos_local: vl?.res ?? 0,
         resueltos_visitante: vv?.res ?? 0,
         plazas: vl?.plazas ?? vv?.plazas ?? 11,
+        sin_nota_local: vl?.sinNota ?? 0,
+        sin_nota_visitante: vv?.sinNota ?? 0,
         partidos_jugados: pJugados,
         partidos_total: pTotal,
       };
