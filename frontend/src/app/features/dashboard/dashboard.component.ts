@@ -242,7 +242,7 @@ interface Once { equipo: string; formacion: string; campo: EnCampo[]; banca: EnB
                         <img class="fo" [class.es]="!b.foto" [src]="b.foto || b.escudo" alt=""
                              loading="lazy" (error)="b.foto = null" />
                         <span class="nb">
-                          {{ b.nombre }}@if (enMarcha() && b.cuenta && b.releva) { <b class="por">por {{ b.releva }}</b> }@else if (enMarcha() && b.espera) { <b class="por">si juega, por {{ b.espera }}</b> }
+                          {{ b.nombre }}@if (cubre(b); as ls) {<span class="cubre" title="Puede entrar en estas líneas">@for (l of ls; track l) {<b [class]="abr(l)">{{ abr(l) }}</b>}</span>}@if (enMarcha() && b.cuenta && b.releva) { <b class="por">por {{ b.releva }}</b> }@else if (enMarcha() && b.espera) { <b class="por">si juega, por {{ b.espera }}</b> }
                         </span>
                         @if (b.escudo) {
                           <img class="cl" [src]="b.escudo" alt="" loading="lazy" />
@@ -355,6 +355,13 @@ interface Once { equipo: string; formacion: string; campo: EnCampo[]; banca: EnB
     .pts.nj { color: var(--text2); }
     .sube { font-style: normal; color: var(--accent); margin-right: 3px; }
     .por { font-size: var(--t-xs); font-weight: 700; color: var(--accent); margin-left: 5px; }
+    /* Las lineas que cubre un suplente, junto a su nombre y con el color de
+       cada linea, igual que en Alineacion y en el detalle del partido. */
+    .cubre { display: inline-flex; gap: 3px; margin-left: 5px; vertical-align: 1px; }
+    .cubre b { font-size: 9px; font-weight: 700; letter-spacing: .04em; line-height: 1;
+      padding: 2px 4px; border-radius: 3px; color: var(--accent-ink); }
+    .cubre b.DEF { background: var(--def); } .cubre b.MED { background: var(--med); }
+    .cubre b.DEL { background: var(--del); } .cubre b.POR { background: var(--por); }
 
     /* El banquillo va en las mismas filas que el once, bajo su cabecera: iba en
        píldoras agrupadas por la línea que cubría cada uno y era el único bloque
@@ -529,8 +536,23 @@ export class DashboardComponent implements OnInit, OnDestroy {
     return `Jugó y sumó ${j.pts ?? 0}, pero se queda en el banquillo`;
   }
 
-  /** El banquillo, en el mismo orden que el once: de portería a delantera. */
-  suplentes(o: Once) { return ORDEN.flatMap((pos) => o.banca.filter((b) => b.pos === pos)); }
+  /**
+   * El banquillo, en el mismo orden que el once: de portería a delantera, pero
+   * por la línea que cubre cada uno y no por su posición. Un defensa puesto de
+   * suplente de la delantera salía entre los defensas, y parecían tres.
+   */
+  suplentes(o: Once) {
+    const linea = (b: EnBanca) => {
+      const ls = b.cubre.length ? b.cubre : [b.pos];
+      const i = Math.min(...ls.map((l) => ORDEN.indexOf(l as typeof ORDEN[number])).filter((x) => x >= 0));
+      return Number.isFinite(i) ? i : ORDEN.length;
+    };
+    return [...o.banca].sort((a, b) => linea(a) - linea(b));
+  }
+  /** Las líneas que cubre un suplente, solo si no es únicamente la suya. */
+  cubre(b: EnBanca): string[] | null {
+    return !b.cubre.length || (b.cubre.length === 1 && b.cubre[0] === b.pos) ? null : b.cubre;
+  }
 
   constructor(private falm: FalmService) {}
   ngOnDestroy() { if (this.timer) clearInterval(this.timer); }
@@ -654,7 +676,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
         const p = ficha.get(j.activo_id);
         return p ? [datos(p)] : [];
       }),
-      banca: dentro('SUPLENTE').flatMap<EnBanca>((j) => {
+      // En el orden de entrada que puso el gestor: la consulta no lo garantiza.
+      banca: dentro('SUPLENTE').sort((x, y) => (x.orden ?? 0) - (y.orden ?? 0)).flatMap<EnBanca>((j) => {
         const p = ficha.get(j.activo_id);
         return p ? [{ ...datos(p), cubre: j.lineas ?? [] }] : [];
       }),

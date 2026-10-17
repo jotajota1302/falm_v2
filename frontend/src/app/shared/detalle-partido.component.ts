@@ -307,9 +307,16 @@ export class DetallePartidoComponent {
     // Una posicion que no reconozcamos se va al final, no al principio.
     const linea = (j: any) => (ORDEN.indexOf(j?.pos) + 1) || ORDEN.length + 1;
     const porLinea = (a: any, b: any) => linea(a) - linea(b);
+    // El suplente va con la linea que cubre, no con su posicion: un defensa
+    // puesto para la delantera salia entre los defensas.
+    const cubierta = (j: any) => {
+      const ls: string[] = Array.isArray(j?.lineas) && j.lineas.length ? j.lineas : [j?.pos];
+      return Math.min(...ls.map((l) => linea({ pos: l })));
+    };
     return [
       { rol: 'TITULAR', js: js.filter((j) => j.rol === 'TITULAR').sort(porLinea) },
-      { rol: 'SUPLENTE', js: js.filter((j) => j.rol !== 'TITULAR').sort(porLinea) },
+      { rol: 'SUPLENTE', js: js.filter((j) => j.rol !== 'TITULAR')
+          .sort((a, b) => cubierta(a) - cubierta(b) || (a.orden ?? 0) - (b.orden ?? 0)) },
     ];
   }
 
