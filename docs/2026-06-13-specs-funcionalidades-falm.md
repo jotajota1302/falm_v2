@@ -185,9 +185,9 @@ Cada jornada enfrenta a dos equipos FALM; el reparto de puntos depende de la dif
 - No se calcula para jornadas en estado PARCIAL.
 
 ### 9.2 Premios — reparto con empates (v2.9.10)
-**Jornadas NORMALES (10€ + 5€ = 15€):**
-- 2+ empatados 1º → repartir los 15€ a partes iguales entre los primeros.
-- 1 primero + varios 2º → 1º gana 10€, repartir 5€ entre los segundos.
+**Jornadas NORMALES (20€ + 5€ = 25€; eran 10€ + 5€ hasta el 2026-10-20):**
+- 2+ empatados 1º → repartir los 25€ a partes iguales entre los primeros.
+- 1 primero + varios 2º → 1º gana 20€, repartir 5€ entre los segundos.
 
 **Jornadas DOBLES (20€ + 15€ + 5€ = 40€):**
 - 3+ empatados 1º → repartir los 40€ entre los primeros.

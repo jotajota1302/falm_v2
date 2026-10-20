@@ -651,9 +651,11 @@ end $function$;
 -- doble cuando alguien juega dos veces en ella. Antes se miraba si tenia dos
 -- jornadas de LaLiga mapeadas, y no es asi como se montan: la 2 es doble con
 -- una sola jornada de LaLiga detras, asi que repartia premio sencillo.
+-- La normal da 20 al primero y 5 al segundo (eran 10 y 5 hasta el 2026-10-20);
+-- la doble sigue en 20, 15 y 5.
 create or replace function falm.calcular_premios_jornada(
   p_jornada uuid,
-  p_normal numeric[] default array[(10)::numeric, (5)::numeric, (0)::numeric],
+  p_normal numeric[] default array[(20)::numeric, (5)::numeric, (0)::numeric],
   p_doble numeric[] default array[(20)::numeric, (15)::numeric, (5)::numeric])
 returns integer
 language plpgsql
