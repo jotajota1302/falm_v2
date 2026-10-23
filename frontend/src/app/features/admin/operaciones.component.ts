@@ -286,7 +286,7 @@ export class AdminOperacionesComponent implements OnInit {
     { id: 'vivo', titulo: 'Puntuar lo ya jugado', rpc: 'puntuar_en_vivo', porJornada: false,
       desc: 'Mete los puntos de los partidos que ya han acabado, sin esperar a que termine la jornada. El cron lo hace solo cada 10 minutos; esto es para no esperar.' },
     { id: 'premios', titulo: 'Calcular premios de la jornada', rpc: 'calcular_premios_jornada', porJornada: true,
-      desc: 'Reparte los premios de esa jornada (normal 10/5, doble 20/15/5).' },
+      desc: 'Reparte los premios de esa jornada (normal 20/5, doble 20/15/5).' },
     { id: 'expirar', titulo: 'Expirar ofertas', rpc: 'expirar_ofertas', porJornada: false,
       desc: 'Marca EXPIRADA las ofertas de intercambio vencidas. El cron ya lo hace cada hora.' },
     { id: 'estados', titulo: 'Leer lesionados y sancionados', rpc: 'refrescar_estados_jugadores',

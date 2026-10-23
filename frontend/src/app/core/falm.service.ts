@@ -69,6 +69,18 @@ export interface PremioItem {
   concepto: string;     // "Jornada N" o nombre de competición
 }
 
+/** Un premio cobrado, con lo necesario para explicarlo. */
+export interface PremioDetalle {
+  equipo: string;
+  tipo: string;
+  jornada: number | null;      // premio de jornada
+  competicion: string | null;  // premio de competicion
+  posicion: number;
+  importe: number;
+  puntos: number | null;
+  pagado: boolean;
+}
+
 export interface JornadaFalm {
   id: string;
   numero: number;
@@ -967,6 +979,32 @@ export class FalmService {
       .order('beneficio', { ascending: false });
     if (error) throw error;
     return (data ?? []) as { nombre: string; beneficio: number }[];
+  }
+
+  /**
+   * Todos los premios de la temporada, uno por fila, para poder decir de dónde
+   * sale el beneficio de cada equipo: de qué jornada, en qué puesto y con
+   * cuántos puntos.
+   */
+  async premiosDeLaTemporada(): Promise<PremioDetalle[]> {
+    const id = await this.season.ensure();
+    const { data, error } = await this.sb.client
+      .from('premio')
+      .select('tipo, posicion, importe, puntos_obtenidos, pagado, ' +
+              'equipo:equipo_falm_id!inner (nombre, temporada_id), ' +
+              'jornada:jornada_falm_id (numero), competicion:competicion_id (nombre)')
+      .eq('equipo.temporada_id', id);
+    if (error) throw error;
+    return (data ?? []).map((p: any) => ({
+      equipo: p.equipo?.nombre ?? '',
+      tipo: p.tipo,
+      jornada: p.jornada?.numero ?? null,
+      competicion: p.competicion?.nombre ?? null,
+      posicion: p.posicion,
+      importe: Number(p.importe ?? 0),
+      puntos: p.puntos_obtenidos == null ? null : Number(p.puntos_obtenidos),
+      pagado: !!p.pagado,
+    }));
   }
 
   /** Jornadas LFP válidas (para el selector de estadísticas). */
