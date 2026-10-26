@@ -25,6 +25,10 @@
 -- 3) falm.clubes_provisionales(jornada_falm) dice a la pantalla que clubes
 --    estan asi, mientras su jornada de LaLiga no se haya cerrado.
 --
+-- Escrito el 11/10/2026 pero no se llego a aplicar; se aplico el 26/10/2026,
+-- cuando la LL10 se quedo igual (la jornada solo traia el Alaves - Malaga), con
+-- el corte de fila de _parsear_tablas_ff anadido tras el ensayo.
+--
 -- Las filas que vienen de un partido llevan match_idx >= 100; el resumen de
 -- ingestar_jornada_ff ('clubes_por_partido') y el de puntuar_en_vivo
 -- ('por_partido') dicen quien ha entrado asi.
@@ -57,8 +61,12 @@ as $function$
     from segs t join segs prev on prev.ord = t.ord - 1
     where t.ord >= 2
   ),
+  -- Cada fila se corta donde acaba su tabla: la ultima seguia hasta la tabla
+  -- siguiente, y en la pagina de un partido lo que viene detras es la
+  -- cronologia, con un data-tooltip="Gol" por gol. El 26/10/2026 eso le
+  -- apuntaba a Enes Unal, el ultimo del Getafe, los 4 goles del Athletic.
   filas as (
-    select p_base + ((t.o + 1) / 2)::int mi, t.eq, f.fila from tabs t,
+    select p_base + ((t.o + 1) / 2)::int mi, t.eq, split_part(f.fila, '</table>', 1) fila from tabs t,
       lateral unnest(regexp_split_to_array(t.tabla, '<tr class="plegado plegable"')) with ordinality as f(fila, ford)
     where f.ford >= 2 and t.eq is not null
   ),
