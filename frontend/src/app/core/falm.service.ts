@@ -1155,6 +1155,9 @@ export class FalmService {
       .eq('equipo_falm_id', equipoId)
       .eq('ventana', ventana)
       .eq('estado', 'PENDIENTE')
+      // Las de lesión van aparte: si no, la pantalla enseñaba la extra como si
+      // fuera la de la semana y al «actualizar» se la llevaba por delante.
+      .is('fichaje_extra_id', null)
       .order('fecha_creacion', { ascending: false })
       .limit(1);
     if (error) throw error;
@@ -1262,7 +1265,9 @@ export class FalmService {
                 observaciones: 'Sustituida por una petición posterior del mismo equipo' })
       .eq('equipo_falm_id', equipoId)
       .eq('ventana', ventana)
-      .eq('estado', 'PENDIENTE');
+      .eq('estado', 'PENDIENTE')
+      // Solo sustituye a la semanal: las peticiones por lesión no se tocan.
+      .is('fichaje_extra_id', null);
     if (e0) throw e0;
 
     const { data: pet, error } = await this.sb.client
