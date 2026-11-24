@@ -174,8 +174,10 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
                   <div class="lrow">
                     <span class="ln">{{ fe.lesionado }}</span>
                     @if (fe.url) { <a class="lurl" [href]="fe.url" target="_blank" rel="noopener">noticia ↗</a> }
-                    <span class="lest" [class.usado]="fe.usado">{{ fe.usado ? 'Usado' : 'Disponible' }}</span>
+                    <span class="lest" [class.usado]="fe.usado" [class.anulada]="fe.anulada">
+                      {{ fe.anulada ? 'Anulada' : fe.usado ? 'Usado' : 'Disponible' }}</span>
                   </div>
+                  @if (fe.anulada) { <p class="lmot">El gestor la ha anulado: {{ fe.anulada }}</p> }
                   <!-- Antes aquí acababa todo: no había dónde elegir a quién fichar,
                        se usaba el formulario de la semana y se pisaba la petición. -->
                   @if (!fe.usado) {
@@ -331,6 +333,8 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
     .lurl { color: var(--accent); font-size: var(--t-xs); }
     .lest { font-size: var(--t-xs); font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--good); }
     .lest.usado { color: var(--text2); }
+    .lest.anulada { color: var(--bad); }
+    .lmot { margin: 0 0 4px; font-size: var(--t-xs); color: var(--bad); }
     .lcard { margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
     .lcard.activa .lrow { border-color: var(--accent); background: var(--accent-soft); }
     .lacc { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
@@ -401,7 +405,7 @@ export class FichajesComponent implements OnInit {
   aviso = signal('');
   // Fichaje por lesión
   miPlantilla = signal<ItemPlantilla[]>([]);
-  extras = signal<{ id: string; lesionado: string; url: string | null; usado: boolean }[]>([]);
+  extras = signal<{ id: string; lesionado: string; url: string | null; usado: boolean; anulada: string | null }[]>([]);
   verLesion = signal(false);
   lesionadoId = signal('');
   urlLesion = signal('');

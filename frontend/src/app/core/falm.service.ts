@@ -1396,10 +1396,10 @@ export class FalmService {
   }
 
   /** Fichajes extra por lesión de un equipo (con el nombre del lesionado). */
-  async fichajesExtra(equipoId: string): Promise<{ id: string; lesionado: string; url: string | null; usado: boolean }[]> {
+  async fichajesExtra(equipoId: string): Promise<{ id: string; lesionado: string; url: string | null; usado: boolean; anulada: string | null }[]> {
     const { data, error } = await this.sb.client
       .from('fichaje_extra')
-      .select('id, url_noticia, usado, activo:activo_lesionado_id (tipo, ' +
+      .select('id, url_noticia, usado, anulada, activo:activo_lesionado_id (tipo, ' +
         'jugador_lfp:jugador_lfp_id (nombre, apellido), equipo_lfp:equipo_lfp_id (nombre))')
       .eq('equipo_falm_id', equipoId)
       .order('fecha_solicitud', { ascending: false });
@@ -1413,6 +1413,7 @@ export class FalmService {
           : `${a?.jugador_lfp?.nombre ?? ''} ${a?.jugador_lfp?.apellido ?? ''}`.trim(),
         url: f.url_noticia,
         usado: f.usado,
+        anulada: f.anulada ?? null,
       };
     });
   }

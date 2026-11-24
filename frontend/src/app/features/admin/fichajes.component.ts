@@ -1,6 +1,6 @@
 import { Component, OnInit, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { AdminPeticion, AdminService, JornadaAdmin, PropuestaFichajes } from './admin.service';
+import { AdminLesion, AdminPeticion, AdminService, JornadaAdmin, PropuestaFichajes } from './admin.service';
 import { ActaFichajesComponent } from '../../shared/acta-fichajes.component';
 
 const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'MED', DELANTERO: 'DEL' };
@@ -73,6 +73,66 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
         </div>
       </section>
 
+      <!-- Las lesiones, para revisarlas antes del reparto: antes solo se veian
+           dentro del acta, ya mezcladas con lo demas. -->
+      <section class="tabla lesiones">
+        <div class="barra">
+          <span class="lb">Lesiones</span>
+          <span class="muted mini">Fichaje extra por lesión de larga duración. Si una no procede, anúlala:
+            el reparto la salta y el equipo ve el motivo.</span>
+        </div>
+        @if (!lesiones().length) {
+          <p class="muted pad">Ningún equipo ha pedido fichaje por lesión esta temporada.</p>
+        }
+        @for (l of lesiones(); track l.id) {
+          <div class="pet" [class.pend]="!l.usado">
+            <div class="quien">
+              <strong>{{ l.equipo }}</strong>
+              <span class="meta">{{ cuando(l.fecha) }}</span>
+            </div>
+            <div class="les">
+              <span class="ln">
+                <span class="pos" [class]="abr(l.posicion)">{{ abr(l.posicion) }}</span>
+                {{ l.lesionado }}
+                @if (l.url) { <a class="lurl" [href]="l.url" target="_blank" rel="noopener">noticia ↗</a> }
+                @else { <span class="meta">sin noticia</span> }
+              </span>
+              @if (!l.usado && !l.enPlantilla) {
+                <span class="alerta">Ya no está en su plantilla: no hay a quién sustituir.</span>
+              }
+              @if (l.pide.length) {
+                <div class="pide">
+                  @for (o of l.pide; track o.prioridad) {
+                    <span class="op"><i class="pr num">{{ o.prioridad }}</i>{{ o.nombre }}</span>
+                  }
+                </div>
+              } @else if (!l.usado) {
+                <span class="meta">Todavía no ha pedido sustituto.</span>
+              }
+              @if (l.anulada) { <span class="meta">Motivo: {{ l.anulada }}</span> }
+              @if (l.fichado) { <span class="meta">{{ 'Fichó a ' + l.fichado + (l.jornadaUsada ? ' en la J' + l.jornadaUsada : '') + '.' }}</span> }
+            </div>
+            <div class="der">
+              <span class="est" [attr.data-e]="l.anulada ? 'RECHAZADA' : l.usado ? 'PROCESADA' : 'PENDIENTE'">
+                {{ l.anulada ? 'Anulada' : l.usado ? 'Usada' : 'Disponible' }}
+              </span>
+              @if (!l.usado) {
+                <button class="bn no" [disabled]="tocando() === l.id" (click)="anular(l)">
+                  {{ tocando() === l.id ? '…' : 'Anular' }}
+                </button>
+              }
+            </div>
+          </div>
+        }
+        @if (lesiones().some(esDisponible)) {
+          <label class="pad motivoL">
+            <span class="lb">Motivo al anular</span>
+            <input [ngModel]="motivoLesion()" (ngModelChange)="motivoLesion.set($event)"
+                   placeholder="Por qué no procede; el equipo lo lee en Fichajes" />
+          </label>
+        }
+      </section>
+
       <section class="tabla">
         <div class="barra chips">
           <span class="lb">Peticiones</span>
@@ -116,6 +176,7 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
             <div class="quien">
               <strong>{{ p.equipo }}</strong>
               <span class="meta">J{{ p.jornada ?? '—' }} · {{ cuando(p.fecha) }}</span>
+              @if (p.lesion) { <span class="tag">Por lesión de {{ p.lesion }}</span> }
             </div>
 
             <div class="pide">
@@ -193,6 +254,16 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
 
     .obs { grid-column: 1 / -1; margin: 4px 0 0; color: var(--text2); font-size: var(--t-sm); }
 
+    .lesiones { margin-bottom: 14px; }
+    .les { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+    .les .ln { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-weight: 700; }
+    .lurl { color: var(--accent); font-size: var(--t-xs); font-weight: 600; }
+    .alerta { color: var(--bad); font-size: var(--t-sm); font-weight: 600; }
+    .tag { align-self: flex-start; margin-top: 3px; font-size: var(--t-xs); font-weight: 700;
+      color: var(--accent); background: var(--surface); border: 1px solid var(--accent-line);
+      border-radius: var(--r-xs); padding: 2px 7px; }
+    .motivoL { display: flex; flex-direction: column; gap: 6px; border-top: 1px solid var(--line); }
+    .motivoL input { width: 100%; }
     .mercado { margin-bottom: 14px; }
     .reparto { margin-bottom: 14px; }
     .reparto .barra { gap: 8px; flex-wrap: wrap; }
@@ -227,6 +298,9 @@ const ABR: Record<string, string> = { PORTERO: 'POR', DEFENSA: 'DEF', MEDIO: 'ME
 })
 export class AdminFichajesComponent implements OnInit {
   peticiones = signal<AdminPeticion[]>([]);
+  lesiones = signal<AdminLesion[]>([]);
+  motivoLesion = signal('La lesión no es de larga duración.');
+  esDisponible = (l: AdminLesion) => !l.usado;
   jornadas = signal<JornadaAdmin[]>([]);
   moviendo = signal('');
   solo = signal<'PENDIENTE' | ''>('PENDIENTE');
@@ -306,8 +380,9 @@ export class AdminFichajesComponent implements OnInit {
   private async cargar() {
     this.cargando.set(true);
     try {
-      const [ps, js] = await Promise.all([this.admin.peticiones(), this.admin.jornadasFalm()]);
-      this.peticiones.set(ps); this.jornadas.set(js);
+      const [ps, js, ls] = await Promise.all([
+        this.admin.peticiones(), this.admin.jornadasFalm(), this.admin.lesiones()]);
+      this.peticiones.set(ps); this.jornadas.set(js); this.lesiones.set(ls);
       this.admin.ventanasFichajes().then((vs) => this.ventanas.set(vs)).catch(() => {});
     } catch (e: any) {
       this.error.set(e?.message ?? 'Error cargando las peticiones');
@@ -340,6 +415,21 @@ export class AdminFichajesComponent implements OnInit {
       this.error.set(e?.message ?? 'No se pudo cambiar el mercado');
     } finally {
       this.moviendo.set('');
+    }
+  }
+
+  async anular(l: AdminLesion) {
+    this.aviso.set(''); this.error.set('');
+    this.tocando.set(l.id);
+    try {
+      await this.admin.anularLesion(l.id, this.motivoLesion().trim());
+      await this.cargar();
+      this.propuesta.set(null);
+      this.aviso.set(`Lesión de ${l.lesionado} (${l.equipo}) anulada.`);
+    } catch (e: any) {
+      this.error.set(e?.message ?? 'No se pudo anular');
+    } finally {
+      this.tocando.set('');
     }
   }
 

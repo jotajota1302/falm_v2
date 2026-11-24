@@ -177,6 +177,8 @@ export class AdminService {
       .from('peticion_fichaje')
       .select('id, estado, fecha_creacion, observaciones, activo_fichado_id, ' +
         'equipo:equipo_falm_id (nombre), jornada:jornada_objetivo_id (numero), ' +
+        'extra:fichaje_extra_id (activo:activo_lesionado_id (tipo, ' +
+          'jugador_lfp:jugador_lfp_id (nombre, apellido), equipo_lfp:equipo_lfp_id (nombre))), ' +
         'peticion_fichaje_opcion (prioridad, ' +
           'activo:activo_id (tipo, jugador_lfp:jugador_lfp_id (nombre, apellido, posicion), ' +
             'equipo_lfp:equipo_lfp_id (nombre)))')
@@ -191,6 +193,7 @@ export class AdminService {
       fecha: p.fecha_creacion,
       observaciones: p.observaciones ?? '',
       fichado: p.activo_fichado_id != null,
+      lesion: p.extra ? nombreActivo(p.extra.activo) : null,
       pide: (p.peticion_fichaje_opcion ?? [])
         .sort((a: any, b: any) => a.prioridad - b.prioridad)
         .map((o: any) => {
@@ -235,6 +238,67 @@ export class AdminService {
   }
 
   /** Rechaza una peticion dejando dicho por que; el equipo lo ve en su pantalla. */
+  /**
+   * Las lesiones de la temporada, con lo que hace falta para revisarlas: la
+   * noticia, si el lesionado sigue en la plantilla, qué pide esta semana y en
+   * qué quedó. Antes solo se veían al validar el reparto.
+   */
+  async lesiones(): Promise<AdminLesion[]> {
+    const { data, error } = await this.sb.client
+      .from('fichaje_extra')
+      .select('id, url_noticia, fecha_solicitud, usado, anulada, activo_lesionado_id, equipo_falm_id, ' +
+        'equipo:equipo_falm_id!inner (nombre, temporada!inner (activa)), ' +
+        'jornada:jornada_usada_id (numero), ' +
+        'activo:activo_lesionado_id (tipo, jugador_lfp:jugador_lfp_id (nombre, apellido, posicion), equipo_lfp:equipo_lfp_id (nombre)), ' +
+        'peticion_fichaje (estado, fecha_creacion, activo_fichado_id, ' +
+          'fichado:activo_fichado_id (tipo, jugador_lfp:jugador_lfp_id (nombre, apellido), equipo_lfp:equipo_lfp_id (nombre)), ' +
+          'peticion_fichaje_opcion (prioridad, activo:activo_id (tipo, ' +
+            'jugador_lfp:jugador_lfp_id (nombre, apellido), equipo_lfp:equipo_lfp_id (nombre))))')
+      .eq('equipo.temporada.activa', true)
+      .order('fecha_solicitud', { ascending: false });
+    if (error) throw error;
+    const filas = (data ?? []) as any[];
+
+    // Si el lesionado sigue en la plantilla de quien lo pide: si ya no está,
+    // la lesión no tiene a quién sustituir.
+    const ids = filas.map((f) => f.activo_lesionado_id);
+    const { data: pl, error: e2 } = ids.length
+      ? await this.sb.client.from('plantilla').select('activo_id, equipo_falm_id')
+          .in('activo_id', ids).is('fecha_baja', null)
+      : { data: [], error: null };
+    if (e2) throw e2;
+    const sigue = new Set((pl ?? []).map((p: any) => `${p.equipo_falm_id}|${p.activo_id}`));
+
+    return filas.map((f) => {
+      const pets = (f.peticion_fichaje ?? []) as any[];
+      const pend = pets.filter((p) => p.estado === 'PENDIENTE')
+        .sort((a, b) => b.fecha_creacion.localeCompare(a.fecha_creacion))[0];
+      const hecha = pets.find((p) => p.activo_fichado_id);
+      return {
+        id: f.id,
+        equipo: f.equipo?.nombre ?? '—',
+        lesionado: nombreActivo(f.activo),
+        posicion: f.activo?.jugador_lfp?.posicion ?? 'PORTERO',
+        url: f.url_noticia ?? null,
+        fecha: f.fecha_solicitud,
+        usado: !!f.usado,
+        anulada: f.anulada ?? null,
+        jornadaUsada: f.jornada?.numero ?? null,
+        fichado: hecha ? nombreActivo(hecha.fichado) : null,
+        enPlantilla: sigue.has(`${f.equipo_falm_id}|${f.activo_lesionado_id}`),
+        pide: pend ? (pend.peticion_fichaje_opcion ?? [])
+          .sort((a: any, b: any) => a.prioridad - b.prioridad)
+          .map((o: any) => ({ prioridad: o.prioridad, nombre: nombreActivo(o.activo) })) : [],
+      };
+    });
+  }
+
+  /** Anula una lesión que no procede: el reparto la salta y su petición queda rechazada. */
+  async anularLesion(id: string, motivo: string): Promise<void> {
+    const { error } = await this.sb.client.rpc('anular_fichaje_extra', { p_id: id, p_motivo: motivo });
+    if (error) throw error;
+  }
+
   async rechazarPeticion(id: string, motivo: string): Promise<void> {
     const { error } = await this.sb.client
       .from('peticion_fichaje')
@@ -536,7 +600,28 @@ export interface AdminPeticion {
   fecha: string;
   observaciones: string;
   fichado: boolean;
+  /** El lesionado, si es una petición por lesión; null es la semanal. */
+  lesion: string | null;
   pide: { prioridad: number; nombre: string; posicion: string }[];
+}
+
+export interface AdminLesion {
+  id: string; equipo: string; lesionado: string; posicion: string;
+  url: string | null; fecha: string;
+  usado: boolean; anulada: string | null; jornadaUsada: number | null;
+  /** A quién se fichó con ella, si se llegó a usar. */
+  fichado: string | null;
+  /** Si el lesionado sigue en la plantilla de ese equipo. */
+  enPlantilla: boolean;
+  /** Lo que pide ahora mismo, si tiene petición pendiente. */
+  pide: { prioridad: number; nombre: string }[];
+}
+
+/** "Nombre Apellido", o "Portería Club" para una portería. */
+function nombreActivo(a: any): string {
+  const jl = a?.jugador_lfp;
+  return jl ? [jl.nombre, jl.apellido].filter(Boolean).join(' ')
+            : `Portería ${a?.equipo_lfp?.nombre ?? ''}`.trim();
 }
 
 export interface AdminEquipo {
