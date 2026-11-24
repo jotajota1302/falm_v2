@@ -55,6 +55,14 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
     } @else {
       <div class="cols">
         <section class="tabla">
+          <!-- La misma lista sirve para la semanal y para cada lesión: hay que
+               decir siempre para cuál estás pidiendo. -->
+          @if (destinoExtra(); as fe) {
+            <p class="eligiendo">
+              <span>Eligiendo el sustituto de <b>{{ fe.lesionado }}</b> (fichaje por lesión).</span>
+              <button class="btn sec" (click)="destino.set(null)">Volver a la semanal</button>
+            </p>
+          }
           <div class="barra">
             <span class="lb">Libres</span>
             <div class="chips">
@@ -158,15 +166,53 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
               <span class="chev">{{ verLesion() ? '−' : '+' }}</span>
             </button>
             @if (verLesion()) {
-              <p class="lhint">Si un jugador tuyo se lesiona de larga duración, pide un fichaje extra
-                adjuntando la noticia. Lo revisa el gestor.</p>
+              <p class="lhint">Si un jugador tuyo se lesiona de larga duración, avisa con la noticia y
+                elige a su sustituto. Es un fichaje aparte del de la semana: entra en el mismo reparto
+                y no lo pisa. Lo revisa el gestor.</p>
               @for (fe of extras(); track fe.id) {
-                <div class="lrow">
-                  <span class="ln">{{ fe.lesionado }}</span>
-                  @if (fe.url) { <a class="lurl" [href]="fe.url" target="_blank" rel="noopener">noticia ↗</a> }
-                  <span class="lest" [class.usado]="fe.usado">{{ fe.usado ? 'Usado' : 'Disponible' }}</span>
+                <div class="lcard" [class.activa]="destino() === fe.id">
+                  <div class="lrow">
+                    <span class="ln">{{ fe.lesionado }}</span>
+                    @if (fe.url) { <a class="lurl" [href]="fe.url" target="_blank" rel="noopener">noticia ↗</a> }
+                    <span class="lest" [class.usado]="fe.usado">{{ fe.usado ? 'Usado' : 'Disponible' }}</span>
+                  </div>
+                  <!-- Antes aquí acababa todo: no había dónde elegir a quién fichar,
+                       se usaba el formulario de la semana y se pisaba la petición. -->
+                  @if (!fe.usado) {
+                    @if (petExtra()[fe.id]) {
+                      <p class="puesta">Ya tienes pedido el sustituto. Si lo cambias y envías,
+                        cuenta el último; el fichaje de la semana no se toca.</p>
+                    }
+                    @for (s of [1, 2]; track s) {
+                      @if (selE(fe.id, s); as a) {
+                        <div class="slot lleno">
+                          <span class="prio num">{{ s }}</span>
+                          <div class="sw">
+                            <span class="sn">{{ a.nombre }}</span>
+                            <span class="smeta">{{ abr(a.posicion) }} · {{ a.club }}</span>
+                          </div>
+                          <button class="rm" (click)="quitarE(fe.id, s)" aria-label="Quitar">✕</button>
+                        </div>
+                      } @else {
+                        <div class="slot">
+                          <span class="prio num">{{ s }}</span>
+                          <span class="vacia">{{ s === 1 ? 'Sustituto: elígelo en la lista' : 'Segunda opción (opcional)' }}</span>
+                        </div>
+                      }
+                    }
+                    <div class="lacc">
+                      <button class="btn sec" (click)="elegirPara(fe.id)">
+                        {{ destino() === fe.id ? 'Eligiendo en la lista…' : 'Elegir en la lista' }}
+                      </button>
+                      <button class="btn" [disabled]="!selE(fe.id, 1) || enviandoExtra() === fe.id || !hayMercado()"
+                              (click)="enviarExtra(fe)">
+                        {{ enviandoExtra() === fe.id ? 'Enviando…' : petExtra()[fe.id] ? 'Actualizar' : 'Enviar' }}
+                      </button>
+                    </div>
+                  }
                 </div>
               }
+              <span class="lt">Avisar de una lesión nueva</span>
               <div class="lform">
                 <select [ngModel]="lesionadoId()" (ngModelChange)="lesionadoId.set($event)">
                   <option value="">— jugador lesionado —</option>
@@ -285,6 +331,18 @@ const POS = ['PORTERO', 'DEFENSA', 'MEDIO', 'DELANTERO'];
     .lurl { color: var(--accent); font-size: var(--t-xs); }
     .lest { font-size: var(--t-xs); font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--good); }
     .lest.usado { color: var(--text2); }
+    .lcard { margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+    .lcard.activa .lrow { border-color: var(--accent); background: var(--accent-soft); }
+    .lacc { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+    .btn.sec { background: var(--surface); color: var(--text); border: 1px solid var(--line); }
+    .btn.sec:hover { border-color: var(--accent); color: var(--accent); }
+    .lt { display: block; margin: 4px 0 8px; font-size: var(--t-xs); font-weight: 700;
+      letter-spacing: .14em; text-transform: uppercase; color: var(--text2); }
+    .eligiendo { display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      flex-wrap: wrap; margin: 0 0 10px; padding: 10px 14px; border-radius: var(--r-sm);
+      background: var(--accent-soft); border: 1px solid var(--accent-line);
+      color: var(--accent); font-size: var(--t-sm); }
+    .eligiendo b { color: var(--text); }
     .lform { display: flex; flex-direction: column; gap: 8px; }
     .lform select, .lform input { width: 100%; }
 
@@ -348,6 +406,14 @@ export class FichajesComponent implements OnInit {
   lesionadoId = signal('');
   urlLesion = signal('');
   enviandoLesion = signal(false);
+  /** Para qué está eligiendo la lista: null es la semanal; si no, el id de la lesión. */
+  destino = signal<string | null>(null);
+  /** Las dos opciones de cada lesión, por `fichaje_extra.id`. */
+  selExtra = signal<Record<string, (ActivoLibre | null)[]>>({});
+  /** Lo ya pedido esta semana por cada lesión. */
+  petExtra = signal<Record<string, PeticionViva>>({});
+  enviandoExtra = signal('');
+  destinoExtra = computed(() => this.extras().find((e) => e.id === this.destino()) ?? null);
   /** Lo que ya tengo pedido esta semana, si hay algo. */
   peticion = signal<PeticionViva | null>(null);
   /** La semana en curso: hasta cuando se pide y a que jornada va. */
@@ -402,6 +468,22 @@ export class FichajesComponent implements OnInit {
     this.p1.set(de(1)); this.p2.set(de(2));
   }
 
+  /** Igual que la semanal, pero una por lesión: cada caja arranca con lo que ya pidió. */
+  private async cargarPeticionesExtra() {
+    const eq = this.equipo(); const v = this.ventana();
+    if (!eq || !v) return;
+    const m = await this.falm.misPeticionesExtra(eq.id, v.ventana);
+    this.petExtra.set(m);
+    const sel: Record<string, (ActivoLibre | null)[]> = {};
+    for (const [id, p] of Object.entries(m)) {
+      sel[id] = [1, 2].map((n) => {
+        const o = p.opciones.find((x) => x.prioridad === n);
+        return o ? this.mercado().find((a) => a.activo_id === o.activo_id) ?? null : null;
+      });
+    }
+    this.selExtra.set(sel);
+  }
+
   /** Lo que pasa los filtros; el orden y la página los lleva la lista. */
   filtrados = computed(() => {
     const f = this.texto().trim().toLowerCase();
@@ -432,21 +514,49 @@ export class FichajesComponent implements OnInit {
     return a.foto ?? (a.club_id ? this.caras()[a.club_id] ?? null : null);
   }
   sinFoto(a: ActivoLibre) { const r = new Set(this.rotas()); r.add(a.activo_id); this.rotas.set(r); }
+  selE(id: string, s: number) { return this.selExtra()[id]?.[s - 1] ?? null; }
+  quitarE(id: string, s: number) {
+    const p = [...(this.selExtra()[id] ?? [null, null])]; p[s - 1] = null;
+    this.selExtra.set({ ...this.selExtra(), [id]: p });
+  }
+
+  /** Las dos opciones de aquello para lo que está eligiendo la lista. */
+  private par(): (ActivoLibre | null)[] {
+    const d = this.destino();
+    return d ? (this.selExtra()[d] ?? [null, null]) : [this.p1(), this.p2()];
+  }
+  private ponerPar(p: (ActivoLibre | null)[]) {
+    const d = this.destino();
+    if (d) this.selExtra.set({ ...this.selExtra(), [d]: p });
+    else { this.p1.set(p[0]); this.p2.set(p[1]); }
+  }
+
+  /** La lista pasa a elegir para esa lesión; otra vez, vuelve a la semanal. */
+  elegirPara(id: string) {
+    this.destino.set(this.destino() === id ? null : id);
+    // En el móvil la caja va encima de la lista: bajar hasta ella.
+    if (this.destino() && window.innerWidth <= 900) {
+      document.querySelector('.tabla')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
+
   prioridadDe(a: ActivoLibre): number | null {
-    if (this.p1()?.activo_id === a.activo_id) return 1;
-    if (this.p2()?.activo_id === a.activo_id) return 2;
+    const [x, y] = this.par();
+    if (x?.activo_id === a.activo_id) return 1;
+    if (y?.activo_id === a.activo_id) return 2;
     return null;
   }
   togglePos(p: string) { this.posFiltro.set(this.posFiltro() === p ? '' : p); this.l.reset(); }
 
   /** Pedir: si ya está elegido lo quita; si no, ocupa la primera prioridad libre. */
   toggle(a: ActivoLibre) {
+    const [x, y] = this.par();
     const pr = this.prioridadDe(a);
-    if (pr === 1) { this.p1.set(null); return; }
-    if (pr === 2) { this.p2.set(null); return; }
-    if (!this.p1()) this.p1.set(a);
-    else if (!this.p2()) this.p2.set(a);
-    else this.p1.set(a); // ambas llenas: reemplaza la 1ª
+    if (pr === 1) { this.ponerPar([null, y]); return; }
+    if (pr === 2) { this.ponerPar([x, null]); return; }
+    if (!x) this.ponerPar([a, y]);
+    else if (!y) this.ponerPar([x, a]);
+    else this.ponerPar([a, y]); // ambas llenas: reemplaza la 1ª
   }
   quitar(s: number) { (s === 1 ? this.p1 : this.p2).set(null); }
 
@@ -472,6 +582,9 @@ export class FichajesComponent implements OnInit {
         const [mp, ex] = await Promise.all([this.falm.miPlantilla(eq.id), this.falm.fichajesExtra(eq.id)]);
         this.miPlantilla.set(mp); this.extras.set(ex);
         await this.cargarPeticion();
+        await this.cargarPeticionesExtra();
+        // Con una lesión por cubrir, la caja se enseña abierta: cerrada no se veía.
+        if (ex.some((e) => !e.usado)) this.verLesion.set(true);
       }
     } catch (e: any) {
       this.error.set(e?.message ?? 'Error cargando fichajes');
@@ -491,11 +604,53 @@ export class FichajesComponent implements OnInit {
     this.enviandoLesion.set(true);
     try {
       await this.falm.crearFichajeExtra(eq.id, this.lesionadoId(), this.urlLesion().trim());
-      this.aviso.set('Solicitud de fichaje por lesión enviada.');
+      this.aviso.set('Lesión registrada. Ahora elige a su sustituto en la lista y dale a Enviar en su caja.');
       this.lesionadoId.set(''); this.urlLesion.set('');
+      const antes = new Set(this.extras().map((e) => e.id));
       this.extras.set(await this.falm.fichajesExtra(eq.id));
+      // La lista pasa directamente a elegir para la lesión recién registrada.
+      const nueva = this.extras().find((e) => !antes.has(e.id));
+      if (nueva) this.elegirPara(nueva.id);
     } catch (e: any) { this.error.set(e?.message ?? 'Error al solicitar'); }
     finally { this.enviandoLesion.set(false); }
+  }
+
+  async enviarExtra(fe: { id: string; lesionado: string }) {
+    this.aviso.set(''); this.error.set('');
+    if (environment.devEquipoNombre) {
+      this.aviso.set('Modo demo: la petición no se envía hasta que actives tu cuenta (login).');
+      return;
+    }
+    const eq = this.equipo(); const v = this.ventana();
+    if (!eq) {
+      this.error.set('No se ha podido identificar tu equipo: vuelve a entrar en la web y repite la petición.');
+      return;
+    }
+    if (!v || !v.jornada_id) {
+      this.error.set('Ahora mismo no hay ninguna jornada a la que mandar el fichaje.');
+      return;
+    }
+    const [x, y] = this.selExtra()[fe.id] ?? [null, null];
+    if (!x) {
+      this.error.set(`Elige en la lista al sustituto de ${fe.lesionado} antes de enviar.`);
+      return;
+    }
+    const opciones = [{ activo_id: x.activo_id, prioridad: 1 }];
+    if (y) opciones.push({ activo_id: y.activo_id, prioridad: 2 });
+    this.enviandoExtra.set(fe.id);
+    try {
+      const habia = !!this.petExtra()[fe.id];
+      await this.falm.crearPeticion(eq.id, v.jornada_id, opciones, v.ventana, null, fe.id);
+      await this.cargarPeticionesExtra();
+      if (this.destino() === fe.id) this.destino.set(null);
+      this.aviso.set(habia
+        ? `Fichaje por la lesión de ${fe.lesionado} actualizado. El de la semana sigue igual.`
+        : `Fichaje por la lesión de ${fe.lesionado} enviado. El de la semana sigue igual.`);
+    } catch (e: any) {
+      this.error.set(e?.message ?? 'Error al enviar');
+    } finally {
+      this.enviandoExtra.set('');
+    }
   }
 
   async enviar() {

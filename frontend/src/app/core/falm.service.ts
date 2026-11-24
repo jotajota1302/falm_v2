@@ -1173,6 +1173,33 @@ export class FalmService {
     };
   }
 
+  /** Lo pedido esta semana por cada lesión, indexado por `fichaje_extra.id`. */
+  async misPeticionesExtra(equipoId: string, ventana: string): Promise<Record<string, PeticionViva>> {
+    const { data, error } = await this.sb.client
+      .from('peticion_fichaje')
+      .select('id, fecha_creacion, activo_baja_id, fichaje_extra_id, peticion_fichaje_opcion (prioridad, activo_id)')
+      .eq('equipo_falm_id', equipoId)
+      .eq('ventana', ventana)
+      .eq('estado', 'PENDIENTE')
+      .not('fichaje_extra_id', 'is', null)
+      .order('fecha_creacion', { ascending: true });
+    if (error) throw error;
+    const r: Record<string, PeticionViva> = {};
+    // Ascendente: si quedara más de una de la misma lesión, gana la última,
+    // que es la que se lleva el reparto.
+    for (const p of (data ?? []) as any[]) {
+      r[p.fichaje_extra_id] = {
+        id: p.id,
+        fecha: p.fecha_creacion,
+        baja_id: p.activo_baja_id ?? null,
+        opciones: (p.peticion_fichaje_opcion ?? [])
+          .map((o: any) => ({ activo_id: o.activo_id, prioridad: o.prioridad }))
+          .sort((a: any, b: any) => a.prioridad - b.prioridad),
+      };
+    }
+    return r;
+  }
+
   /** El acta de los fichajes ya resueltos, para el teletipo de la pantalla. */
   async noticiasFichajes(limite = 20): Promise<any[]> {
     const { data, error } = await this.sb.client.rpc('noticias_fichajes', { p_limite: limite });
@@ -1255,25 +1282,28 @@ export class FalmService {
     jornadaObjetivoId: string,
     opciones: { activo_id: string; prioridad: number }[],
     ventana: string,
-    bajaId: string | null
+    bajaId: string | null,
+    /** La lesión por la que se pide; null es el fichaje de la semana. */
+    extraId: string | null = null
   ): Promise<void> {
     // La unidad es la SEMANA, no la jornada: en un parón varias semanas caen en
-    // la misma jornada y son fichajes distintos.
-    const { error: e0 } = await this.sb.client
+    // la misma jornada y son fichajes distintos. Cada petición solo sustituye a
+    // la suya: la semanal a la semanal y la de una lesión a la de esa lesión.
+    let q = this.sb.client
       .from('peticion_fichaje')
       .update({ estado: 'RECHAZADA', fecha_procesamiento: new Date().toISOString(),
                 observaciones: 'Sustituida por una petición posterior del mismo equipo' })
       .eq('equipo_falm_id', equipoId)
       .eq('ventana', ventana)
-      .eq('estado', 'PENDIENTE')
-      // Solo sustituye a la semanal: las peticiones por lesión no se tocan.
-      .is('fichaje_extra_id', null);
+      .eq('estado', 'PENDIENTE');
+    q = extraId ? q.eq('fichaje_extra_id', extraId) : q.is('fichaje_extra_id', null);
+    const { error: e0 } = await q;
     if (e0) throw e0;
 
     const { data: pet, error } = await this.sb.client
       .from('peticion_fichaje')
       .insert({ equipo_falm_id: equipoId, jornada_objetivo_id: jornadaObjetivoId,
-                estado: 'PENDIENTE', ventana, activo_baja_id: bajaId })
+                estado: 'PENDIENTE', ventana, activo_baja_id: bajaId, fichaje_extra_id: extraId })
       .select('id')
       .single();
     if (error) throw error;
